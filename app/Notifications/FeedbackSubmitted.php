@@ -30,12 +30,16 @@ class FeedbackSubmitted extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->line(__('A new customer feedback has been submitted.'))
-            ->line('- ' . __('Project:') . ' ' . $this->feedback->project->name)
-            ->line('- ' . __('Customer:') . ' ' . $this->feedback->user->name)
-            ->line('- ' . __('Title:') . ' ' . $this->feedback->title)
-            ->line(__('Please review and take appropriate action.'))
-            ->action(__('View Feedback'), route('filament.resources.customer-feedbacks.view', $this->feedback->id));
+            ->subject('New Customer Feedback Submitted')
+            ->greeting('Hello!')
+            ->line('A new customer feedback has been submitted.')
+            ->line('**Project:** ' . $this->feedback->project->name)
+            ->line('**Customer:** ' . $this->feedback->user->name)
+            ->line('**Title:** ' . $this->feedback->title)
+            ->line('Please review and take appropriate action.')
+            ->action('View Feedback', route('filament.resources.customer-feedbacks.view', $this->feedback->id))
+            ->line('Thank you for your attention!')
+            ->salutation('Regards, ' . config('app.name'));
     }
 
     public function toDatabase(User $notifiable): array
