@@ -7,29 +7,13 @@
     </x-slot:header>
 
     {{-- Body --}}
-    <div class="notification-header">
-        <div class="notification-badge">
-            NOTIFICATION
-        </div>
-    </div>
-
-    <div class="notification-box">
-        <div class="decorative-line"></div>
-
-        {!! $slot !!}
-    </div>
+    {{ $slot }}
 
     {{-- Subcopy --}}
     @isset($subcopy)
     <x-slot:subcopy>
         <x-mail::subcopy>
-            <div class="subcopy">
-                <div class="info-header">
-                    <div class="info-icon"></div>
-                    <span class="info-title">Important Information</span>
-                </div>
-                {{ $subcopy }}
-            </div>
+            {{ $subcopy }}
         </x-mail::subcopy>
     </x-slot:subcopy>
     @endisset
