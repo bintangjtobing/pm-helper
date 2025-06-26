@@ -54,13 +54,13 @@ class Ticket extends Model implements HasMedia
             }
 
             // Jika ticket ini dibuat dari customer feedback, notify customer
-            if ($item->customerFeedback) {
-                $feedback = $item->customerFeedback;
-                $feedback->user->notify(new FeedbackUpdated(
-                    $feedback,
-                    "Your feedback has been converted to ticket: {$item->code}"
-                ));
-            }
+            $feedback = $item->customerFeedback()->first(); // ✅ Get actual model
+                if ($feedback) {
+                    $feedback->user->notify(new FeedbackUpdated(
+                        $feedback,
+                        "Your feedback has been converted to ticket: {$item->code}"
+                    ));
+                }
         });
 
         static::updating(function (Ticket $item) {
@@ -76,14 +76,17 @@ class Ticket extends Model implements HasMedia
                     'user_id' => auth()->user()->id
                 ]);
 
-                foreach ($item->watchers as $user) {
-                    $user->notify(new TicketStatusUpdated($item));
+                // Reload watchers dari database untuk memastikan data fresh
+                $freshTicket = Ticket::with('watchers')->find($item->id);
+
+                foreach ($freshTicket->watchers as $user) {
+                    $user->notify(new TicketStatusUpdated($freshTicket));
                 }
 
                 // Jika ticket ini dari customer feedback, notify customer juga
-                if ($item->customerFeedback) {
-                    $feedback = $item->customerFeedback;
-                    $newStatusName = $item->status->name;
+                $feedback = $item->customerFeedback()->first(); // ✅ Get actual model
+                if ($feedback) {
+                    $newStatusName = $freshTicket->status->name;
                     $feedback->user->notify(new FeedbackUpdated(
                         $feedback,
                         "Ticket {$item->code} status updated to: {$newStatusName}"
