@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\TicketResource\Pages;
 
 use App\Filament\Resources\TicketResource;
+use App\Notifications\TicketStatusUpdated;
+use App\Models\TicketActivity;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -17,6 +19,7 @@ class EditTicket extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // Handle CC users
@@ -36,6 +39,43 @@ class EditTicket extends EditRecord
         // Attach CC users if provided
         if (isset($this->ccUsers)) {
             $this->record->ccUsers()->sync($this->ccUsers);
+        }
+    }
+
+    protected function beforeSave(): void
+    {
+        // Store old status for comparison
+        $this->oldStatusId = $this->record->getOriginal('status_id');
+    }
+
+    protected function saved(): void
+    {
+        // Check if status was changed and trigger notifications manually
+        if ($this->oldStatusId && $this->oldStatusId != $this->record->status_id) {
+
+            // Create activity record
+            TicketActivity::create([
+                'ticket_id' => $this->record->id,
+                'old_status_id' => $this->oldStatusId,
+                'new_status_id' => $this->record->status_id,
+                'user_id' => auth()->user()->id
+            ]);
+
+            // Get fresh ticket with watchers
+            $freshTicket = $this->record->load('watchers', 'status');
+
+            // Send notifications to all watchers
+            foreach ($freshTicket->watchers as $user) {
+                $user->notify(new TicketStatusUpdated($freshTicket));
+            }
+
+            // Log the notification for debugging
+            \Log::info('Status update notification sent', [
+                'ticket_id' => $this->record->id,
+                'old_status' => $this->oldStatusId,
+                'new_status' => $this->record->status_id,
+                'watchers_count' => $freshTicket->watchers->count()
+            ]);
         }
     }
 }

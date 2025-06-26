@@ -185,17 +185,49 @@ class Kanban extends Page implements HasForms
                 throw new \Exception('Unauthorized');
             }
 
-            // Update ticket status
+            // Store old status for notification
             $oldStatusId = $ticket->status_id;
+
+            // Update ticket status and order
             $ticket->status_id = $newStatusId;
+            $ticket->order = $newIndex;
             $ticket->save();
 
-            // Update ticket order
+            // Update ticket order for other tickets
             $this->updateTicketOrder($newStatusId, $ticketId, $newIndex);
 
             // Reorder old status if status changed
             if ($oldStatusId != $newStatusId) {
                 $this->updateTicketOrder($oldStatusId);
+
+                // ✅ MANUALLY TRIGGER NOTIFICATIONS FOR STATUS CHANGE
+
+                // Create activity record
+                \App\Models\TicketActivity::create([
+                    'ticket_id' => $ticket->id,
+                    'old_status_id' => $oldStatusId,
+                    'new_status_id' => $newStatusId,
+                    'user_id' => auth()->user()->id
+                ]);
+
+                // Get fresh ticket with watchers and status
+                $freshTicket = Ticket::with('watchers', 'status', 'project')
+                    ->find($ticket->id);
+
+                // Send notifications to all watchers
+                foreach ($freshTicket->watchers as $user) {
+                    $user->notify(new \App\Notifications\TicketStatusUpdated($freshTicket));
+                }
+
+                // Log the notification for debugging
+                \Log::info('Kanban status update notification sent', [
+                    'ticket_id' => $ticket->id,
+                    'ticket_code' => $freshTicket->code,
+                    'old_status' => $oldStatusId,
+                    'new_status' => $newStatusId,
+                    'watchers_count' => $freshTicket->watchers->count(),
+                    'user_id' => auth()->user()->id
+                ]);
             }
 
             // Return success response
@@ -208,7 +240,8 @@ class Kanban extends Page implements HasForms
             // Log error for debugging
             \Log::error('Kanban update failed', [
                 'ticketId' => $ticketId,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             throw $e;
