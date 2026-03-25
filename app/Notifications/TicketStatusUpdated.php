@@ -17,7 +17,7 @@ class TicketStatusUpdated extends Notification implements ShouldQueue
     use Queueable;
 
     private Ticket $ticket;
-    private TicketActivity $activity;
+    private ?TicketActivity $activity;
 
     /**
      * Create a new notification instance.
@@ -28,7 +28,7 @@ class TicketStatusUpdated extends Notification implements ShouldQueue
     public function __construct(Ticket $ticket)
     {
         $this->ticket = $ticket;
-        $this->activity = $this->ticket->activities->last();
+        $this->activity = $this->ticket->activities()->latest()->first();
     }
 
     /**
@@ -56,9 +56,9 @@ class TicketStatusUpdated extends Notification implements ShouldQueue
                 'code' => $this->ticket->code,
                 'title' => $this->ticket->name
             ]))
-            ->line('- ' . __('Updated by:') . ' ' . ($this->activity->user->name ?? 'System'))
-            ->line('- ' . __('Old status:') . ' ' . $this->activity->oldStatus->name)
-            ->line('- ' . __('New status:') . ' ' . $this->activity->newStatus->name)
+            ->line('- ' . __('Updated by:') . ' ' . ($this->activity?->user->name ?? 'System'))
+            ->line('- ' . __('Old status:') . ' ' . ($this->activity?->oldStatus->name ?? '-'))
+            ->line('- ' . __('New status:') . ' ' . ($this->activity?->newStatus->name ?? $this->ticket->status->name))
             ->line('- ' . __('Project:') . ' ' . $this->ticket->project->name)
             ->line(__('See more details of this ticket by clicking on the button below:'))
             ->action(__('View details'), route('filament.resources.tickets.share', $this->ticket->code));
@@ -71,8 +71,8 @@ class TicketStatusUpdated extends Notification implements ShouldQueue
             ->icon('heroicon-o-ticket')
             ->body(
                 fn() => __('Old status: :oldStatus - New status: :newStatus', [
-                    'oldStatus' => $this->activity->oldStatus->name,
-                    'newStatus' => $this->activity->newStatus->name,
+                    'oldStatus' => $this->activity?->oldStatus->name ?? '-',
+                    'newStatus' => $this->activity?->newStatus->name ?? $this->ticket->status->name,
                 ])
             )
             ->actions([
