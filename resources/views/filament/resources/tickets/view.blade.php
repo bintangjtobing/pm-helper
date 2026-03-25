@@ -52,7 +52,7 @@
                 <div
                     class="w-full p-4 overflow-hidden prose-sm prose border border-gray-200 rounded-lg max-w-none bg-gray-50">
                     <div class="leading-relaxed text-gray-700">
-                        {!! $record->content !!}
+                        {!! $record->rendered_content !!}
                     </div>
 
                     {{-- Bug Report Details --}}

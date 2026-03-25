@@ -355,6 +355,28 @@ class Ticket extends Model implements HasMedia
         return in_array($this->type->name, ['Bug', 'Hotfix']);
     }
 
+    /**
+     * Render content as HTML — supports both Markdown and raw HTML.
+     */
+    public function getRenderedContentAttribute(): string
+    {
+        $content = $this->content ?? '';
+        if (empty(trim($content))) {
+            return '';
+        }
+
+        // If content has Markdown indicators, parse it
+        if (preg_match('/^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>/m', $content)) {
+            return \Illuminate\Support\Str::markdown($content, [
+                'html_input' => 'allow',
+                'allow_unsafe_links' => false,
+            ]);
+        }
+
+        // Already HTML, return as-is
+        return $content;
+    }
+
     public function ccUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'ticket_cc', 'ticket_id', 'user_id')

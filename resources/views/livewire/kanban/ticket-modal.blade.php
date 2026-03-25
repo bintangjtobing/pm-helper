@@ -47,7 +47,7 @@
                             <div class="p-4 bg-white border border-gray-200 rounded-lg">
                                 @if($ticket->content)
                                 <div class="prose-sm prose text-gray-700 max-w-none">
-                                    {!! $ticket->content !!}
+                                    {!! $ticket->rendered_content !!}
                                 </div>
                                 @else
                                 <p class="italic text-gray-500">No description provided...</p>
