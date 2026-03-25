@@ -35,11 +35,95 @@ class AppServiceProvider extends ServiceProvider
         Filament::registerRenderHook(
             'head.end',
             fn (): string => '<style>
+                /* Dark mode: backgrounds */
                 html.dark { background-color: #111827 !important; }
                 html.dark body { background-color: #111827 !important; }
                 html.dark .filament-main { background-color: #111827 !important; }
-                html.dark .filament-main-content { background-color: #1f2937 !important; }
+                html.dark .filament-main-content { background-color: #111827 !important; }
+
+                /* Dark mode: text colors */
+                html.dark .text-gray-900 { color: #f9fafb !important; }
+                html.dark .text-gray-800 { color: #e5e7eb !important; }
+                html.dark .text-gray-700 { color: #d1d5db !important; }
+                html.dark .text-gray-600 { color: #9ca3af !important; }
+
+                /* Dark mode: card & surface backgrounds */
+                html.dark .bg-white { background-color: #1f2937 !important; }
+                html.dark .bg-gray-50 { background-color: #1f2937 !important; }
                 html.dark .bg-gray-100 { background-color: #111827 !important; }
+                html.dark .bg-gray-200 { background-color: #374151 !important; }
+                html.dark .bg-gray-300 { background-color: #4b5563 !important; }
+
+                /* Dark mode: colored backgrounds (soften for dark) */
+                html.dark .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+                html.dark .bg-green-50 { background-color: rgba(16, 185, 129, 0.1) !important; }
+                html.dark .bg-red-50 { background-color: rgba(239, 68, 68, 0.1) !important; }
+                html.dark .bg-yellow-50 { background-color: rgba(245, 158, 11, 0.1) !important; }
+                html.dark .bg-purple-50 { background-color: rgba(139, 92, 246, 0.1) !important; }
+                html.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.2) !important; }
+                html.dark .bg-green-100 { background-color: rgba(16, 185, 129, 0.2) !important; }
+                html.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.2) !important; }
+                html.dark .bg-yellow-100 { background-color: rgba(245, 158, 11, 0.2) !important; }
+                html.dark .bg-purple-100 { background-color: rgba(139, 92, 246, 0.2) !important; }
+
+                /* Dark mode: borders */
+                html.dark .border-gray-100 { border-color: #374151 !important; }
+                html.dark .border-gray-200 { border-color: #374151 !important; }
+                html.dark .border-gray-300 { border-color: #4b5563 !important; }
+                html.dark .border-blue-200 { border-color: rgba(59, 130, 246, 0.3) !important; }
+                html.dark .border-yellow-200 { border-color: rgba(245, 158, 11, 0.3) !important; }
+                html.dark .border-yellow-400 { border-color: rgba(245, 158, 11, 0.5) !important; }
+                html.dark .border-red-200 { border-color: rgba(239, 68, 68, 0.3) !important; }
+
+                /* Dark mode: hover states */
+                html.dark .hover\:bg-gray-50:hover { background-color: #374151 !important; }
+                html.dark .hover\:bg-gray-100:hover { background-color: #374151 !important; }
+                html.dark .hover\:bg-blue-100:hover { background-color: rgba(59, 130, 246, 0.25) !important; }
+
+                /* Dark mode: JSGantt chart overrides */
+                html.dark .JSGantt,
+                html.dark .gantt { background-color: #1f2937 !important; color: #e5e7eb !important; }
+                html.dark .gchartcontainer { background-color: #1f2937 !important; }
+                html.dark .gmajorheading { background-color: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
+                html.dark .gminorheading { background-color: #1f2937 !important; color: #d1d5db !important; border-color: #4b5563 !important; }
+                html.dark .gheadcell { border-color: #4b5563 !important; }
+                html.dark .gname { border-color: #4b5563 !important; color: #e5e7eb !important; }
+                html.dark .gplancontain { background-color: #1f2937 !important; border-color: #4b5563 !important; }
+                html.dark .gtaskcellwkend { background-color: #111827 !important; }
+                html.dark .gtaskcell { border-color: #374151 !important; }
+                html.dark .glinediv { border-color: #4b5563 !important; }
+                html.dark .gtaskheading,
+                html.dark .gresource,
+                html.dark .gduration,
+                html.dark .gpccomplete { color: #d1d5db !important; border-color: #4b5563 !important; }
+                html.dark .gstartdate,
+                html.dark .genddate { color: #9ca3af !important; border-color: #4b5563 !important; }
+                html.dark .gitemgroup td { background-color: #374151 !important; color: #e5e7eb !important; }
+                html.dark .gitem td,
+                html.dark .glineitem td { background-color: #1f2937 !important; color: #e5e7eb !important; }
+                html.dark .gname a { color: #93c5fd !important; }
+                html.dark .gformlabel { background-color: #374151 !important; color: #e5e7eb !important; border-color: #4b5563 !important; }
+                html.dark .gcurrcell { background-color: rgba(99, 102, 241, 0.15) !important; }
+                html.dark .rhscrpad { background-color: #1f2937 !important; }
+                html.dark .ghead { background-color: #374151 !important; border-color: #4b5563 !important; }
+
+                /* Dark mode: inline mention styles */
+                html.dark .mention-tag { background-color: rgba(59, 130, 246, 0.2) !important; color: #93c5fd !important; border-color: rgba(59, 130, 246, 0.3) !important; }
+
+                /* Dark mode: dialog/modal styles */
+                html.dark .dialog-container { background-color: rgba(0, 0, 0, 0.6) !important; }
+                html.dark .dialog { background-color: #1f2937 !important; border-color: #374151 !important; }
+                html.dark .dialog-header { background-color: #374151 !important; color: #f9fafb !important; }
+                html.dark .dialog-content { background-color: #1f2937 !important; }
+
+                /* Dark mode: prose/content areas */
+                html.dark .prose { color: #e5e7eb !important; }
+                html.dark .prose blockquote { border-left-color: #4b5563 !important; }
+                html.dark .prose pre { background-color: #111827 !important; }
+                html.dark .prose code { background-color: #111827 !important; color: #f9fafb !important; }
+
+                /* Dark mode: sortable ghost (kanban drag) */
+                html.dark .sortable-ghost { background: linear-gradient(135deg, #374151, #1f2937) !important; }
             </style>'
         );
         // Configure application

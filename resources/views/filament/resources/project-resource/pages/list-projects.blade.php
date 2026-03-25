@@ -11,7 +11,7 @@
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             @foreach($projects as $project)
             <div
-                class="overflow-hidden transition-all duration-200 bg-white border border-gray-200 rounded-lg shadow-sm group hover:shadow-md hover:border-blue-300">
+                class="overflow-hidden transition-all duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600">
 
                 {{-- Project Header/Cover --}}
                 <div class="relative h-32 overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600">
@@ -59,13 +59,13 @@
                 {{-- Project Content --}}
                 <div class="p-4">
                     {{-- Project Name --}}
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 transition-colors group-hover:text-blue-600">
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white transition-colors group-hover:text-blue-600">
                         {{ $project->name }}
                     </h3>
 
                     {{-- Project Description --}}
                     @if($project->description)
-                    <p class="mb-3 text-sm text-gray-600 line-clamp-2">
+                    <p class="mb-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                         {{ Str::limit(strip_tags($project->description), 100) }}
                     </p>
                     @endif
@@ -74,7 +74,7 @@
                     <div class="flex items-center justify-between mb-4">
                         {{-- Owner --}}
                         <div class="flex items-center space-x-2">
-                            <img class="w-6 h-6 border border-gray-200 rounded-full"
+                            <img class="w-6 h-6 border border-gray-200 dark:border-gray-600 rounded-full"
                                 src="{{ $project->owner->avatar_url }}" alt="{{ $project->owner->name }}">
                             <span class="text-xs text-gray-500">{{ $project->owner->name }}</span>
                         </div>
@@ -96,8 +96,8 @@
                             @endforeach
                             @if($project->users->count() > 4)
                             <div
-                                class="flex items-center justify-center w-6 h-6 bg-gray-100 border border-white rounded-full shadow-sm">
-                                <span class="text-xs text-gray-600">+{{ $project->users->count() - 4 }}</span>
+                                class="flex items-center justify-center w-6 h-6 bg-gray-100 dark:bg-gray-700 border border-white dark:border-gray-800 rounded-full shadow-sm">
+                                <span class="text-xs text-gray-600 dark:text-gray-400">+{{ $project->users->count() - 4 }}</span>
                             </div>
                             @endif
                         </div>
@@ -105,9 +105,9 @@
                     @endif
 
                     {{-- Action Buttons --}}
-                    <div class="flex items-center pt-3 space-x-2 border-t border-gray-100">
+                    <div class="flex items-center pt-3 space-x-2 border-t border-gray-100 dark:border-gray-700">
                         <button wire:click="openBoard({{ $project->id }})"
-                            class="inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-medium text-blue-700 transition-colors rounded-md bg-blue-50 hover:bg-blue-100">
+                            class="inline-flex items-center justify-center flex-1 px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 transition-colors rounded-md bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50">
                             <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                                 <path
                                     d="M2 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V4zM8 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1H9a1 1 0 01-1-1V4zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z">
@@ -118,7 +118,7 @@
 
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open"
-                                class="inline-flex items-center justify-center p-2 text-gray-400 transition-colors rounded-md hover:text-gray-600 hover:bg-gray-50">
+                                class="inline-flex items-center justify-center p-2 text-gray-400 transition-colors rounded-md hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path
                                         d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z">
@@ -133,10 +133,10 @@
                                 x-transition:leave="transition ease-in duration-75"
                                 x-transition:leave-start="transform opacity-100 scale-100"
                                 x-transition:leave-end="transform opacity-0 scale-95"
-                                class="absolute right-0 z-10 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
+                                class="absolute right-0 z-10 w-48 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
                                 <div class="py-1">
                                     <button wire:click="viewProject({{ $project->id }})"
-                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                             <path fill-rule="evenodd"
@@ -146,7 +146,7 @@
                                         View Details
                                     </button>
                                     <button wire:click="editProject({{ $project->id }})"
-                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        class="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
                                             <path
                                                 d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z">
@@ -165,14 +165,14 @@
         @else
         {{-- Empty State --}}
         <div class="py-12 text-center">
-            <div class="flex items-center justify-center w-24 h-24 mx-auto mb-4 bg-gray-100 rounded-full">
+            <div class="flex items-center justify-center w-24 h-24 mx-auto mb-4 bg-gray-100 dark:bg-gray-800 rounded-full">
                 <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
                     </path>
                 </svg>
             </div>
-            <h3 class="mb-2 text-lg font-medium text-gray-900">No projects found</h3>
+            <h3 class="mb-2 text-lg font-medium text-gray-900 dark:text-white">No projects found</h3>
             <p class="mb-6 text-gray-500">Create your first project to get started.</p>
             <a href="{{ route('filament.resources.projects.create') }}"
                 class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">
