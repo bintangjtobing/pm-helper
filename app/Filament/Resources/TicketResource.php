@@ -215,7 +215,6 @@ class TicketResource extends Resource
                         // Bug Report Fields — shown only for Bug/Hotfix types
                         Forms\Components\Section::make(__('Bug Report Details'))
                             ->description(__('Provide structured bug report information'))
-                            ->icon('heroicon-o-bug-ant')
                             ->collapsible()
                             ->collapsed(fn($get) => !in_array($get('type_id'), self::getBugTypeIds()))
                             ->visible(fn($get) => in_array($get('type_id'), self::getBugTypeIds()))
