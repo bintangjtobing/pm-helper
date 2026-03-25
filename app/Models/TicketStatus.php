@@ -14,8 +14,39 @@ class TicketStatus extends Model
 
     protected $fillable = [
         'name', 'color', 'is_default', 'order',
-        'project_id'
+        'project_id', 'role_group'
     ];
+
+    /**
+     * Role groups and which roles can transition to statuses in each group.
+     */
+    public const ROLE_GROUP_ACCESS = [
+        'dev'      => ['Super Admin', 'Project Manager', 'Developer'],
+        'qa'       => ['Super Admin', 'Project Manager', 'QA / Tester'],
+        'business' => ['Super Admin', 'Project Manager', 'DevOps'],
+        'any'      => null, // null = all roles allowed
+    ];
+
+    /**
+     * Check if a user can transition a ticket to this status.
+     */
+    public function canBeSetByUser(?User $user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        if (!$user) return false;
+
+        // 'any' group = everyone can use it
+        if ($this->role_group === 'any' || !$this->role_group) {
+            return true;
+        }
+
+        $allowedRoles = self::ROLE_GROUP_ACCESS[$this->role_group] ?? null;
+        if ($allowedRoles === null) {
+            return true;
+        }
+
+        return $user->hasAnyRole($allowedRoles);
+    }
 
     public static function boot()
     {

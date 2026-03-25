@@ -105,7 +105,9 @@ trait KanbanScrumHelper
                     'title' => $item->name,
                     'color' => $item->color,
                     'size' => $ticketCounts->get($item->id, 0),
-                    'add_ticket' => $canCreateTicket
+                    'add_ticket' => $canCreateTicket,
+                    'can_drop' => $item->canBeSetByUser(),
+                    'role_group' => $item->role_group,
                 ];
             });
     }
@@ -178,6 +180,15 @@ trait KanbanScrumHelper
         // Security: verify user has permission to update this ticket
         if (!auth()->user()->can('update', $ticket)) {
             Filament::notify('danger', __('You do not have permission to update this ticket'));
+            return;
+        }
+
+        // Security: verify user can transition to this status (role-based)
+        $targetStatus = \App\Models\TicketStatus::find($newStatus);
+        if ($targetStatus && !$targetStatus->canBeSetByUser()) {
+            Filament::notify('danger', __('You do not have permission to set tickets to ":status" status.', [
+                'status' => $targetStatus->name
+            ]));
             return;
         }
 

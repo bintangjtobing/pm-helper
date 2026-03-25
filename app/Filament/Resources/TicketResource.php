@@ -132,16 +132,14 @@ class TicketResource extends Resource
                                             ->options(function ($get) {
                                                 $project = Project::where('id', $get('project_id'))->first();
                                                 if ($project?->status_type === 'custom') {
-                                                    return TicketStatus::where('project_id', $project->id)
-                                                        ->get()
-                                                        ->pluck('name', 'id')
-                                                        ->toArray();
+                                                    $statuses = TicketStatus::where('project_id', $project->id)->get();
                                                 } else {
-                                                    return TicketStatus::whereNull('project_id')
-                                                        ->get()
-                                                        ->pluck('name', 'id')
-                                                        ->toArray();
+                                                    $statuses = TicketStatus::whereNull('project_id')->get();
                                                 }
+                                                // Filter by role-based access
+                                                return $statuses->filter(fn($s) => $s->canBeSetByUser())
+                                                    ->pluck('name', 'id')
+                                                    ->toArray();
                                             })
                                             ->default(function ($get) {
                                                 $project = Project::where('id', $get('project_id'))->first();

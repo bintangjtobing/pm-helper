@@ -62,6 +62,18 @@ class TicketStatusResource extends Resource
                                     ->integer()
                                     ->default(fn() => TicketStatus::whereNull('project_id')->count() + 1)
                                     ->required(),
+
+                                Forms\Components\Select::make('role_group')
+                                    ->label(__('Role group'))
+                                    ->options([
+                                        'any' => __('Any role'),
+                                        'dev' => __('Development (Developer, PM, Super Admin)'),
+                                        'qa' => __('QA (QA/Tester, PM, Super Admin)'),
+                                        'business' => __('Business (PM, DevOps, Super Admin)'),
+                                    ])
+                                    ->default('any')
+                                    ->helperText(__('Which roles can move tickets to this status?'))
+                                    ->required(),
                             ])
                     ])
             ]);
@@ -86,16 +98,26 @@ class TicketStatusResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\IconColumn::make('is_default')
-                    ->label(__('Default status'))
-                    ->boolean()
+                Tables\Columns\BadgeColumn::make('role_group')
+                    ->label(__('Role group'))
+                    ->enum([
+                        'any' => 'Any',
+                        'dev' => 'Dev',
+                        'qa' => 'QA',
+                        'business' => 'Business',
+                    ])
+                    ->colors([
+                        'secondary' => 'any',
+                        'primary' => 'dev',
+                        'warning' => 'qa',
+                        'success' => 'business',
+                    ])
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created at'))
-                    ->dateTime()
-                    ->sortable()
-                    ->searchable(),
+                Tables\Columns\IconColumn::make('is_default')
+                    ->label(__('Default'))
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
                 //

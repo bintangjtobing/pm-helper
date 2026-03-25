@@ -64,8 +64,18 @@ class Ticket extends Model implements HasMedia
         });
 
         static::updating(function (Ticket $item) {
-            // Ticket activity based on status
+            // Enforce role-based status transitions
             $oldStatus = $item->getOriginal('status_id');
+            if ($oldStatus != $item->status_id) {
+                $newStatus = TicketStatus::find($item->status_id);
+                if ($newStatus && !$newStatus->canBeSetByUser()) {
+                    throw new \Exception(__('You do not have permission to set tickets to ":status" status.', [
+                        'status' => $newStatus->name
+                    ]));
+                }
+            }
+
+            // Ticket activity based on status
             if ($oldStatus != $item->status_id) {
                 TicketActivity::create([
                     'ticket_id' => $item->id,
