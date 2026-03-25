@@ -92,24 +92,31 @@ return [
             // Users affectations roles
             'roles' => [
 
-                // Default role
-                'default' => 'employee',
+                // Default role (used when attaching user to project)
+                'default' => 'Developer',
 
-                // Role that can manage
-                'can_manage' => 'administrator',
+                // Roles that can manage projects (used in policies)
+                'can_manage' => ['Super Admin', 'Project Manager'],
 
-                // Roles list
+                // Roles list is now dynamic — loaded from database
+                // See UsersRelationManager for implementation
                 'list' => [
-                    'employee' => 'Employee',
-                    'customer' => 'Customer',
-                    'administrator' => 'Administrator'
+                    'Super Admin' => 'Super Admin',
+                    'Project Manager' => 'Project Manager',
+                    'Developer' => 'Developer',
+                    'QA / Tester' => 'QA / Tester',
+                    'DevOps' => 'DevOps',
+                    'Stakeholder' => 'Stakeholder',
                 ],
 
                 // Roles colors
                 'colors' => [
-                    'primary' => 'employee',
-                    'warning' => 'customer',
-                    'danger' => 'administrator'
+                    'danger' => 'Super Admin',
+                    'warning' => 'Project Manager',
+                    'primary' => 'Developer',
+                    'success' => 'QA / Tester',
+                    'secondary' => 'DevOps',
+                    'gray' => 'Stakeholder',
                 ],
 
             ],

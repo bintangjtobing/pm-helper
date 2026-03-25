@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ProjectResource\RelationManagers;
 
+use App\Models\Role;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -34,7 +35,7 @@ class UsersRelationManager extends RelationManager
 
                 Tables\Columns\BadgeColumn::make('pivot.role')
                     ->label(__('User role'))
-                    ->enum(config('system.projects.affectations.roles.list'))
+                    ->enum(fn() => Role::pluck('name', 'name')->toArray())
                     ->colors(config('system.projects.affectations.roles.colors'))
                     ->searchable()
                     ->sortable(),
@@ -52,7 +53,7 @@ class UsersRelationManager extends RelationManager
                             ->label(__('User role'))
                             ->searchable()
                             ->default(fn () => config('system.projects.affectations.roles.default'))
-                            ->options(fn () => config('system.projects.affectations.roles.list'))
+                            ->options(fn () => Role::pluck('name', 'name')->toArray())
                             ->required(),
                     ]),
             ])
@@ -63,7 +64,7 @@ class UsersRelationManager extends RelationManager
                         Forms\Components\Select::make('role')
                             ->label(__('User role'))
                             ->searchable()
-                            ->options(fn () => config('system.projects.affectations.roles.list'))
+                            ->options(fn () => Role::pluck('name', 'name')->toArray())
                             ->required(),
                     ]),
                 Tables\Actions\DeleteAction::make(),

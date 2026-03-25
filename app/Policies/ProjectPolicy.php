@@ -63,7 +63,7 @@ class ProjectPolicy
                 $project->owner_id === $user->id
                 ||
                 $project->users()->where('users.id', $user->id)
-                    ->where('role', config('system.projects.affectations.roles.can_manage'))
+                    ->whereIn('role', (array) config('system.projects.affectations.roles.can_manage'))
                     ->count()
             );
     }
@@ -82,7 +82,7 @@ class ProjectPolicy
                 $project->owner_id === $user->id
                 ||
                 $project->users()->where('users.id', $user->id)
-                    ->where('role', config('system.projects.affectations.roles.can_manage'))
+                    ->whereIn('role', (array) config('system.projects.affectations.roles.can_manage'))
                     ->count()
             );
     }

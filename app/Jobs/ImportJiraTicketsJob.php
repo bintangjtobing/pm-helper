@@ -60,7 +60,9 @@ class ImportJiraTicketsJob implements ShouldQueue
                     ProjectUser::create([
                         'project_id' => $project->id,
                         'user_id' => $this->user->id,
-                        'role' => config('system.projects.affectations.roles.can_manage')
+                        'role' => is_array(config('system.projects.affectations.roles.can_manage'))
+                            ? config('system.projects.affectations.roles.can_manage')[0]
+                            : config('system.projects.affectations.roles.can_manage')
                     ]);
                 }
 
