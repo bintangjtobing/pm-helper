@@ -1,4 +1,6 @@
-@php($record = $this->record)
+@php
+    $record = $this->record;
+@endphp
 <x-filament::page>
 
     <a href="{{ route('filament.pages.kanban/{project}', ['project' => $record->project->id]) }}"
@@ -184,22 +186,20 @@
                         <span class="w-2 h-2 bg-red-500 rounded-full mr-1.5 animate-pulse"></span>
                         {{ $record->due_date->format('M d, Y') }} (DUE TODAY!)
                     </span>
-                    @elseif($record->due_date->diffInDays(now()) <= 3) <span
-                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                    @elseif($record->due_date->diffInDays(now()) <= 3)
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
                         <span class="w-2 h-2 bg-yellow-500 rounded-full mr-1.5"></span>
                         {{ $record->due_date->format('M d, Y') }} ({{ $record->due_date->diffInDays(now()) }} days left)
-                        </span>
-                        @else
-                        <span
-                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                            <span class="w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>
-                            {{ $record->due_date->format('M d, Y') }} ({{ $record->due_date->diffInDays(now()) }} days
-                            left)
-                        </span>
-                        @endif
-                        @else
-                        <span class="text-gray-400">No due date set</span>
-                        @endif
+                    </span>
+                    @else
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>
+                        {{ $record->due_date->format('M d, Y') }} ({{ $record->due_date->diffInDays(now()) }} days left)
+                    </span>
+                    @endif
+                    @else
+                    <span class="text-gray-400">No due date set</span>
+                    @endif
                 </div>
             </div>
 
