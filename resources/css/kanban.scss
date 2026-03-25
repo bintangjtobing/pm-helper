@@ -4,14 +4,14 @@
     .kanban-statuses {
         @apply w-full flex flex-col gap-2;
 
-        min-width: 250px;
+        min-width: 260px;
 
         .status-header {
             @apply w-full flex gap-1 items-center bg-white p-3 mb-3 text-xs font-medium text-gray-400 uppercase rounded-t border-b-4;
         }
 
         .status-container {
-            @apply relative w-full flex flex-col gap-2 bg-white p-2 rounded overflow-y-auto overflow-x-hidden border-b-4;
+            @apply relative w-full flex flex-col gap-3 bg-white p-3 rounded overflow-y-auto overflow-x-hidden border-b-4;
 
             height: calc(100vh);
 
@@ -20,7 +20,7 @@
             }
 
             .kanban-record {
-                @apply w-full flex flex-col gap-4 rounded bg-gray-50 border border-gray-200 p-3 hover:shadow hover:bg-gray-100 relative cursor-move;
+                @apply w-full flex flex-col gap-3 rounded bg-gray-50 border border-gray-200 p-4 hover:shadow hover:bg-gray-100 relative cursor-move;
 
                 // Add visual feedback for dragging
                 &:hover {
@@ -29,18 +29,18 @@
                 }
 
                 .record-info {
-                    @apply w-full flex flex-col gap-0;
+                    @apply w-full flex flex-col gap-1;
 
                     .record-subtitle {
                         @apply text-xs text-gray-400;
                     }
 
                     .record-title {
-                        @apply text-base text-gray-600 hover:cursor-pointer;
+                        @apply text-sm leading-snug text-gray-600 hover:cursor-pointer;
                         user-select: none; // Prevent text selection when dragging
 
                         .code {
-                            @apply text-xs font-medium text-gray-400;
+                            @apply text-xs font-medium text-gray-400 mr-1;
                         }
 
                         &:hover {
@@ -57,10 +57,10 @@
                 }
 
                 .record-footer {
-                    @apply w-full flex justify-between items-center;
+                    @apply w-full flex justify-between items-center pt-1;
 
                     .record-type-code {
-                        @apply flex items-center gap-2;
+                        @apply flex items-center gap-1.5 flex-wrap;
                     }
 
                     .avatar {

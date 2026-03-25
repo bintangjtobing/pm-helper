@@ -122,6 +122,19 @@ class AppServiceProvider extends ServiceProvider
                 html.dark .prose pre { background-color: #111827 !important; }
                 html.dark .prose code { background-color: #111827 !important; color: #f9fafb !important; }
 
+                /* Dark mode: colored text (for date badges, status badges) */
+                html.dark .text-green-800 { color: #6ee7b7 !important; }
+                html.dark .text-green-700 { color: #6ee7b7 !important; }
+                html.dark .text-red-800 { color: #fca5a5 !important; }
+                html.dark .text-red-700 { color: #fca5a5 !important; }
+                html.dark .text-yellow-800 { color: #fcd34d !important; }
+                html.dark .text-yellow-700 { color: #fcd34d !important; }
+                html.dark .text-blue-800 { color: #93c5fd !important; }
+                html.dark .text-blue-700 { color: #93c5fd !important; }
+                html.dark .text-purple-800 { color: #c4b5fd !important; }
+                html.dark .text-purple-700 { color: #c4b5fd !important; }
+                html.dark .border-green-200 { border-color: rgba(16, 185, 129, 0.3) !important; }
+
                 /* Dark mode: Kanban board */
                 html.dark .status-header { background-color: #1f2937 !important; }
                 html.dark .status-container { background-color: #1f2937 !important; }
@@ -129,6 +142,7 @@ class AppServiceProvider extends ServiceProvider
                 html.dark .kanban-record:hover { background-color: #4b5563 !important; }
                 html.dark .kanban-record .record-title { color: #e5e7eb !important; }
                 html.dark .kanban-record .record-subtitle { color: #9ca3af !important; }
+                html.dark .kanban-record .code { color: #9ca3af !important; }
                 html.dark .kanban-record .record-relations div { color: #9ca3af !important; }
                 html.dark .kanban-record .avatar { background-color: #4b5563 !important; }
                 html.dark .create-record { color: #9ca3af !important; }
