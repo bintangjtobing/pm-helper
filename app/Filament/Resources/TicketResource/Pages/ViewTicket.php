@@ -281,6 +281,19 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->disableLabel()
                 ->placeholder(__('Type a new comment, use @username to mention users'))
                 ->required()
+                ->toolbarButtons([
+                    'bold',
+                    'italic',
+                    'strike',
+                    'link',
+                    'orderedList',
+                    'bulletList',
+                    'blockquote',
+                    'codeBlock',
+                    'attachFiles',
+                    'redo',
+                    'undo',
+                ])
                 ->extraInputAttributes([
                     'data-enable-mentions' => 'true',
                     'id' => 'comment-editor'
