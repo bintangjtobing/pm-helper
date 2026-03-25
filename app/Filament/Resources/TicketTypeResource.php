@@ -62,7 +62,12 @@ class TicketTypeResource extends Resource
                                     ->helperText(
                                         __('If checked, this type will be automatically affected to new tickets')
                                     ),
-                            ])
+                            ]),
+
+                        Forms\Components\Textarea::make('description')
+                            ->label(__('Description'))
+                            ->helperText(__('What kind of work does this type represent?'))
+                            ->rows(2),
                     ])
             ]);
     }
@@ -82,20 +87,18 @@ class TicketTypeResource extends Resource
                     ->searchable(),
 
                 IconColumn::make('icon')
-                    ->label(__('Type icon'))
-                    ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\IconColumn::make('is_default')
-                    ->label(__('Default type'))
-                    ->boolean()
+                    ->label(__('Icon'))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created at'))
-                    ->dateTime()
-                    ->sortable()
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('description')
+                    ->label(__('Description'))
+                    ->limit(60)
+                    ->tooltip(fn($record) => $record->description),
+
+                Tables\Columns\IconColumn::make('is_default')
+                    ->label(__('Default'))
+                    ->boolean()
+                    ->sortable(),
             ])
             ->filters([
                 //
