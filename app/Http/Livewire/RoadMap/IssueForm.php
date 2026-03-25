@@ -191,6 +191,16 @@ class IssueForm extends Component implements HasForms
 
     public function submit(): void
     {
+        // Security: verify user has permission to create tickets
+        if (!auth()->user()->can('Create ticket')) {
+            Notification::make()
+                ->title(__('Unauthorized'))
+                ->body(__('You do not have permission to create tickets'))
+                ->danger()
+                ->send();
+            return;
+        }
+
         $data = $this->form->getState();
 
         try {

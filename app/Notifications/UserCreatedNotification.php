@@ -32,7 +32,14 @@ class UserCreatedNotification extends Notification implements ShouldQueue
      */
     public function via($notifiable)
     {
-        return ['mail'];
+        $channels = ['database'];
+
+        // Only include mail channel if SMTP is configured
+        if (config('mail.mailers.smtp.host') && config('mail.mailers.smtp.host') !== 'mailpit') {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     /**
@@ -51,6 +58,22 @@ class UserCreatedNotification extends Notification implements ShouldQueue
     }
 
     /**
+     * Get the database representation of the notification.
+     *
+     * @param mixed $notifiable
+     * @return array
+     */
+    public function toDatabase($notifiable)
+    {
+        return [
+            'title' => __('Validate your account'),
+            'body' => __('Welcome to :app platform. Please validate your account.', ['app' => config('app.name')]),
+            'url' => route('validate-account', $this->user->creation_token),
+            'user_id' => $this->user->id,
+        ];
+    }
+
+    /**
      * Get the array representation of the notification.
      *
      * @param mixed $notifiable
@@ -58,8 +81,6 @@ class UserCreatedNotification extends Notification implements ShouldQueue
      */
     public function toArray($notifiable)
     {
-        return [
-            //
-        ];
+        return $this->toDatabase($notifiable);
     }
 }

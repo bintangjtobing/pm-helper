@@ -182,7 +182,12 @@ class Kanban extends Page implements HasForms
 
             // Verify ticket belongs to current project
             if ($ticket->project_id !== $this->project->id) {
-                throw new \Exception('Unauthorized');
+                throw new \Exception('Unauthorized: ticket does not belong to this project');
+            }
+
+            // Verify user has permission to update this ticket
+            if (!$this->canUpdateTicket($ticket)) {
+                throw new \Exception('Unauthorized: you do not have permission to update this ticket');
             }
 
             // Store old status for notification

@@ -89,6 +89,63 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->action(fn() => $this->dispatchBrowserEvent('shareTicket', [
                     'url' => route('filament.resources.tickets.share', $this->record->code)
                 ])),
+            Actions\Action::make('quickAssign')
+                ->label(__('Assign'))
+                ->icon('heroicon-o-user')
+                ->color('secondary')
+                ->button()
+                ->visible(fn() => auth()->user()->can('update', $this->record))
+                ->form([
+                    Select::make('responsible_id')
+                        ->label(__('Responsible'))
+                        ->options(User::all()->pluck('name', 'id'))
+                        ->searchable()
+                        ->default(fn() => $this->record->responsible_id),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update(['responsible_id' => $data['responsible_id']]);
+                    $this->record->refresh();
+                    $this->notify('success', __('Responsible updated'));
+                }),
+
+            Actions\Action::make('quickPriority')
+                ->label(__('Priority'))
+                ->icon('heroicon-o-flag')
+                ->color('secondary')
+                ->button()
+                ->visible(fn() => auth()->user()->can('update', $this->record))
+                ->form([
+                    Select::make('priority_id')
+                        ->label(__('Priority'))
+                        ->options(\App\Models\TicketPriority::all()->pluck('name', 'id'))
+                        ->default(fn() => $this->record->priority_id)
+                        ->required(),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update(['priority_id' => $data['priority_id']]);
+                    $this->record->refresh();
+                    $this->notify('success', __('Priority updated'));
+                }),
+
+            Actions\Action::make('quickType')
+                ->label(__('Type'))
+                ->icon('heroicon-o-tag')
+                ->color('secondary')
+                ->button()
+                ->visible(fn() => auth()->user()->can('update', $this->record))
+                ->form([
+                    Select::make('type_id')
+                        ->label(__('Type'))
+                        ->options(\App\Models\TicketType::all()->pluck('name', 'id'))
+                        ->default(fn() => $this->record->type_id)
+                        ->required(),
+                ])
+                ->action(function (array $data): void {
+                    $this->record->update(['type_id' => $data['type_id']]);
+                    $this->record->refresh();
+                    $this->notify('success', __('Type updated'));
+                }),
+
             Actions\EditAction::make(),
             Actions\Action::make('logHours')
                 ->label(__('Log time'))
@@ -261,10 +318,47 @@ class ViewTicket extends ViewRecord implements HasForms
                 return;
             }
 
+            $commentContent = $data['comment'];
+
+            // Parse /spend command (e.g., /spend 2h 30m, /spend 1h, /spend 45m)
+            if (preg_match('/\/spend\s+(?:(\d+)h)?\s*(?:(\d+)m)?/', $commentContent, $spendMatch)) {
+                $spendHours = (int) ($spendMatch[1] ?? 0);
+                $spendMinutes = (int) ($spendMatch[2] ?? 0);
+                $totalSpendHours = $spendHours + ($spendMinutes / 60);
+
+                if ($totalSpendHours > 0) {
+                    // Get default activity or first available
+                    $defaultActivity = Activity::first();
+
+                    TicketHour::create([
+                        'ticket_id' => $this->record->id,
+                        'activity_id' => $defaultActivity?->id,
+                        'user_id' => auth()->user()->id,
+                        'value' => $totalSpendHours,
+                        'comment' => __('Logged via /spend command'),
+                    ]);
+
+                    $timeFormatted = $spendHours > 0
+                        ? ($spendMinutes > 0 ? "{$spendHours}h {$spendMinutes}m" : "{$spendHours}h")
+                        : "{$spendMinutes}m";
+                    $this->notify('success', __(':time logged', ['time' => $timeFormatted]));
+                }
+
+                // Remove /spend command from comment content
+                $commentContent = trim(preg_replace('/\/spend\s+(?:\d+h)?\s*(?:\d+m)?/', '', $commentContent));
+
+                // If comment is empty after removing /spend, don't create a comment
+                if (empty(strip_tags($commentContent))) {
+                    $this->record->refresh();
+                    $this->cancelEditComment();
+                    return;
+                }
+            }
+
             TicketComment::create([
                 'user_id' => auth()->user()->id,
                 'ticket_id' => $this->record->id,
-                'content' => $data['comment']
+                'content' => $commentContent
             ]);
 
             $this->notify('success', __('Comment created successfully'));
@@ -513,13 +607,21 @@ class ViewTicket extends ViewRecord implements HasForms
     // Method untuk format mentions dalam content
     private function formatMentions($content)
     {
+        // Performance: batch load all mentioned users in one query instead of N+1
+        preg_match_all('/@([a-zA-Z0-9_]+)/', $content, $allMatches);
+
+        if (empty($allMatches[1])) {
+            return $content;
+        }
+
+        $usernames = array_unique($allMatches[1]);
+        $users = User::whereIn('username', $usernames)->get()->keyBy('username');
+
         return preg_replace_callback(
             '/@([a-zA-Z0-9_]+)/',
-            function ($matches) {
+            function ($matches) use ($users) {
                 $username = $matches[1];
-
-                // Cari user berdasarkan username
-                $user = User::where('username', $username)->first();
+                $user = $users->get($username);
 
                 if ($user) {
                     return sprintf(

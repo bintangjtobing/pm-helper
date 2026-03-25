@@ -73,6 +73,20 @@ class EpicForm extends Component implements HasForms
 
     public function submit(): void
     {
+        // Security: verify user has access to this project
+        $project = Project::where('id', $this->epic->project_id)
+            ->where(function ($query) {
+                $query->where('owner_id', auth()->user()->id)
+                    ->orWhereHas('users', function ($q) {
+                        $q->where('users.id', auth()->user()->id);
+                    });
+            })->first();
+
+        if (!$project) {
+            Filament::notify('danger', __('Unauthorized action'));
+            return;
+        }
+
         $data = $this->form->getState();
         $this->epic->project_id = $data['project_id'];
         $this->epic->parent_id = $data['parent_id'];
@@ -91,6 +105,20 @@ class EpicForm extends Component implements HasForms
 
     public function delete(): void
     {
+        // Security: verify user has access to this epic's project
+        $project = Project::where('id', $this->epic->project_id)
+            ->where(function ($query) {
+                $query->where('owner_id', auth()->user()->id)
+                    ->orWhereHas('users', function ($q) {
+                        $q->where('users.id', auth()->user()->id);
+                    });
+            })->first();
+
+        if (!$project) {
+            Filament::notify('danger', __('Unauthorized action'));
+            return;
+        }
+
         $this->epic->tickets->each(function (Ticket $ticket) {
             $ticket->epic_id = null;
             $ticket->save();

@@ -135,7 +135,20 @@ class SprintsRelationManager extends RelationManager
                     ->button()
                     ->icon('heroicon-o-play')
                     ->action(function ($record) {
+                        // Security: verify user has permission to manage sprints
+                        if (!auth()->user()->can('update', $record)) {
+                            Filament::notify('danger', __('You do not have permission to start this sprint'));
+                            return;
+                        }
+
                         $now = now();
+                        // Note: Starting a new sprint will end any currently active sprint
+                        $activeSprintsCount = Sprint::where('project_id', $record->project_id)
+                            ->where('id', '<>', $record->id)
+                            ->whereNotNull('started_at')
+                            ->whereNull('ended_at')
+                            ->count();
+
                         Sprint::where('project_id', $record->project_id)
                             ->where('id', '<>', $record->id)
                             ->whereNotNull('started_at')
@@ -143,9 +156,14 @@ class SprintsRelationManager extends RelationManager
                             ->update(['ended_at' => $now]);
                         $record->started_at = $now;
                         $record->save();
+                        $notificationBody = __('Sprint started at') . ' ' . $now;
+                        if ($activeSprintsCount > 0) {
+                            $notificationBody .= ' — ' . __(':count previously active sprint(s) have been ended.', ['count' => $activeSprintsCount]);
+                        }
+
                         Notification::make('sprint_started')
                             ->success()
-                            ->body(__('Sprint started at') . ' ' . $now)
+                            ->body($notificationBody)
                             ->actions([
                                 Action::make('board')
                                     ->color('secondary')
@@ -173,11 +191,17 @@ class SprintsRelationManager extends RelationManager
                     ->button()
                     ->icon('heroicon-o-pause')
                     ->action(function ($record) {
+                        // Security: verify user has permission to manage sprints
+                        if (!auth()->user()->can('update', $record)) {
+                            Filament::notify('danger', __('You do not have permission to stop this sprint'));
+                            return;
+                        }
+
                         $now = now();
                         $record->ended_at = $now;
                         $record->save();
 
-                        Notification::make('sprint_started')
+                        Notification::make('sprint_ended')
                             ->success()
                             ->body(__('Sprint ended at') . ' ' . $now)
                             ->send();

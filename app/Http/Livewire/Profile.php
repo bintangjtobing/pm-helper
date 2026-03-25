@@ -86,9 +86,36 @@ class Profile extends BaseProfile
             ->visible(fn () => $this->user->avatar_url !== null)
             ->label('Current Avatar');
 
+        // Locale selection field
+        $localeField = Forms\Components\Select::make('locale')
+            ->label(__('Language'))
+            ->placeholder(__('Use system default'))
+            ->options(collect(config('system.locales'))->mapWithKeys(function ($locale) {
+                return [$locale['id'] => $locale['name']];
+            })->toArray())
+            ->searchable()
+            ->helperText(__('Choose your preferred language. Leave empty to use the system default.'));
+
+        // Default project selection field
+        $defaultProjectField = Forms\Components\Select::make('default_project_id')
+            ->label(__('Default Project'))
+            ->placeholder(__('No default project'))
+            ->options(function () {
+                return \App\Models\Project::where('owner_id', $this->user->id)
+                    ->orWhereHas('users', function ($q) {
+                        $q->where('users.id', $this->user->id);
+                    })
+                    ->pluck('name', 'id')
+                    ->toArray();
+            })
+            ->searchable()
+            ->helperText(__('Your default project for quick access.'));
+
         // Insert fields into the form
         array_splice($fields, 0, 0, [$avatarPreview, $avatarField]); // Add avatar fields at the beginning
         array_splice($fields, 3, 0, [$usernameField]); // Add username after name (now at position 3)
+        $fields[] = $localeField;
+        $fields[] = $defaultProjectField;
 
         // Update email field helper text (now at position 4)
         $emailFieldIndex = 4;

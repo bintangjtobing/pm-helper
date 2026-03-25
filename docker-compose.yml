@@ -1,11 +1,10 @@
-version: "3.3"
-
 volumes:
   mysql_data:
+  redis_data:
 
 services:
   sqldb:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: helper-mysql
     volumes:
       - mysql_data:/var/lib/mysql
@@ -14,7 +13,7 @@ services:
       - MYSQL_USER=helper
       - MYSQL_PASSWORD=helper
       - MYSQL_ROOT_PASSWORD=helper
-    command: --default-storage-engine innodb
+    command: --default-authentication-plugin=mysql_native_password --default-storage-engine=innodb
     restart: unless-stopped
     healthcheck:
       test: mysqladmin -p$$MYSQL_ROOT_PASSWORD ping -h localhost
@@ -22,6 +21,21 @@ services:
       start_period: 10s
       timeout: 10s
       retries: 3
+
+  # Optional: Redis for queue, cache, and broadcasting
+  # Uncomment to use Redis instead of database/sync drivers
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: helper-redis
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: redis-cli ping
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 3
+
   helper:
     image: eloufirhatim/helper:latest
     container_name: helper-server
@@ -32,12 +46,22 @@ services:
       - DB_DATABASE=helper
       - DB_USERNAME=helper
       - DB_PASSWORD=helper
+      - QUEUE_CONNECTION=database
       - MAIL_MAILER=smtp
       - MAIL_HOST=smtp.mailtrap.io
       - MAIL_PORT=2525
       - MAIL_USERNAME=your_username
       - MAIL_PASSWORD=your_password
       - MAIL_ENCRYPTION=tls
+      # Optional: Pusher broadcasting
+      # - BROADCAST_DRIVER=pusher
+      # - PUSHER_APP_ID=your_app_id
+      # - PUSHER_APP_KEY=your_key
+      # - PUSHER_APP_SECRET=your_secret
+      # - PUSHER_APP_CLUSTER=your_cluster
+      # Optional: Redis broadcasting (requires redis service above)
+      # - BROADCAST_DRIVER=redis
+      # - REDIS_HOST=redis
     depends_on:
       - sqldb
     restart: "no"

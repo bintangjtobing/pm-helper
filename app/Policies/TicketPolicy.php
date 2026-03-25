@@ -36,7 +36,7 @@ class TicketPolicy
                 ||
                 $ticket->responsible_id === $user->id
                 ||
-                $ticket->project->users()->where('users.id', auth()->user()->id)->count()
+                $ticket->project->users()->where('users.id', $user->id)->count()
                 ||
                 $ticket->project->owner_id === $user->id
             );
@@ -68,7 +68,7 @@ class TicketPolicy
                 ||
                 $ticket->responsible_id === $user->id
                 ||
-                $ticket->project->users()->where('users.id', auth()->user()->id)->count()
+                $ticket->project->users()->where('users.id', $user->id)->count()
                 ||
                 $ticket->project->owner_id === $user->id
             );
@@ -83,6 +83,15 @@ class TicketPolicy
      */
     public function delete(User $user, Ticket $ticket)
     {
-        return $user->can('Delete ticket');
+        return $user->can('Delete ticket')
+            && (
+                $ticket->owner_id === $user->id
+                ||
+                $ticket->responsible_id === $user->id
+                ||
+                $ticket->project->users()->where('users.id', $user->id)->count()
+                ||
+                $ticket->project->owner_id === $user->id
+            );
     }
 }

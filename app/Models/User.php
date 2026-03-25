@@ -44,6 +44,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'email_verified_at',
         'avatar_url',
         'avatar_cloudinary_public_id',
+        'locale',
+        'default_project_id',
     ];
 
     /**

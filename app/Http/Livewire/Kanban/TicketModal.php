@@ -26,6 +26,13 @@ class TicketModal extends Component
             'hours.user', 'hours.activity'
         ])->find($ticketId);
 
+        // Security: verify user has access to this ticket
+        if (!$this->ticket || !auth()->user()->can('view', $this->ticket)) {
+            $this->ticket = null;
+            $this->ticketId = null;
+            return;
+        }
+
         $this->showModal = true;
     }
 

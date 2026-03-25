@@ -37,11 +37,11 @@ class Ticket extends Model implements HasMedia
         parent::boot();
 
         static::creating(function (Ticket $item) {
-            $project = Project::where('id', $item->project_id)->first();
+            $project = $item->project;
             $count = Ticket::where('project_id', $project->id)->count();
-            $order = $project->tickets?->last()?->order ?? -1;
+            $maxOrder = Ticket::where('project_id', $project->id)->max('order') ?? -1;
             $item->code = $project->ticket_prefix . '-' . ($count + 1);
-            $item->order = $order + 1;
+            $item->order = $maxOrder + 1;
         });
 
         static::created(function (Ticket $item) {
@@ -64,10 +64,8 @@ class Ticket extends Model implements HasMedia
         });
 
         static::updating(function (Ticket $item) {
-            $old = Ticket::where('id', $item->id)->first();
-
             // Ticket activity based on status
-            $oldStatus = $old->status_id;
+            $oldStatus = $item->getOriginal('status_id');
             if ($oldStatus != $item->status_id) {
                 TicketActivity::create([
                     'ticket_id' => $item->id,
@@ -95,7 +93,7 @@ class Ticket extends Model implements HasMedia
             }
 
             // Ticket sprint update
-            $oldSprint = $old->sprint_id;
+            $oldSprint = $item->getOriginal('sprint_id');
             if ($oldSprint && !$item->sprint_id) {
                 Ticket::where('id', $item->id)->update(['epic_id' => null]);
             } elseif ($item->sprint_id && $item->sprint->epic_id) {

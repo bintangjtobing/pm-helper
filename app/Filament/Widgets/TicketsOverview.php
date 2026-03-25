@@ -26,18 +26,20 @@ class TicketsOverview extends Widget
 
     public function getViewData(): array
     {
+        // Performance: cache total count instead of querying inside each map()
+        $totalTickets = Ticket::count();
+
         // Get ticket types with counts and colors
         $ticketTypes = TicketType::withCount('tickets')
             ->orderByDesc('tickets_count')
             ->get()
-            ->map(function ($type) {
-                $total = Ticket::count();
+            ->map(function ($type) use ($totalTickets) {
                 return [
                     'name' => $type->name,
                     'count' => $type->tickets_count,
                     'color' => $type->color,
                     'icon' => $type->icon,
-                    'percentage' => $total > 0 ? round(($type->tickets_count / $total) * 100, 1) : 0
+                    'percentage' => $totalTickets > 0 ? round(($type->tickets_count / $totalTickets) * 100, 1) : 0
                 ];
             });
 
@@ -45,20 +47,19 @@ class TicketsOverview extends Widget
         $ticketPriorities = TicketPriority::withCount('tickets')
             ->orderByDesc('tickets_count')
             ->get()
-            ->map(function ($priority) {
-                $total = Ticket::count();
+            ->map(function ($priority) use ($totalTickets) {
                 return [
                     'name' => $priority->name,
                     'count' => $priority->tickets_count,
                     'color' => $priority->color,
-                    'percentage' => $total > 0 ? round(($priority->tickets_count / $total) * 100, 1) : 0
+                    'percentage' => $totalTickets > 0 ? round(($priority->tickets_count / $totalTickets) * 100, 1) : 0
                 ];
             });
 
         return [
             'ticketTypes' => $ticketTypes,
             'ticketPriorities' => $ticketPriorities,
-            'totalTickets' => Ticket::count(),
+            'totalTickets' => $totalTickets,
         ];
     }
 }

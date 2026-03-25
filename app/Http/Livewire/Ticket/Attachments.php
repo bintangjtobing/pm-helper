@@ -7,6 +7,7 @@ use Filament\Facades\Filament;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -93,8 +94,21 @@ class Attachments extends Component implements HasForms, HasTable
     protected function getTableActions(): array
     {
         return [
+            TableAction::make('download')
+                ->label(__('Download'))
+                ->icon('heroicon-o-download')
+                ->color('secondary')
+                ->url(fn($record) => $record->getUrl())
+                ->openUrlInNewTab(),
+
             DeleteAction::make()
+                ->visible(fn() => auth()->user()->can('update', $this->ticket))
                 ->action(function ($record) {
+                    // Security: verify user has permission to modify this ticket
+                    if (!auth()->user()->can('update', $this->ticket)) {
+                        Filament::notify('danger', __('Unauthorized action'));
+                        return;
+                    }
                     $record->delete();
                     Filament::notify('success', __('Ticket attachment deleted'));
                 })

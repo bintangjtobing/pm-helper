@@ -85,20 +85,27 @@ trait KanbanScrumHelper
         } else {
             $query->whereNull('project_id');
         }
+
+        // Performance: single grouped count query instead of N+1
+        $ticketCounts = collect();
+        if ($this->project) {
+            $ticketCounts = Ticket::where('project_id', $this->project->id)
+                ->selectRaw('status_id, count(*) as count')
+                ->groupBy('status_id')
+                ->pluck('count', 'status_id');
+        }
+
+        $canCreateTicket = auth()->user()->can('Create ticket');
+
         return $query->orderBy('order')
             ->get()
-            ->map(function ($item) {
-                $query = Ticket::query();
-                if ($this->project) {
-                    $query->where('project_id', $this->project->id);
-                }
-                $query->where('status_id', $item->id);
+            ->map(function ($item) use ($ticketCounts, $canCreateTicket) {
                 return [
                     'id' => $item->id,
                     'title' => $item->name,
                     'color' => $item->color,
-                    'size' => $query->count(),
-                    'add_ticket' => auth()->user()->can('Create ticket')
+                    'size' => $ticketCounts->get($item->id, 0),
+                    'add_ticket' => $canCreateTicket
                 ];
             });
     }
@@ -157,12 +164,27 @@ trait KanbanScrumHelper
     public function recordUpdated(int $record, int $newIndex, int $newStatus): void
     {
         $ticket = Ticket::find($record);
-        if ($ticket) {
-            $ticket->order = $newIndex;
-            $ticket->status_id = $newStatus;
-            $ticket->save();
-            Filament::notify('success', __('Ticket updated'));
+        if (!$ticket) {
+            Filament::notify('danger', __('Ticket not found'));
+            return;
         }
+
+        // Security: verify ticket belongs to current project
+        if ($this->project && $ticket->project_id !== $this->project->id) {
+            Filament::notify('danger', __('Unauthorized action'));
+            return;
+        }
+
+        // Security: verify user has permission to update this ticket
+        if (!auth()->user()->can('update', $ticket)) {
+            Filament::notify('danger', __('You do not have permission to update this ticket'));
+            return;
+        }
+
+        $ticket->order = $newIndex;
+        $ticket->status_id = $newStatus;
+        $ticket->save();
+        Filament::notify('success', __('Ticket updated'));
     }
 
     public function createTicketWithStatusDirect(int $statusId): void

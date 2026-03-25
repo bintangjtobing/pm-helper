@@ -103,13 +103,24 @@ class RoadMap extends Page implements HasForms
 
     public function createEpic(): void
     {
+        if (!$this->project) {
+            return;
+        }
         $this->epic = new Epic();
         $this->epic->project_id = $this->project->id;
     }
 
     public function updateEpic(int $epicId): void
     {
-        $this->epic = Epic::where('id', $epicId)->first();
+        // Security: only load epic if it belongs to a project the user has access to
+        $this->epic = Epic::where('id', $epicId)
+            ->whereHas('project', function ($query) {
+                $query->where('owner_id', auth()->user()->id)
+                    ->orWhereHas('users', function ($q) {
+                        $q->where('users.id', auth()->user()->id);
+                    });
+            })
+            ->first();
     }
 
     public function closeDialog(bool $refresh): void

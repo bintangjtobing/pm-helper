@@ -16,7 +16,12 @@ class LocaleMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        app()->setLocale(config('app.locale'));
+        // Per-user locale preference takes priority over app-wide setting
+        if (auth()->check() && auth()->user()->locale) {
+            app()->setLocale(auth()->user()->locale);
+        } else {
+            app()->setLocale(config('app.locale'));
+        }
         return $next($request);
     }
 }
