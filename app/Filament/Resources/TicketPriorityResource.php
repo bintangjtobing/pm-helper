@@ -50,6 +50,11 @@ class TicketPriorityResource extends Resource
                                     ->required()
                                     ->maxLength(255),
 
+                                Forms\Components\TextInput::make('level')
+                                    ->label(__('Level code'))
+                                    ->placeholder('P0, P1, P2, P3')
+                                    ->maxLength(10),
+
                                 Forms\Components\ColorPicker::make('color')
                                     ->label(__('Priority color'))
                                     ->required(),
@@ -59,7 +64,22 @@ class TicketPriorityResource extends Resource
                                     ->helperText(
                                         __('If checked, this priority will be automatically affected to new tickets')
                                     ),
-                            ])
+                            ]),
+
+                        Forms\Components\Textarea::make('description')
+                            ->label(__('Description'))
+                            ->helperText(__('What does this priority level mean?'))
+                            ->rows(2),
+
+                        Forms\Components\Textarea::make('examples')
+                            ->label(__('Examples'))
+                            ->helperText(__('Real-world examples of issues at this priority level'))
+                            ->rows(2),
+
+                        Forms\Components\TextInput::make('action')
+                            ->label(__('Required action'))
+                            ->helperText(__('What action should be taken for tickets at this priority?'))
+                            ->maxLength(255),
                     ])
             ]);
     }
@@ -68,26 +88,34 @@ class TicketPriorityResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ColorColumn::make('color')
-                    ->label(__('Priority color'))
+                Tables\Columns\TextColumn::make('level')
+                    ->label(__('Level'))
                     ->sortable()
-                    ->searchable(),
+                    ->searchable()
+                    ->weight('bold'),
+
+                Tables\Columns\ColorColumn::make('color')
+                    ->label(__('Color'))
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('Priority name'))
                     ->sortable()
                     ->searchable(),
 
+                Tables\Columns\TextColumn::make('description')
+                    ->label(__('Description'))
+                    ->limit(60)
+                    ->tooltip(fn($record) => $record->description),
+
+                Tables\Columns\TextColumn::make('action')
+                    ->label(__('Required action'))
+                    ->limit(40),
+
                 Tables\Columns\IconColumn::make('is_default')
-                    ->label(__('Default priority'))
+                    ->label(__('Default'))
                     ->boolean()
                     ->sortable(),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created at'))
-                    ->dateTime()
-                    ->sortable()
-                    ->searchable(),
             ])
             ->filters([
                 //

@@ -12,7 +12,7 @@ class TicketPriority extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'name', 'color', 'is_default'
+        'name', 'color', 'is_default', 'level', 'description', 'examples', 'action'
     ];
 
     public function tickets(): HasMany
