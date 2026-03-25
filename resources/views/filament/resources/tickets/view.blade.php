@@ -52,6 +52,48 @@
                     <div class="leading-relaxed text-gray-700">
                         {!! $record->content !!}
                     </div>
+
+                    {{-- Bug Report Details --}}
+                    @if($record->isBugType() && ($record->steps_to_reproduce || $record->expected_behavior || $record->actual_behavior || $record->environment))
+                    <div class="mt-4 p-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
+                        <h4 class="text-sm font-semibold text-red-700 dark:text-red-400 mb-3 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            {{ __('Bug Report Details') }}
+                        </h4>
+
+                        @if($record->steps_to_reproduce)
+                        <div class="mb-3">
+                            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">{{ __('Steps to Reproduce') }}</span>
+                            <div class="mt-1 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-line">{{ $record->steps_to_reproduce }}</div>
+                        </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            @if($record->expected_behavior)
+                            <div class="p-3 rounded bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800">
+                                <span class="text-xs font-medium text-green-700 dark:text-green-400 uppercase tracking-wide">{{ __('Expected Behavior') }}</span>
+                                <div class="mt-1 text-sm text-gray-800 dark:text-gray-200">{{ $record->expected_behavior }}</div>
+                            </div>
+                            @endif
+
+                            @if($record->actual_behavior)
+                            <div class="p-3 rounded bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800">
+                                <span class="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wide">{{ __('Actual Behavior') }}</span>
+                                <div class="mt-1 text-sm text-gray-800 dark:text-gray-200">{{ $record->actual_behavior }}</div>
+                            </div>
+                            @endif
+                        </div>
+
+                        @if($record->environment)
+                        <div class="mt-3">
+                            <span class="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">{{ __('Environment') }}</span>
+                            <div class="mt-1 text-sm text-gray-800 dark:text-gray-200">{{ $record->environment }}</div>
+                        </div>
+                        @endif
+                    </div>
+                    @endif
                 </div>
             </div>
         </x-filament::card>
@@ -309,6 +351,20 @@
                     class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'attachments') border-primary-500 text-primary-500 @else text-gray-700 @endif">
                     {{ __('Attachments') }}
                 </button>
+                <button wire:click="selectTab('qa-checklist')"
+                    class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center gap-1 @if($tab === 'qa-checklist') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    {{ __('QA Checklist') }}
+                    @php
+                        $qaTotal = $record->qaChecklists()->count();
+                        $qaPassed = $record->qaChecklists()->where('status', 'passed')->count();
+                        $qaFailed = $record->qaChecklists()->where('status', 'failed')->count();
+                    @endphp
+                    @if($qaTotal > 0)
+                    <span class="px-1.5 py-0.5 text-xs rounded-full {{ $qaFailed > 0 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : ($qaPassed === $qaTotal ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400') }}">
+                        {{ $qaPassed }}/{{ $qaTotal }}
+                    </span>
+                    @endif
+                </button>
             </div>
 
             @if($tab === 'comments')
@@ -410,6 +466,10 @@
 
             @if($tab === 'attachments')
             <livewire:ticket.attachments :ticket="$record" />
+            @endif
+
+            @if($tab === 'qa-checklist')
+            <livewire:ticket.qa-checklist :ticket="$record" />
             @endif
         </x-filament::card>
 

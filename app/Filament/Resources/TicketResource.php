@@ -160,6 +160,7 @@ class TicketResource extends Resource
                                         Forms\Components\Select::make('type_id')
                                             ->label(__('Ticket type'))
                                             ->searchable()
+                                            ->reactive()
                                             ->options(fn() => TicketType::all()->pluck('name', 'id')->toArray())
                                             ->default(fn() => TicketType::where('is_default', true)->first()?->id)
                                             ->required(),
@@ -210,6 +211,40 @@ class TicketResource extends Resource
                             ->label(__('Ticket content'))
                             ->required()
                             ->columnSpan(2),
+
+                        // Bug Report Fields — shown only for Bug/Hotfix types
+                        Forms\Components\Section::make(__('Bug Report Details'))
+                            ->description(__('Provide structured bug report information'))
+                            ->icon('heroicon-o-bug-ant')
+                            ->collapsible()
+                            ->collapsed(fn($get) => !in_array($get('type_id'), self::getBugTypeIds()))
+                            ->visible(fn($get) => in_array($get('type_id'), self::getBugTypeIds()))
+                            ->columnSpan(2)
+                            ->schema([
+                                Forms\Components\Textarea::make('steps_to_reproduce')
+                                    ->label(__('Steps to Reproduce'))
+                                    ->helperText(__('Step-by-step instructions to reproduce the bug'))
+                                    ->placeholder("1. Go to...\n2. Click on...\n3. Observe that...")
+                                    ->rows(4),
+
+                                Forms\Components\Grid::make()
+                                    ->schema([
+                                        Forms\Components\Textarea::make('expected_behavior')
+                                            ->label(__('Expected Behavior'))
+                                            ->helperText(__('What should happen'))
+                                            ->rows(3),
+
+                                        Forms\Components\Textarea::make('actual_behavior')
+                                            ->label(__('Actual Behavior'))
+                                            ->helperText(__('What actually happens'))
+                                            ->rows(3),
+                                    ]),
+
+                                Forms\Components\TextInput::make('environment')
+                                    ->label(__('Environment'))
+                                    ->placeholder(__('e.g. Chrome 120, macOS 14, iPhone 15 Pro'))
+                                    ->helperText(__('Browser, OS, device, or any relevant environment info')),
+                            ]),
 
                         Forms\Components\Grid::make()
                             ->columnSpan(2)
@@ -422,6 +457,16 @@ class TicketResource extends Resource
         return [
             //
         ];
+    }
+
+    /**
+     * Get IDs of ticket types that should show bug report fields.
+     */
+    private static function getBugTypeIds(): array
+    {
+        return TicketType::whereIn('name', ['Bug', 'Hotfix'])
+            ->pluck('id')
+            ->toArray();
     }
 
     public static function getPages(): array

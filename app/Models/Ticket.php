@@ -25,7 +25,8 @@ class Ticket extends Model implements HasMedia
     protected $fillable = [
         'name', 'content', 'owner_id', 'responsible_id',
         'status_id', 'project_id', 'code', 'order', 'type_id',
-        'priority_id', 'estimation', 'epic_id', 'sprint_id', 'due_date'
+        'priority_id', 'estimation', 'epic_id', 'sprint_id', 'due_date',
+        'steps_to_reproduce', 'expected_behavior', 'actual_behavior', 'environment',
     ];
 
     protected $casts = [
@@ -72,6 +73,11 @@ class Ticket extends Model implements HasMedia
                     throw new \Exception(__('You do not have permission to set tickets to ":status" status.', [
                         'status' => $newStatus->name
                     ]));
+                }
+
+                // Enforce QA checklist completion before "QA Passed"
+                if ($newStatus && $newStatus->name === 'QA Passed' && !$item->isQaChecklistPassed()) {
+                    throw new \Exception(__('Cannot set to QA Passed: there are pending or failed QA checklist items.'));
                 }
             }
 
@@ -323,6 +329,32 @@ class Ticket extends Model implements HasMedia
             }
         );
     }
+    public function qaChecklists(): HasMany
+    {
+        return $this->hasMany(TicketQaChecklist::class, 'ticket_id', 'id');
+    }
+
+    /**
+     * Check if all QA checklist items are passed (no pending or failed).
+     */
+    public function isQaChecklistPassed(): bool
+    {
+        $total = $this->qaChecklists()->count();
+        if ($total === 0) {
+            return true; // No checklist = no restriction
+        }
+        return $this->qaChecklists()->where('status', '!=', 'passed')->count() === 0;
+    }
+
+    /**
+     * Check if ticket is a bug type (has structured bug fields).
+     */
+    public function isBugType(): bool
+    {
+        if (!$this->type) return false;
+        return in_array($this->type->name, ['Bug', 'Hotfix']);
+    }
+
     public function ccUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'ticket_cc', 'ticket_id', 'user_id')
