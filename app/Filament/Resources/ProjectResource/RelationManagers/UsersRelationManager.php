@@ -35,7 +35,7 @@ class UsersRelationManager extends RelationManager
 
                 Tables\Columns\BadgeColumn::make('pivot.role')
                     ->label(__('User role'))
-                    ->enum(fn() => Role::pluck('name', 'name')->toArray())
+                    ->enum(Role::pluck('name', 'name')->toArray())
                     ->colors(config('system.projects.affectations.roles.colors'))
                     ->searchable()
                     ->sortable(),
