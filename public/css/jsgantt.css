@@ -1026,3 +1026,163 @@ td.gspanning div {
     -ms-overflow-style: scrollbar;
     display: block;
 }
+
+/* =============================================
+   DARK MODE SUPPORT
+   ============================================= */
+
+html.dark div.gantt {
+    color: #e5e7eb;
+}
+
+html.dark .gmajorheading,
+html.dark .gminorheading,
+html.dark .gtaskheading {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark .gminorheadingwkend,
+html.dark .gtaskcellwkend {
+    background-color: #1f2937 !important;
+    color: #d1d5db !important;
+}
+
+html.dark .gtaskcellcurrent {
+    background-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+html.dark .gmajorheading,
+html.dark .gminorheading,
+html.dark .gminorheadingwkend,
+html.dark .gtaskcell,
+html.dark .gtaskcellcurrent,
+html.dark .gtaskcellwkend,
+html.dark .gtasklist {
+    border-color: #4b5563 !important;
+}
+
+html.dark .gtaskheading,
+html.dark .gname,
+html.dark .gtaskname,
+html.dark .gres,
+html.dark .gdur,
+html.dark .gcomp,
+html.dark .gstartdate,
+html.dark .gplanstartdate,
+html.dark .gplanenddate,
+html.dark .gcost,
+html.dark .genddate {
+    border-color: #4b5563 !important;
+    color: #d1d5db !important;
+}
+
+html.dark .gtaskname {
+    color: #93c5fd !important;
+}
+
+html.dark .gtasktableh,
+html.dark .gtasktable {
+    border-color: #4b5563 !important;
+}
+
+html.dark .gcharttable {
+    border-color: #4b5563 !important;
+}
+
+html.dark .glistgrid,
+html.dark .glistlbl,
+html.dark .gchartgrid,
+html.dark .gchartlbl {
+    background-color: #1f2937 !important;
+}
+
+html.dark .ggroupitem {
+    background-color: #374151 !important;
+}
+
+html.dark .ggroupitem td {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark .gmileitem,
+html.dark .glineitem {
+    background-color: #1f2937 !important;
+}
+
+html.dark .gmileitem td,
+html.dark .glineitem td {
+    background-color: #1f2937 !important;
+    color: #d1d5db !important;
+}
+
+html.dark .gitemhighlight td {
+    background-color: rgba(99, 102, 241, 0.1) !important;
+}
+
+html.dark .gitemdifferent td {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+html.dark .gformlabel {
+    border-color: #4b5563 !important;
+    color: #d1d5db !important;
+}
+
+html.dark span.gformlabel:hover,
+html.dark span.gselected {
+    background-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+html.dark span.gfoldercollapse {
+    color: #e5e7eb !important;
+}
+
+html.dark .gtaskbarcontainer.gplan {
+    background: #374151 !important;
+    border-color: #6b7280 !important;
+}
+
+html.dark .JSGanttToolTipcont {
+    background: #1f2937 !important;
+    color: #e5e7eb !important;
+}
+
+html.dark .gTaskInfo {
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-color: #4b5563 !important;
+}
+
+html.dark .gTtTitle {
+    color: #f9fafb !important;
+}
+
+html.dark .gTaskLabel,
+html.dark .gTaskText {
+    color: #d1d5db !important;
+}
+
+html.dark .gTaskNotes {
+    color: #e5e7eb !important;
+}
+
+html.dark .gadditional {
+    border-color: #4b5563 !important;
+}
+
+html.dark .gtasknolist-label {
+    color: #9ca3af !important;
+}
+
+html.dark .rhscrpad {
+    background-color: #1f2937 !important;
+}
+
+html.dark .frame::-webkit-scrollbar-thumb {
+    border-color: #1f2937 !important;
+}
+
+html.dark .frame::-webkit-scrollbar-track {
+    background-color: #1f2937 !important;
+}

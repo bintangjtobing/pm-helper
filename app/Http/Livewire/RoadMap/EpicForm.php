@@ -73,22 +73,28 @@ class EpicForm extends Component implements HasForms
 
     public function submit(): void
     {
-        // Security: verify user has access to this project
-        $project = Project::where('id', $this->epic->project_id)
-            ->where(function ($query) {
-                $query->where('owner_id', auth()->user()->id)
-                    ->orWhereHas('users', function ($q) {
-                        $q->where('users.id', auth()->user()->id);
-                    });
-            })->first();
+        $data = $this->form->getState();
 
-        if (!$project) {
-            Filament::notify('danger', __('Unauthorized action'));
-            return;
+        // Use the original project_id (disabled fields don't submit)
+        $projectId = $this->epic->project_id ?? $data['project_id'] ?? null;
+
+        // Security: verify user has access to this project
+        if ($projectId) {
+            $project = Project::where('id', $projectId)
+                ->where(function ($query) {
+                    $query->where('owner_id', auth()->user()->id)
+                        ->orWhereHas('users', function ($q) {
+                            $q->where('users.id', auth()->user()->id);
+                        });
+                })->first();
+
+            if (!$project) {
+                Filament::notify('danger', __('Unauthorized action'));
+                return;
+            }
         }
 
-        $data = $this->form->getState();
-        $this->epic->project_id = $data['project_id'];
+        $this->epic->project_id = $projectId;
         $this->epic->parent_id = $data['parent_id'];
         $this->epic->name = $data['name'];
         $this->epic->starts_at = $data['starts_at'];
@@ -106,17 +112,19 @@ class EpicForm extends Component implements HasForms
     public function delete(): void
     {
         // Security: verify user has access to this epic's project
-        $project = Project::where('id', $this->epic->project_id)
-            ->where(function ($query) {
-                $query->where('owner_id', auth()->user()->id)
-                    ->orWhereHas('users', function ($q) {
-                        $q->where('users.id', auth()->user()->id);
-                    });
-            })->first();
+        if ($this->epic->project_id) {
+            $project = Project::where('id', $this->epic->project_id)
+                ->where(function ($query) {
+                    $query->where('owner_id', auth()->user()->id)
+                        ->orWhereHas('users', function ($q) {
+                            $q->where('users.id', auth()->user()->id);
+                        });
+                })->first();
 
-        if (!$project) {
-            Filament::notify('danger', __('Unauthorized action'));
-            return;
+            if (!$project) {
+                Filament::notify('danger', __('Unauthorized action'));
+                return;
+            }
         }
 
         $this->epic->tickets->each(function (Ticket $ticket) {

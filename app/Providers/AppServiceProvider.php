@@ -122,8 +122,23 @@ class AppServiceProvider extends ServiceProvider
                 html.dark .prose pre { background-color: #111827 !important; }
                 html.dark .prose code { background-color: #111827 !important; color: #f9fafb !important; }
 
-                /* Dark mode: sortable ghost (kanban drag) */
+                /* Dark mode: Kanban board */
+                html.dark .status-header { background-color: #1f2937 !important; }
+                html.dark .status-container { background-color: #1f2937 !important; }
+                html.dark .kanban-record { background-color: #374151 !important; border-color: #4b5563 !important; }
+                html.dark .kanban-record:hover { background-color: #4b5563 !important; }
+                html.dark .kanban-record .record-title { color: #e5e7eb !important; }
+                html.dark .kanban-record .record-subtitle { color: #9ca3af !important; }
+                html.dark .kanban-record .record-relations div { color: #9ca3af !important; }
+                html.dark .kanban-record .avatar { background-color: #4b5563 !important; }
+                html.dark .create-record { color: #9ca3af !important; }
+                html.dark .create-record:hover { background-color: #374151 !important; color: #d1d5db !important; }
                 html.dark .sortable-ghost { background: linear-gradient(135deg, #374151, #1f2937) !important; }
+
+                /* Dark mode: Kanban filter details */
+                html.dark details { background-color: #1f2937 !important; }
+                html.dark details[open] { background-color: #374151 !important; }
+                html.dark details summary { color: #9ca3af !important; }
             </style>'
         );
         // Configure application
