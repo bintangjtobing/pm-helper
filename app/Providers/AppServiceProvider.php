@@ -118,9 +118,20 @@ class AppServiceProvider extends ServiceProvider
 
                 /* Dark mode: prose/content areas */
                 html.dark .prose { color: #e5e7eb !important; }
-                html.dark .prose blockquote { border-left-color: #4b5563 !important; }
+                html.dark .prose h1, html.dark .prose h2, html.dark .prose h3,
+                html.dark .prose h4, html.dark .prose h5, html.dark .prose h6 { color: #f9fafb !important; }
+                html.dark .prose p { color: #d1d5db !important; }
+                html.dark .prose li { color: #d1d5db !important; }
+                html.dark .prose strong { color: #f9fafb !important; }
+                html.dark .prose a { color: #93c5fd !important; }
+                html.dark .prose blockquote { border-left-color: #4b5563 !important; color: #9ca3af !important; }
                 html.dark .prose pre { background-color: #111827 !important; }
                 html.dark .prose code { background-color: #111827 !important; color: #f9fafb !important; }
+                html.dark .prose ul ::marker { color: #9ca3af !important; }
+                html.dark .prose ol ::marker { color: #9ca3af !important; }
+                html.dark .prose hr { border-color: #374151 !important; }
+                html.dark .prose thead th { color: #e5e7eb !important; border-color: #4b5563 !important; }
+                html.dark .prose tbody td { border-color: #374151 !important; }
 
                 /* Dark mode: colored text (for date badges, status badges) */
                 html.dark .text-green-800 { color: #6ee7b7 !important; }
