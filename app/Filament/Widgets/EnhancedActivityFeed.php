@@ -176,26 +176,43 @@ class EnhancedActivityFeed extends BaseWidget
                         ? 'added a comment'
                         : $record->getAttributes()['description'] ?? 'updated ticket status';
 
+                    $timeAgo = $record->created_at->diffForHumans();
+                    $viewUrl = route('filament.resources.tickets.share', $ticket->code);
+
                     return new HtmlString('
                         <div class="flex items-start gap-3">
                             <img src="' . ($user->avatar_url ?: 'https://ui-avatars.com/api/?name=' . urlencode($user->name)) . '"
                                  alt="' . e($user->name) . '"
-                                 class="w-8 h-8 rounded-full object-cover">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-1">
-                                    ' . $typeIcon . '
-                                    <span class="font-medium text-sm">' . e($user->name) . '</span>
-                                    <span class="text-gray-600 text-sm">' . e($descriptionText) . '</span>
-                                </div>
-                                <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
-                                    <span>' . e($ticket->project->name) . '</span>
-                                    <span>•</span>
-                                    <a href="' . route('filament.resources.tickets.share', $ticket->code) . '"
-                                       target="_blank"
-                                       class="text-blue-600 hover:text-blue-800 hover:underline font-medium">
-                                        ' . e($ticket->code) . '
-                                    </a>
-                                    <span>' . e(Str::limit($ticket->name, 40)) . '</span>
+                                 class="w-8 h-8 rounded-full object-cover shrink-0">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <div class="flex items-center gap-2 mb-0.5">
+                                            ' . $typeIcon . '
+                                            <span class="font-medium text-sm">' . e($user->name) . '</span>
+                                            <span class="text-gray-500 dark:text-gray-400 text-sm">' . e($descriptionText) . '</span>
+                                        </div>
+                                        <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                            <span>' . e($ticket->project->name) . '</span>
+                                            <span>•</span>
+                                            <a href="' . $viewUrl . '" target="_blank"
+                                               class="text-primary-600 hover:text-primary-800 hover:underline font-medium">
+                                                ' . e($ticket->code) . '
+                                            </a>
+                                            <span class="truncate">' . e(Str::limit($ticket->name, 50)) . '</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 shrink-0">
+                                        <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">' . $timeAgo . '</span>
+                                        <a href="' . $viewUrl . '" target="_blank"
+                                           class="text-xs text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 whitespace-nowrap">
+                                            <svg class="w-4 h-4 inline -mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            View
+                                        </a>
+                                    </div>
                                 </div>
                                 ' . $statusBadges . '
                                 ' . $commentPreview . '
@@ -203,36 +220,12 @@ class EnhancedActivityFeed extends BaseWidget
                         </div>
                     ');
                 }),
-
-            Tables\Columns\TextColumn::make('created_at')
-                ->label('When')
-                ->formatStateUsing(function ($state) {
-                    return new HtmlString('
-                        <div class="text-center">
-                            <div class="text-sm font-medium">' . $state->format('M j') . '</div>
-                            <div class="text-xs text-gray-500">' . $state->format('g:i A') . '</div>
-                            <div class="text-xs text-gray-400">' . $state->diffForHumans() . '</div>
-                        </div>
-                    ');
-                })
-                ->sortable(),
         ];
     }
 
     protected function getTableActions(): array
     {
-        return [
-            Tables\Actions\Action::make('view_ticket')
-                ->label('View')
-                ->icon('heroicon-o-eye')
-                ->color('secondary')
-                ->action(function ($record) {
-                    $ticket = \App\Models\Ticket::find($record->ticket_id);
-                    if ($ticket) {
-                        return redirect()->to(route('filament.resources.tickets.view', $ticket));
-                    }
-                })
-        ];
+        return [];
     }
 
     protected function getTableFilters(): array
