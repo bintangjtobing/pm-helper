@@ -40,7 +40,7 @@ class ListTickets extends ListRecords
 
     protected function applySearchToTableQuery(Builder $query): Builder
     {
-        $search = $this->getTableSearch();
+        $search = $this->getTableSearchQuery();
 
         if (blank($search)) {
             return $query;
