@@ -207,114 +207,129 @@
                     </div>
 
                     {{-- Right sidebar - Actions & Info --}}
-                    <div class="p-6 bg-white border-l border-gray-200 w-80">
+                    <div class="p-5 bg-white border-l border-gray-200 dark:bg-gray-800 dark:border-gray-700 w-80">
 
-                        {{-- Ticket info --}}
-                        <div class="p-4 mb-6 rounded-lg bg-gray-50">
-                            <h3 class="mb-3 text-sm font-medium text-gray-900">Ticket Details</h3>
+                        {{-- Actions --}}
+                        <div class="flex gap-2 mb-5">
+                            <a href="{{ route('filament.resources.tickets.view', $ticket) }}" target="_blank"
+                                class="flex items-center justify-center flex-1 gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                    <path fill-rule="evenodd"
+                                        d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                        clip-rule="evenodd"></path>
+                                </svg>
+                                {{ __('View') }}
+                            </a>
+                            <a href="{{ route('filament.resources.tickets.edit', $ticket) }}" target="_blank"
+                                class="flex items-center justify-center flex-1 gap-2 px-3 py-2 text-sm font-medium text-white rounded-lg bg-primary-500 hover:bg-primary-600">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                                </svg>
+                                {{ __('Edit') }}
+                            </a>
+                        </div>
+
+                        {{-- Ticket Details --}}
+                        <div class="p-4 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                            <h3 class="mb-4 text-xs font-semibold tracking-wider text-gray-400 uppercase dark:text-gray-500">{{ __('Details') }}</h3>
                             <div class="space-y-3 text-sm">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Project:</span>
-                                    <span class="font-medium">{{ $ticket->project->name }}</span>
+                                {{-- Project --}}
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Project') }}</span>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $ticket->project->name }}</span>
                                 </div>
+
+                                {{-- Epic --}}
                                 @if($ticket->epic)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Epic:</span>
-                                    <span class="font-medium">{{ $ticket->epic->name }}</span>
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Epic') }}</span>
+                                    <span class="inline-flex items-center gap-1">
+                                        <span class="w-2 h-2 bg-purple-500 rounded-full shrink-0"></span>
+                                        <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $ticket->epic->name }}</span>
+                                    </span>
                                 </div>
                                 @endif
+
+                                {{-- Sprint --}}
                                 @if($ticket->sprint)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Sprint:</span>
-                                    <span class="font-medium">{{ $ticket->sprint->name }}</span>
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Sprint') }}</span>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $ticket->sprint->name }}</span>
                                 </div>
                                 @endif
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Owner:</span>
-                                    <div class="flex items-center space-x-2">
-                                        <img class="w-5 h-5 rounded-full" src="{{ $ticket->owner->avatar_url }}"
-                                            alt="{{ $ticket->owner->name }}">
-                                        <span class="font-medium">{{ $ticket->owner->name }}</span>
+
+                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
+
+                                {{-- Owner --}}
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Owner') }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <img class="w-5 h-5 rounded-full" src="{{ $ticket->owner->avatar_url }}" alt="{{ $ticket->owner->name }}">
+                                        <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $ticket->owner->name }}</span>
                                     </div>
                                 </div>
+
+                                {{-- Assignee --}}
                                 @if($ticket->responsible)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Assignee:</span>
-                                    <div class="flex items-center space-x-2">
-                                        <img class="w-5 h-5 rounded-full" src="{{ $ticket->responsible->avatar_url }}"
-                                            alt="{{ $ticket->responsible->name }}">
-                                        <span class="font-medium">{{ $ticket->responsible->name }}</span>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Assignee') }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <img class="w-5 h-5 rounded-full" src="{{ $ticket->responsible->avatar_url }}" alt="{{ $ticket->responsible->name }}">
+                                        <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $ticket->responsible->name }}</span>
                                     </div>
                                 </div>
                                 @endif
+
+                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
+
+                                {{-- Priority --}}
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Priority') }}</span>
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium rounded-full"
+                                        style="background-color: {{ $ticket->priority->color }}20; color: {{ $ticket->priority->color }}">
+                                        <span class="w-1.5 h-1.5 rounded-full" style="background-color: {{ $ticket->priority->color }}"></span>
+                                        {{ $ticket->priority->name }}
+                                    </span>
+                                </div>
+
+                                {{-- Due Date --}}
                                 @if($ticket->due_date)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Due Date:</span>
-                                    <span class="font-medium {{ $ticket->due_date->isPast() ? 'text-red-600' : '' }}">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Due Date') }}</span>
+                                    <span class="text-sm font-medium {{ $ticket->due_date->isPast() ? 'text-red-500' : 'text-gray-800 dark:text-gray-200' }}">
                                         {{ $ticket->due_date->format('M j, Y') }}
                                         @if($ticket->due_date->isPast())
-                                        (Overdue)
+                                        <span class="text-xs">({{ __('Overdue') }})</span>
                                         @endif
                                     </span>
                                 </div>
                                 @endif
-                                @if($ticket->estimation)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Estimation:</span>
-                                    <span class="font-medium">{{ $ticket->estimationForHumans }}</span>
-                                </div>
-                                @endif
-                                @if($ticket->hours->count() > 0)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Time Logged:</span>
-                                    <span class="font-medium">{{ $ticket->totalLoggedHours }}</span>
-                                </div>
-                                @endif
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Priority:</span>
-                                    <div class="flex items-center space-x-2">
-                                        <span class="w-3 h-3 rounded-full"
-                                            style="background-color: {{ $ticket->priority->color }}"></span>
-                                        <span class="font-medium">{{ $ticket->priority->name }}</span>
-                                    </div>
-                                </div>
-                                @if($ticket->isCompleted && $ticket->completedAt)
-                                <div class="flex justify-between">
-                                    <span class="text-gray-500">Completed:</span>
-                                    <div class="text-right">
-                                        <span class="font-medium text-green-600">{{ $ticket->completedAt->format('M j,
-                                            Y') }}</span>
-                                        <div class="text-xs text-gray-500">{{ $ticket->completedAt->format('g:i A') }}
-                                        </div>
-                                    </div>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
 
-                        {{-- Actions --}}
-                        <div class="mb-6">
-                            <h3 class="mb-3 text-sm font-medium tracking-wider text-gray-500 uppercase">Actions</h3>
-                            <div class="space-y-2">
-                                <a href="{{ route('filament.resources.tickets.view', $ticket) }}" target="_blank"
-                                    class="flex items-center w-full px-3 py-2 text-left text-gray-700 transition-colors rounded-lg hover:bg-gray-50">
-                                    <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                        <path fill-rule="evenodd"
-                                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                                            clip-rule="evenodd"></path>
-                                    </svg>
-                                    Open Full View
-                                </a>
-                                <a href="{{ route('filament.resources.tickets.edit', $ticket) }}" target="_blank"
-                                    class="flex items-center w-full px-3 py-2 text-left text-gray-700 transition-colors rounded-lg hover:bg-gray-50">
-                                    <svg class="w-4 h-4 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z">
-                                        </path>
-                                    </svg>
-                                    Edit Ticket
-                                </a>
+                                {{-- Estimation --}}
+                                @if($ticket->estimation)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Estimation') }}</span>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $ticket->estimationForHumans }}</span>
+                                </div>
+                                @endif
+
+                                {{-- Time Logged --}}
+                                @if($ticket->hours->count() > 0)
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Time Logged') }}</span>
+                                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ $ticket->totalLoggedHours }}</span>
+                                </div>
+                                @endif
+
+                                {{-- Completed --}}
+                                @if($ticket->isCompleted && $ticket->completedAt)
+                                <div class="border-t border-gray-200 dark:border-gray-700"></div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">{{ __('Completed') }}</span>
+                                    <span class="text-sm font-medium text-green-500">{{ $ticket->completedAt->format('M j, Y') }}</span>
+                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
