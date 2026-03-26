@@ -3,7 +3,7 @@
     {{-- Project Info --}}
     <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
         <h3 class="mb-2 text-lg font-medium text-gray-900">{{ $project->name }}</h3>
-        <div class="grid grid-cols-2 gap-4 text-sm">
+        <div class="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
                 <span class="font-medium text-gray-600">Auto Complete:</span>
                 <span
@@ -78,7 +78,7 @@
         @if($eligibleTickets->count() > 0)
         <div class="overflow-hidden border border-gray-200 rounded-lg">
             <div class="px-4 py-2 border-b border-gray-200 bg-gray-50">
-                <div class="grid grid-cols-4 gap-4 text-xs font-medium tracking-wider text-gray-600 uppercase">
+                <div class="hidden gap-4 text-xs font-medium tracking-wider text-gray-600 uppercase md:grid md:grid-cols-4">
                     <div>Ticket</div>
                     <div>Title</div>
                     <div>Days in {{ $fromStatus->name }}</div>
@@ -95,14 +95,16 @@
                 $daysInStatus = $lastActivity ? now()->diffInDays($lastActivity->created_at) : 0;
                 @endphp
                 <div class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50">
-                    <div class="grid items-center grid-cols-4 gap-4">
-                        <div>
+                    <div class="flex flex-col gap-2 md:grid md:grid-cols-4 md:items-center md:gap-4">
+                        <div class="flex items-center gap-2 md:block">
                             <span class="text-sm font-medium text-blue-600">{{ $ticket->code }}</span>
+                            <span class="text-sm text-gray-900 md:hidden">{{ Str::limit($ticket->name, 30) }}</span>
                         </div>
-                        <div>
+                        <div class="hidden md:block">
                             <span class="text-sm text-gray-900">{{ Str::limit($ticket->name, 40) }}</span>
                         </div>
-                        <div>
+                        <div class="flex items-center gap-2 md:block">
+                            <span class="text-xs text-gray-400 md:hidden">Days:</span>
                             <span
                                 class="text-sm {{ $daysInStatus >= $project->auto_complete_days ? 'text-red-600 font-medium' : 'text-gray-600' }}">
                                 {{ $daysInStatus }} days
