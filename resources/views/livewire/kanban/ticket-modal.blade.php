@@ -8,15 +8,15 @@
             <div class="fixed inset-0 transition-opacity bg-gray-900 bg-opacity-50" aria-hidden="true"
                 wire:click="closeModal"></div>
 
-            {{-- Modal panel - Much wider now --}}
+            {{-- Modal panel --}}
             <div
-                class="inline-block overflow-hidden text-left align-top transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-6xl sm:w-full">
+                class="inline-block w-full overflow-hidden text-left align-top transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle sm:max-w-6xl">
                 @if($ticket)
 
                 {{-- Main content area --}}
-                <div class="flex bg-gray-50 min-h-96">
+                <div class="flex flex-col bg-gray-50 md:flex-row md:min-h-96 max-h-[90vh] overflow-y-auto md:overflow-y-visible">
                     {{-- Left column - Main content --}}
-                    <div class="flex-1 p-6">
+                    <div class="flex-1 p-4 md:p-6 md:overflow-y-auto md:max-h-[90vh]">
                         {{-- Title with status indicator --}}
                         <div class="mb-6">
                             <div class="flex items-center mb-2 space-x-2">
@@ -207,7 +207,7 @@
                     </div>
 
                     {{-- Right sidebar - Actions & Info --}}
-                    <div class="p-5 bg-white border-l border-gray-200 dark:bg-gray-800 dark:border-gray-700 w-80">
+                    <div class="w-full p-4 bg-white border-t border-gray-200 md:p-5 md:border-t-0 md:border-l md:w-80 md:overflow-y-auto md:max-h-[90vh] dark:bg-gray-800 dark:border-gray-700">
 
                         {{-- Actions --}}
                         <div class="flex gap-2 mb-5">

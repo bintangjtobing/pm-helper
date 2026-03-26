@@ -14,7 +14,7 @@
     </div>
 
     {{-- Sort Controls --}}
-    <div class="flex items-center gap-2 mb-3">
+    <div class="flex flex-wrap items-center gap-2 mb-3">
         <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Sort by') }}:</span>
         @foreach([
             'updated_at' => 'Last Updated',
