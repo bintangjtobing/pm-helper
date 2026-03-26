@@ -37,4 +37,37 @@ class ListTickets extends ListRecords
                     });
             });
     }
+
+    protected function applySearchToTableQuery(Builder $query): Builder
+    {
+        $search = $this->getTableSearch();
+
+        if (blank($search)) {
+            return $query;
+        }
+
+        // First apply default column search
+        $query = parent::applySearchToTableQuery($query);
+
+        // Then extend with content, code, and comments search
+        return $query->orWhere(function (Builder $q) use ($search) {
+            $q->where(function ($sub) {
+                // Re-apply access control inside orWhere
+                return $sub->where('owner_id', auth()->user()->id)
+                    ->orWhere('responsible_id', auth()->user()->id)
+                    ->orWhereHas('project', function ($pq) {
+                        return $pq->where('owner_id', auth()->user()->id)
+                            ->orWhereHas('users', function ($uq) {
+                                return $uq->where('users.id', auth()->user()->id);
+                            });
+                    });
+            })->where(function ($sub) use ($search) {
+                $sub->where('content', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhereHas('comments', function ($cq) use ($search) {
+                        $cq->where('content', 'like', "%{$search}%");
+                    });
+            });
+        });
+    }
 }
