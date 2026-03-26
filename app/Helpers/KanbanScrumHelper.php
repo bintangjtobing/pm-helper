@@ -27,6 +27,7 @@ trait KanbanScrumHelper
     public $types = [];
     public $priorities = [];
     public $includeNotAffectedTickets = false;
+    public string $sortBy = 'updated_at';
 
     public bool $ticket = false;
 
@@ -145,6 +146,15 @@ trait KanbanScrumHelper
                         });
                 });
         });
+        // Apply sort
+        match ($this->sortBy) {
+            'updated_at' => $query->orderByDesc('updated_at'),
+            'created_at' => $query->orderByDesc('created_at'),
+            'priority' => $query->orderBy('priority_id'),
+            'due_date' => $query->orderByRaw('due_date IS NULL, due_date ASC'),
+            default => $query->orderBy('order'),
+        };
+
         return $query->get()
             ->map(fn(Ticket $item) => [
                 'id' => $item->id,

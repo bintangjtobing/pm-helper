@@ -13,6 +13,23 @@
         </details>
     </div>
 
+    {{-- Sort Controls --}}
+    <div class="flex items-center gap-2 mb-3">
+        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('Sort by') }}:</span>
+        @foreach([
+            'updated_at' => 'Last Updated',
+            'created_at' => 'Created',
+            'priority' => 'Priority',
+            'due_date' => 'Due Date',
+            'order' => 'Manual',
+        ] as $value => $label)
+        <button wire:click="$set('sortBy', '{{ $value }}')" wire:loading.attr="disabled"
+            class="px-2.5 py-1 text-xs rounded-full transition-colors {{ $sortBy === $value ? 'bg-primary-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600' }}">
+            {{ __($label) }}
+        </button>
+        @endforeach
+    </div>
+
     <div class="kanban-container">
 
         @foreach($this->getStatuses() as $status)
