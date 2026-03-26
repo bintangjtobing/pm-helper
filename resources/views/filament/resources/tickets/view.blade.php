@@ -1,5 +1,6 @@
 @php
     $record = $this->record;
+    use Illuminate\Support\Str;
 @endphp
 <x-filament::page>
 
@@ -408,8 +409,12 @@
                     </div>
                     @endif
                 </div>
-                <div class="w-full prose-sm prose max-w-none">
-                    {!! $comment->content !!}
+                <div class="w-full prose-sm prose max-w-none dark:prose-invert">
+                    @if(strip_tags($comment->content) === $comment->content)
+                        {!! Str::markdown($comment->content) !!}
+                    @else
+                        {!! $comment->content !!}
+                    @endif
                 </div>
             </div>
             @endforeach
