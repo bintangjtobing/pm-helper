@@ -99,31 +99,58 @@ class DataController extends Controller
      */
     private function ticketObj(Epic|null $epic, Ticket $ticket)
     {
-        $pComp = round($ticket->completudePercentage, 0);
+        $statusName = $ticket->status?->name ?? '';
+
+        // Determine completion and styling based on status
+        $completedStatuses = ['Released', 'Approved', 'QA Passed', 'Ready for Release'];
+        $inProgressStatuses = ['In Progress', 'Code Review', 'Fixing'];
+        $qaStatuses = ['Ready for QA', 'QA Testing', 'Retest'];
+        $blockedStatuses = ['QA Failed', 'Rejected'];
+
+        $isCompleted = in_array($statusName, $completedStatuses);
+        $isOverdue = $ticket->due_date && $ticket->due_date->isPast() && !$isCompleted;
+
+        // Completion: 100% if done, otherwise based on logged hours
+        $pComp = $isCompleted ? 100 : min(round($ticket->completudePercentage, 0), 100);
+
+        // Bar color based on status
+        if ($isCompleted) {
+            $pClass = 'gtaskgreen';
+        } elseif ($isOverdue || in_array($statusName, $blockedStatuses)) {
+            $pClass = 'gtaskred';
+        } elseif (in_array($statusName, $qaStatuses)) {
+            $pClass = 'gtaskpurple';
+        } elseif (in_array($statusName, $inProgressStatuses)) {
+            $pClass = 'gtaskblue';
+        } else {
+            $pClass = 'g-custom-task';
+        }
+
         return [
             "pID" => ($epic?->id ?? "N") . $ticket->id,
             "pName" => $ticket->name,
             "pStart" => "",
             "pEnd" => $ticket->due_date ? $ticket->due_date->format('Y-m-d') . " 23:59:59" : "",
-            "pClass" => "g-custom-task",
+            "pClass" => $pClass,
             "pLink" => "",
             "pMile" => 0,
             "pRes" => $ticket->responsible?->name ?? "",
-            "pComp" => min($pComp, 100),
+            "pComp" => $pComp,
             "pGroup" => 0,
             "pParent" => $epic?->id ?? "",
             "pOpen" => 1,
             "pDepend" => "",
             "pCaption" => "",
-            "pNotes" => $ticket->due_date && $ticket->due_date->isPast() ? "OVERDUE" : "",
-            "pBarText" => "",
+            "pNotes" => $isOverdue ? "OVERDUE" : "",
+            "pBarText" => $statusName,
             "meta" => [
                 "id" => $ticket->id,
                 "epic" => false,
                 "parent" => $epic?->id ?? null,
                 "slug" => $ticket->code,
                 "due_date" => $ticket->due_date?->format('Y-m-d'),
-                "is_overdue" => $ticket->due_date && $ticket->due_date->isPast()
+                "is_overdue" => $isOverdue,
+                "status" => $statusName
             ]
         ];
     }
