@@ -14,6 +14,8 @@ class ProjectAuditOverview extends BaseWidget
     protected function getCards(): array
     {
         // Use more efficient query to get projects with basic ticket counts
+        $completedStatusNames = ['Released', 'Approved', 'QA Passed', 'Ready for Release'];
+
         $projects = Project::where(function ($query) {
             return $query->where('owner_id', auth()->user()->id)
                 ->orWhereHas('users', function ($query) {
@@ -22,15 +24,15 @@ class ProjectAuditOverview extends BaseWidget
         })
         ->withCount([
             'tickets',
-            'tickets as completed_tickets_count' => function ($query) {
-                $query->whereHas('status', function ($q) {
-                    $q->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+            'tickets as completed_tickets_count' => function ($query) use ($completedStatusNames) {
+                $query->whereHas('status', function ($q) use ($completedStatusNames) {
+                    $q->whereIn('name', $completedStatusNames);
                 });
             },
-            'tickets as overdue_tickets_count' => function ($query) {
+            'tickets as overdue_tickets_count' => function ($query) use ($completedStatusNames) {
                 $query->where('due_date', '<', now())
-                      ->whereHas('status', function ($q) {
-                          $q->whereNotIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                      ->whereHas('status', function ($q) use ($completedStatusNames) {
+                          $q->whereNotIn('name', $completedStatusNames);
                       });
             }
         ])
