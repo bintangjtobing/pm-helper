@@ -28,6 +28,7 @@ class ActivityFeed extends Widget
         // Get latest activities
         $activities = TicketActivity::query()
             ->with(['ticket.project', 'user', 'oldStatus', 'newStatus'])
+            ->validStatuses()
             ->whereHas('ticket', function ($query) {
                 return $query->where('owner_id', auth()->user()->id)
                     ->orWhere('responsible_id', auth()->user()->id)
@@ -42,6 +43,9 @@ class ActivityFeed extends Widget
             ->limit(10)
             ->get()
             ->map(function ($activity) {
+                $oldName = $activity->oldStatus?->name ?? 'Unknown Status';
+                $newName = $activity->newStatus?->name ?? 'Unknown Status';
+
                 return [
                     'type' => 'activity',
                     'id' => $activity->id,
@@ -51,7 +55,7 @@ class ActivityFeed extends Widget
                     'data' => [
                         'old_status' => $activity->oldStatus,
                         'new_status' => $activity->newStatus,
-                        'description' => "changed status from {$activity->oldStatus->name} to {$activity->newStatus->name}"
+                        'description' => "changed status from {$oldName} to {$newName}"
                     ]
                 ];
             });

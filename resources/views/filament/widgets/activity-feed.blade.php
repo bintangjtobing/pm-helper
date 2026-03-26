@@ -110,7 +110,13 @@
                         @if($item['type'] === 'comment')
                         <div class="p-2 mt-2 bg-white border-green-500 rounded dark:bg-gray-900 border-l-3">
                             <div class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
-                                {!! Str::limit(strip_tags($item['data']['content']), 120) !!}
+                                @php
+                                    $rawContent = $item['data']['content'];
+                                    $plainText = strip_tags($rawContent) === $rawContent
+                                        ? strip_tags(Str::markdown($rawContent))
+                                        : strip_tags($rawContent);
+                                @endphp
+                                {{ Str::limit($plainText, 120) }}
                             </div>
                         </div>
                         @endif

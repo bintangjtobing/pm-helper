@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use App\Models\TicketStatus;
 
 class EnhancedActivityFeed extends BaseWidget
 {
@@ -158,13 +159,22 @@ class EnhancedActivityFeed extends BaseWidget
 
                     $commentPreview = '';
                     if ($record->type === 'comment' && $record->content) {
+                        $rawContent = $record->content;
+                        $plainText = strip_tags($rawContent) === $rawContent
+                            ? strip_tags(Str::markdown($rawContent))
+                            : strip_tags($rawContent);
                         $commentPreview = '
-                            <div class="mt-2 p-2 bg-gray-50 rounded border-l-3 border-green-500">
-                                <div class="text-xs text-gray-700 line-clamp-2">'
-                                    . Str::limit(strip_tags($record->content), 100) .
+                            <div class="mt-2 p-2 bg-gray-50 dark:bg-gray-900 rounded border-l-3 border-green-500">
+                                <div class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">'
+                                    . e(Str::limit($plainText, 100)) .
                                 '</div>
                             </div>';
                     }
+
+                    // Build description based on type to avoid model accessor override
+                    $descriptionText = $record->type === 'comment'
+                        ? 'added a comment'
+                        : $record->getAttributes()['description'] ?? 'updated ticket status';
 
                     return new HtmlString('
                         <div class="flex items-start gap-3">
@@ -175,7 +185,7 @@ class EnhancedActivityFeed extends BaseWidget
                                 <div class="flex items-center gap-2 mb-1">
                                     ' . $typeIcon . '
                                     <span class="font-medium text-sm">' . e($user->name) . '</span>
-                                    <span class="text-gray-600 text-sm">' . e($record->description) . '</span>
+                                    <span class="text-gray-600 text-sm">' . e($descriptionText) . '</span>
                                 </div>
                                 <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                                     <span>' . e($ticket->project->name) . '</span>
