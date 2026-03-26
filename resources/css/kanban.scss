@@ -57,10 +57,10 @@
                 }
 
                 .record-footer {
-                    @apply w-full flex justify-between items-center pt-1;
+                    @apply w-full flex justify-between items-start pt-1;
 
                     .record-type-code {
-                        @apply flex items-center gap-1.5 flex-wrap;
+                        @apply flex items-center gap-1.5 flex-wrap min-w-0 flex-1;
                     }
 
                     .avatar {

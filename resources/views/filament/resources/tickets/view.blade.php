@@ -336,23 +336,23 @@
         <x-filament::card class="flex flex-col w-full md:w-2/3">
             <div class="flex items-center w-full gap-2">
                 <button wire:click="selectTab('comments')"
-                    class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center gap-1 @if($tab === 'comments') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    class="text-sm font-medium px-3 py-2 border-b-2 border-transparent hover:border-primary-500 flex items-center gap-1 @if($tab === 'comments') border-primary-500 text-primary-500 @else text-gray-500 @endif">
                     {{ __('Comments') }}
                 </button>
                 <button wire:click="selectTab('activities')"
-                    class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'activities') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    class="text-sm font-medium px-3 py-2 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'activities') border-primary-500 text-primary-500 @else text-gray-500 @endif">
                     {{ __('Activities') }}
                 </button>
                 <button wire:click="selectTab('time')"
-                    class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'time') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    class="text-sm font-medium px-3 py-2 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'time') border-primary-500 text-primary-500 @else text-gray-500 @endif">
                     {{ __('Time logged') }}
                 </button>
                 <button wire:click="selectTab('attachments')"
-                    class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'attachments') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    class="text-sm font-medium px-3 py-2 border-b-2 border-transparent hover:border-primary-500 @if($tab === 'attachments') border-primary-500 text-primary-500 @else text-gray-500 @endif">
                     {{ __('Attachments') }}
                 </button>
                 <button wire:click="selectTab('qa-checklist')"
-                    class="md:text-xl text-sm p-3 border-b-2 border-transparent hover:border-primary-500 flex items-center gap-1 @if($tab === 'qa-checklist') border-primary-500 text-primary-500 @else text-gray-700 @endif">
+                    class="text-sm font-medium px-3 py-2 border-b-2 border-transparent hover:border-primary-500 flex items-center gap-1 @if($tab === 'qa-checklist') border-primary-500 text-primary-500 @else text-gray-500 @endif">
                     {{ __('QA Checklist') }}
                     @php
                         $qaTotal = $record->qaChecklists()->count();

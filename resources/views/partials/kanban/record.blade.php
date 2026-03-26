@@ -58,7 +58,7 @@
         <div class="record-type-code">
             @php($epic = $record['epic'])
             @if($epic && $epic != "")
-            <div class="inline-flex items-center px-1.5 py-0.5 text-[10px] leading-tight text-center text-white bg-purple-500 rounded truncate max-w-[120px]"
+            <div class="inline-flex items-center px-1.5 py-0.5 text-[10px] leading-tight text-white bg-purple-500 rounded break-words"
                 title="{{ __('Epic') }}: {{ $epic->name }}">
                 {{ $epic->name }}
             </div>
