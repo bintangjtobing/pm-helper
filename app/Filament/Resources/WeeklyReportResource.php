@@ -76,13 +76,28 @@ class WeeklyReportResource extends Resource
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
-                        Forms\Components\Grid::make(3)
+                        Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\DatePicker::make('week_start')
-                                    ->label(__('Week of'))
-                                    ->helperText(__('Select any Monday to report on that week'))
-                                    ->default(now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y-m-d'))
+                                Forms\Components\Select::make('week_start')
+                                    ->label(__('Report Week'))
+                                    ->helperText(__('Select which week to report on'))
                                     ->required()
+                                    ->default(now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y-m-d'))
+                                    ->options(function () {
+                                        $options = [];
+                                        $current = now()->startOfWeek(\Carbon\Carbon::MONDAY);
+                                        // Show last 8 weeks + current week
+                                        for ($i = 0; $i < 9; $i++) {
+                                            $monday = $current->copy()->subWeeks($i);
+                                            $friday = $monday->copy()->addDays(4);
+                                            $sunday = $monday->copy()->addDays(6);
+                                            $label = $monday->format('M d') . ' – ' . $friday->format('M d, Y');
+                                            if ($i === 0) $label .= ' (this week)';
+                                            if ($i === 1) $label .= ' (last week)';
+                                            $options[$monday->format('Y-m-d')] = $label;
+                                        }
+                                        return $options;
+                                    })
                                     ->reactive(),
 
                                 Forms\Components\Select::make('project_id')
