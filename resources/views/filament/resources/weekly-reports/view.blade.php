@@ -227,10 +227,23 @@
                             <div class="text-xs text-gray-400">{{ number_format($media->size / 1024, 1) }} KB</div>
                         </div>
                     </div>
-                    <a href="{{ $media->getUrl() }}" target="_blank"
-                        class="px-3 py-1 text-sm font-medium rounded text-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10">
-                        {{ __('Download') }}
-                    </a>
+                    <div class="flex items-center gap-2">
+                        @if(str_contains($media->mime_type, 'pdf'))
+                        <a href="{{ $media->getUrl() }}" target="_blank"
+                            class="px-3 py-1 text-sm font-medium rounded text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/10">
+                            {{ __('View') }}
+                        </a>
+                        @else
+                        <a href="https://docs.google.com/gview?url={{ urlencode($media->getUrl()) }}&embedded=true" target="_blank"
+                            class="px-3 py-1 text-sm font-medium rounded text-green-600 hover:text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/10">
+                            {{ __('View') }}
+                        </a>
+                        @endif
+                        <a href="{{ $media->getUrl() }}" download
+                            class="px-3 py-1 text-sm font-medium rounded text-primary-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10">
+                            {{ __('Download') }}
+                        </a>
+                    </div>
                 </div>
                 @empty
                 <div class="py-8 text-center text-gray-400 dark:text-gray-500">
