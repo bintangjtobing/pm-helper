@@ -37,6 +37,7 @@ class EnhancedActivityFeed extends BaseWidget
         return false;
     }
 
+
     protected function getTableQuery(): Builder
     {
         // Buat union query untuk menggabungkan activities dan comments
@@ -128,9 +129,7 @@ class EnhancedActivityFeed extends BaseWidget
         return [
             Tables\Columns\TextColumn::make('activity_info')
                 ->label('Activity')
-                ->extraAttributes(['class' => 'w-full'])
-                ->html()
-                ->wrap()
+                ->extraAttributes(['style' => 'max-width: none !important; min-width: 100%;'])
                 ->formatStateUsing(function ($state, $record) {
                     // Load relationships manually karena union query
                     $user = \App\Models\User::find($record->user_id);
