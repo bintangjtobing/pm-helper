@@ -176,11 +176,7 @@
                                             </div>
                                             @if($item->type === 'comment')
                                             <div class="text-gray-700 prose-sm prose max-w-none dark:prose-invert">
-                                                @if(strip_tags($item->content) === $item->content)
-                                                    {!! \Illuminate\Support\Str::markdown($item->content) !!}
-                                                @else
-                                                    {!! $item->content !!}
-                                                @endif
+                                                {!! \Illuminate\Support\Str::markdown($item->content) !!}
                                             </div>
                                             @else
                                             <div class="text-sm text-gray-600">

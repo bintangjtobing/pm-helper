@@ -410,11 +410,7 @@
                     @endif
                 </div>
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    @if(strip_tags($comment->content) === $comment->content)
-                        {!! Str::markdown($comment->content) !!}
-                    @else
-                        {!! $comment->content !!}
-                    @endif
+                    {!! Str::markdown($comment->content) !!}
                 </div>
             </div>
             @endforeach
