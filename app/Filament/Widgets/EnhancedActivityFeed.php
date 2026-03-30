@@ -128,6 +128,9 @@ class EnhancedActivityFeed extends BaseWidget
         return [
             Tables\Columns\TextColumn::make('activity_info')
                 ->label('Activity')
+                ->extraAttributes(['class' => 'w-full'])
+                ->html()
+                ->wrap()
                 ->formatStateUsing(function ($state, $record) {
                     // Load relationships manually karena union query
                     $user = \App\Models\User::find($record->user_id);
@@ -223,14 +226,11 @@ class EnhancedActivityFeed extends BaseWidget
 
                     $commentPreview = '';
                     if ($record->type === 'comment' && $record->content) {
-                        $rawContent = $record->content;
-                        $plainText = strip_tags($rawContent) === $rawContent
-                            ? strip_tags(Str::markdown($rawContent))
-                            : strip_tags($rawContent);
+                        $plainText = Str::limit(strip_tags(Str::markdown($record->content)), 100);
                         $commentPreview = '
                             <div class="mt-2 p-2 bg-gray-50 dark:bg-gray-900 rounded border-l-3 border-green-500">
                                 <div class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">'
-                                    . e(Str::limit($plainText, 100)) .
+                                    . e($plainText) .
                                 '</div>
                             </div>';
                     }
