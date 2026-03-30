@@ -10,6 +10,8 @@ class WeeklyReportFeedback extends Model
 {
     use HasFactory;
 
+    protected $table = 'weekly_report_feedbacks';
+
     protected $fillable = [
         'weekly_report_id',
         'user_id',
