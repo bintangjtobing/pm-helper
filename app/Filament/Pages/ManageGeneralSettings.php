@@ -172,6 +172,40 @@ class ManageGeneralSettings extends SettingsPage
                                 }),
                         ])
                 ]),
+
+            // Weekly Report Settings
+            Card::make()
+                ->schema([
+                    \Filament\Forms\Components\Placeholder::make('weekly_report_heading')
+                        ->label('')
+                        ->content(new \Illuminate\Support\HtmlString('
+                            <div class="mb-2">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">' . __('Weekly Report Settings') . '</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">' . __('Configure weekly report submission settings for your team') . '</p>
+                            </div>
+                        ')),
+
+                    Grid::make(2)
+                        ->schema([
+                            Select::make('report_due_day')
+                                ->label(__('Report due day'))
+                                ->helperText(__('The day of the week when weekly reports are due'))
+                                ->options([
+                                    'monday' => __('Monday'),
+                                    'tuesday' => __('Tuesday'),
+                                    'wednesday' => __('Wednesday'),
+                                    'thursday' => __('Thursday'),
+                                    'friday' => __('Friday'),
+                                    'saturday' => __('Saturday'),
+                                    'sunday' => __('Sunday'),
+                                ])
+                                ->required(),
+
+                            Toggle::make('report_reminder_enabled')
+                                ->label(__('Enable report reminder?'))
+                                ->helperText(__('If enabled, team members will receive a reminder notification on the due day')),
+                        ]),
+                ]),
         ];
     }
 

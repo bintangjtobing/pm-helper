@@ -15,7 +15,7 @@ class PermissionsSeeder extends Seeder
     private array $modules = [
         'permission', 'project', 'project status', 'role', 'ticket',
         'ticket priority', 'ticket status', 'ticket type', 'user',
-        'activity', 'sprint', 'comment', 'customer feedback' // Added customer feedback
+        'activity', 'sprint', 'comment', 'customer feedback', 'weekly report'
     ];
 
     private array $pluralActions = [
@@ -106,6 +106,9 @@ class PermissionsSeeder extends Seeder
             'List timesheet data', 'View timesheet dashboard',
             // Customer Feedback
             'List customer feedbacks', 'View customer feedback', 'Update customer feedback',
+            // Weekly Report
+            'List weekly reports', 'View weekly report', 'Create weekly report',
+            'Update weekly report', 'Delete weekly report',
             // User — view only
             'List users', 'View user',
         ];
@@ -136,6 +139,8 @@ class PermissionsSeeder extends Seeder
             'List comments', 'View comment', 'Create comment', 'Update comment',
             // Activity
             'List activities', 'View activity',
+            // Weekly Report
+            'List weekly reports', 'View weekly report', 'Create weekly report', 'Update weekly report',
             // Timesheet — own data
             'List timesheet data',
         ];
@@ -169,6 +174,8 @@ class PermissionsSeeder extends Seeder
             // Customer Feedback
             'List customer feedbacks', 'View customer feedback',
             'Create customer feedback', 'Update customer feedback',
+            // Weekly Report
+            'List weekly reports', 'View weekly report', 'Create weekly report', 'Update weekly report',
             // Timesheet
             'List timesheet data',
         ];
@@ -199,6 +206,8 @@ class PermissionsSeeder extends Seeder
             'List comments', 'View comment', 'Create comment',
             // Activity
             'List activities', 'View activity',
+            // Weekly Report
+            'List weekly reports', 'View weekly report', 'Create weekly report', 'Update weekly report',
             // Timesheet
             'List timesheet data', 'View timesheet dashboard',
         ];
@@ -224,6 +233,8 @@ class PermissionsSeeder extends Seeder
             // Customer Feedback — can submit
             'List customer feedbacks', 'View customer feedback',
             'Create customer feedback',
+            // Weekly Report — view only + give feedback via UI
+            'List weekly reports', 'View weekly report',
         ];
 
         $existing = Permission::whereIn('name', $permissions)->pluck('name')->toArray();

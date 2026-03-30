@@ -15,6 +15,8 @@ class GeneralSettings extends Settings
     public bool $enable_social_login;
     public bool $enable_login_form;
     public bool $enable_oidc_login;
+    public string $report_due_day;
+    public bool $report_reminder_enabled;
 
     public static function group(): string
     {
@@ -41,6 +43,8 @@ class GeneralSettings extends Settings
             'enable_social_login' => false,
             'enable_login_form' => true,
             'enable_oidc_login' => false,
+            'report_due_day' => 'friday',
+            'report_reminder_enabled' => true,
         ];
     }
 }

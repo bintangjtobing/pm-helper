@@ -28,7 +28,7 @@ class CustomerFeedbackResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-annotation';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     // PERBAIKAN: Set slug yang benar
     protected static ?string $slug = 'customer-feedbacks';

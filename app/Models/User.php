@@ -150,6 +150,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return $this->hasMany(CustomerFeedback::class, 'user_id');
     }
 
+    public function weeklyReports(): HasMany
+    {
+        return $this->hasMany(WeeklyReport::class, 'user_id');
+    }
+
     /**
      * Semua projects yang bisa diakses user (owned + attached)
      */
