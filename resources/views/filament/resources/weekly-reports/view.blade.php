@@ -139,11 +139,11 @@
                 </div>
                 <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
                     @foreach(array_slice($projectData['tickets'], 0, 15) as $ticket)
-                    <div class="flex items-center gap-2 px-4 py-2 text-sm">
+                    <a href="{{ route('filament.resources.tickets.view', $ticket['id']) }}" class="flex items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <span class="px-1.5 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded dark:bg-gray-700 dark:text-gray-400 shrink-0">{{ $ticket['code'] }}</span>
-                        <span class="text-gray-700 truncate dark:text-gray-300">{{ $ticket['name'] }}</span>
+                        <span class="text-gray-700 truncate dark:text-gray-300 hover:text-primary-500">{{ $ticket['name'] }}</span>
                         <span class="ml-auto px-1.5 py-0.5 text-xs rounded shrink-0" style="background-color: {{ $ticket['status_color'] ?? '#6b7280' }}20; color: {{ $ticket['status_color'] ?? '#6b7280' }}">{{ $ticket['status'] }}</span>
-                    </div>
+                    </a>
                     @endforeach
                     @if(count($projectData['tickets']) > 15)
                     <div class="px-4 py-2 text-xs text-gray-400">...{{ __('and') }} {{ count($projectData['tickets']) - 15 }} {{ __('more') }}</div>
@@ -162,14 +162,14 @@
                 </div>
                 <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
                     @foreach(array_slice($summary['hours_logged']['entries'], 0, 15) as $entry)
-                    <div class="flex items-center gap-2 px-4 py-2 text-sm">
+                    <a href="{{ $entry['ticket_id'] ? route('filament.resources.tickets.view', $entry['ticket_id']) : '#' }}" class="flex items-center gap-2 px-4 py-2 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50">
                         <span class="px-1.5 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded dark:bg-gray-700 dark:text-gray-400 shrink-0">{{ $entry['ticket_code'] }}</span>
-                        <span class="text-gray-700 truncate dark:text-gray-300">{{ $entry['ticket_name'] }}</span>
+                        <span class="text-gray-700 truncate dark:text-gray-300 hover:text-primary-500">{{ $entry['ticket_name'] }}</span>
                         <span class="ml-auto font-medium text-orange-600 shrink-0 dark:text-orange-400">{{ $entry['hours'] }}h</span>
                         @if($entry['activity'])
                         <span class="text-xs text-gray-400 shrink-0">({{ $entry['activity'] }})</span>
                         @endif
-                    </div>
+                    </a>
                     @endforeach
                 </div>
             </div>

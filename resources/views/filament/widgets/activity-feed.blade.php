@@ -39,16 +39,22 @@
                         <div class="flex items-center gap-2 mb-1">
                             <!-- Activity Type Icon -->
                             @if($item['type'] === 'activity')
-                            <div class="flex items-center justify-center w-5 h-5 bg-blue-100 rounded-full">
-                                <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <div class="flex items-center justify-center w-5 h-5 bg-blue-100 rounded-full dark:bg-blue-900/30">
+                                <svg class="w-3 h-3 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
                                         clip-rule="evenodd"></path>
                                 </svg>
                             </div>
+                            @elseif($item['type'] === 'weekly_report')
+                            <div class="flex items-center justify-center w-5 h-5 bg-purple-100 rounded-full dark:bg-purple-900/30">
+                                <svg class="w-3 h-3 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
                             @else
-                            <div class="flex items-center justify-center w-5 h-5 bg-green-100 rounded-full">
-                                <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <div class="flex items-center justify-center w-5 h-5 bg-green-100 rounded-full dark:bg-green-900/30">
+                                <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd"
                                         d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
                                         clip-rule="evenodd"></path>
@@ -73,9 +79,10 @@
                         </div>
 
                         <!-- Ticket Info -->
+                        @if($item['ticket'])
                         <div class="flex items-center gap-2 mb-2">
                             <span class="text-xs text-gray-500">
-                                {{ $item['ticket']->project->name }}
+                                {{ $item['ticket']->project->name ?? '' }}
                             </span>
                             <span class="text-xs text-gray-400">•</span>
                             <a href="{{ route('filament.resources.tickets.share', $item['ticket']->code) }}"
@@ -87,6 +94,7 @@
                                 {{ Str::limit($item['ticket']->name, 40) }}
                             </span>
                         </div>
+                        @endif
 
                         <!-- Activity-specific content -->
                         @if($item['type'] === 'activity')

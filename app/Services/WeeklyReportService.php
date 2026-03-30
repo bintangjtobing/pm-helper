@@ -214,6 +214,7 @@ class WeeklyReportService
         return [
             'total_hours' => round($entries->sum('value'), 2),
             'entries' => $entries->map(fn ($entry) => [
+                'ticket_id' => $entry->ticket?->id,
                 'ticket_code' => $entry->ticket?->code ?? 'N/A',
                 'ticket_name' => $entry->ticket?->name ?? 'N/A',
                 'hours' => round($entry->value, 2),
