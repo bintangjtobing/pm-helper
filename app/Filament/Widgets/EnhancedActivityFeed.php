@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\TicketActivity;
 use App\Models\TicketComment;
+use App\Models\WeeklyReport;
 use Filament\Tables;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +25,7 @@ class EnhancedActivityFeed extends BaseWidget
     ];
 
     // Properties untuk filter
-    public string $activityType = 'all'; // 'all', 'activities', 'comments'
+    public string $activityType = 'all'; // 'all', 'activities', 'comments', 'weekly_reports'
 
     public static function canView(): bool
     {
@@ -93,15 +94,31 @@ class EnhancedActivityFeed extends BaseWidget
                     });
             });
 
+        $weeklyReportsQuery = WeeklyReport::query()
+            ->where('status', '!=', 'draft')
+            ->select([
+                'id',
+                \DB::raw('COALESCE(submitted_at, created_at) as created_at'),
+                'user_id',
+                \DB::raw('NULL as ticket_id'),
+                \DB::raw("'weekly_report' as type"),
+                \DB::raw("CONCAT('submitted weekly report (', DATE_FORMAT(week_start, '%b %d'), ' – ', DATE_FORMAT(week_end, '%b %d, %Y'), ')') as description"),
+                \DB::raw('NULL as old_status_id'),
+                \DB::raw('NULL as new_status_id'),
+                \DB::raw('NULL as content'),
+            ]);
+
         // Filter berdasarkan type
         if ($this->activityType === 'activities') {
             return $activitiesQuery->latest()->limit(10);
         } elseif ($this->activityType === 'comments') {
             return $commentsQuery->latest()->limit(10);
+        } elseif ($this->activityType === 'weekly_reports') {
+            return $weeklyReportsQuery->orderBy('created_at', 'desc')->limit(10);
         }
 
         // Union untuk semua
-        return $activitiesQuery->union($commentsQuery)
+        return $activitiesQuery->union($commentsQuery)->union($weeklyReportsQuery)
             ->orderBy('created_at', 'desc')
             ->limit(10);
     }
@@ -116,21 +133,68 @@ class EnhancedActivityFeed extends BaseWidget
                     $user = \App\Models\User::find($record->user_id);
                     $ticket = \App\Models\Ticket::with('project')->find($record->ticket_id);
 
-                    if (!$user || !$ticket) {
+                    if (!$user) {
                         return new HtmlString('<div class="text-red-500">Error loading data</div>');
                     }
 
-                    $typeIcon = $record->type === 'activity'
-                        ? '<div class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center">
-                             <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    // Handle weekly report type (no ticket)
+                    if ($record->type === 'weekly_report') {
+                        $timeAgo = $record->created_at->diffForHumans();
+                        $viewUrl = route('filament.resources.weekly-reports.view', $record->id);
+                        $descriptionText = $record->getAttributes()['description'] ?? 'submitted weekly report';
+
+                        return new HtmlString('
+                            <div class="flex items-start gap-3">
+                                <img src="' . ($user->avatar_url ?: 'https://ui-avatars.com/api/?name=' . urlencode($user->name)) . '"
+                                     alt="' . e($user->name) . '"
+                                     class="w-8 h-8 rounded-full object-cover shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="flex items-center gap-2 mb-0.5">
+                                                ' . $typeIcon . '
+                                                <span class="font-medium text-sm">' . e($user->name) . '</span>
+                                                <span class="text-gray-500 dark:text-gray-400 text-sm">' . e($descriptionText) . '</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 shrink-0">
+                                            <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">' . $timeAgo . '</span>
+                                            <a href="' . $viewUrl . '"
+                                               class="text-xs text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 whitespace-nowrap">
+                                                <svg class="w-4 h-4 inline -mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                View
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ');
+                    }
+
+                    if (!$ticket) {
+                        return new HtmlString('<div class="text-red-500">Error loading data</div>');
+                    }
+
+                    $typeIcon = match($record->type) {
+                        'activity' => '<div class="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                             <svg class="w-3 h-3 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
                              </svg>
-                           </div>'
-                        : '<div class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                             <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                           </div>',
+                        'weekly_report' => '<div class="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                             <svg class="w-3 h-3 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                               <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                             </svg>
+                           </div>',
+                        default => '<div class="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                             <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
                                <path fill-rule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clip-rule="evenodd"></path>
                              </svg>
-                           </div>';
+                           </div>',
+                    };
 
                     $statusBadges = '';
                     if ($record->type === 'activity' && $record->old_status_id && $record->new_status_id) {
@@ -236,7 +300,8 @@ class EnhancedActivityFeed extends BaseWidget
                 ->options([
                     'all' => 'All Activities',
                     'activities' => 'Status Changes Only',
-                    'comments' => 'Comments Only'
+                    'comments' => 'Comments Only',
+                    'weekly_reports' => 'Weekly Reports Only',
                 ])
                 ->default('all')
                 ->query(function (Builder $query, array $data): Builder {
@@ -253,7 +318,8 @@ class EnhancedActivityFeed extends BaseWidget
         $typeDesc = match($this->activityType) {
             'activities' => 'status changes',
             'comments' => 'comments',
-            default => 'activities and comments'
+            'weekly_reports' => 'weekly reports',
+            default => 'activities, comments, and weekly reports'
         };
 
         return "Recent {$typeDesc} from tickets you own, are responsible for, or from projects you're involved in.";
