@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\WeeklyReport;
 use App\Notifications\WeeklyReportSubmitted;
 use App\Services\WeeklyReportService;
+use Carbon\Carbon;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\CreateRecord;
 
@@ -25,26 +26,24 @@ class CreateWeeklyReport extends CreateRecord
 
         $this->form->fill([
             'user_id' => auth()->id(),
+            'week_start' => $bounds['week_start']->format('Y-m-d'),
             'content' => $content,
-        ]);
-
-        // Store bounds and summary in session for use in mutate
-        session([
-            'weekly_report_week_start' => $bounds['week_start']->format('Y-m-d'),
-            'weekly_report_week_end' => $bounds['week_end']->format('Y-m-d'),
-            'weekly_report_auto_summary' => $summary,
         ]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['user_id'] = auth()->id();
-        $data['week_start'] = session('weekly_report_week_start');
-        $data['week_end'] = session('weekly_report_week_end');
-        $data['auto_summary'] = session('weekly_report_auto_summary');
-        $data['status'] = 'draft';
+        $service = new WeeklyReportService();
 
-        session()->forget(['weekly_report_week_start', 'weekly_report_week_end', 'weekly_report_auto_summary']);
+        // Calculate week bounds from the selected week_start date
+        $weekStart = Carbon::parse($data['week_start'])->startOfWeek(Carbon::MONDAY);
+        $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+
+        $data['user_id'] = auth()->id();
+        $data['week_start'] = $weekStart->format('Y-m-d');
+        $data['week_end'] = $weekEnd->format('Y-m-d');
+        $data['auto_summary'] = $service->generateAutoSummary(auth()->user(), $weekStart, $weekEnd);
+        $data['status'] = 'draft';
 
         return $data;
     }
@@ -82,7 +81,6 @@ class CreateWeeklyReport extends CreateRecord
                         'submitted_at' => now(),
                     ]);
 
-                    // Notify Super Admin and PM
                     $notifyUsers = User::role(['Super Admin', 'Project Manager'])->get();
                     foreach ($notifyUsers as $user) {
                         $user->notify(new WeeklyReportSubmitted($report));

@@ -31,111 +31,149 @@
 
             {{-- Auto-Generated Summary --}}
             @if($record->auto_summary)
-            <div class="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
-                <h3 class="flex items-center gap-2 mb-3 text-sm font-semibold text-blue-700 dark:text-blue-400">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                    </svg>
-                    {{ __('Auto-Generated Summary') }}
-                </h3>
+            @php
+                $summary = $record->auto_summary;
+                $progress = $summary['progress_summary'] ?? [];
+                $ticketsUpdated = count($summary['tickets_updated'] ?? []);
+                $ticketsCompleted = count($summary['tickets_completed'] ?? []);
+                $statusChanges = count($summary['status_changes'] ?? []);
+                $totalHours = $summary['hours_logged']['total_hours'] ?? 0;
+                $completionRate = $progress['completion_rate'] ?? ($ticketsUpdated > 0 ? round(($ticketsCompleted / $ticketsUpdated) * 100, 1) : 0);
+                $projectBreakdown = $summary['project_breakdown'] ?? [];
+                $statusBreakdown = $summary['status_breakdown'] ?? [];
+                $typeBreakdown = $summary['type_breakdown'] ?? [];
+            @endphp
 
-                <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    @php
-                        $summary = $record->auto_summary;
-                        $ticketsUpdated = count($summary['tickets_updated'] ?? []);
-                        $ticketsCompleted = count($summary['tickets_completed'] ?? []);
-                        $statusChanges = count($summary['status_changes'] ?? []);
-                        $totalHours = $summary['hours_logged']['total_hours'] ?? 0;
-                    @endphp
-
-                    <div class="p-3 text-center bg-white rounded-lg dark:bg-gray-800">
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $ticketsUpdated }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('Tickets Updated') }}</div>
-                    </div>
-                    <div class="p-3 text-center bg-white rounded-lg dark:bg-gray-800">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $ticketsCompleted }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('Completed') }}</div>
-                    </div>
-                    <div class="p-3 text-center bg-white rounded-lg dark:bg-gray-800">
-                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $statusChanges }}</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('Status Changes') }}</div>
-                    </div>
-                    <div class="p-3 text-center bg-white rounded-lg dark:bg-gray-800">
-                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{{ $totalHours }}h</div>
-                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ __('Hours Logged') }}</div>
-                    </div>
+            {{-- 1. Progress Summary Table (like PDF) --}}
+            <div class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">{{ __('Progress Summary') }}</h3>
                 </div>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-gray-800/50">
+                            <th class="px-4 py-2 text-xs font-semibold text-left text-gray-500 uppercase dark:text-gray-400">{{ __('Metric') }}</th>
+                            <th class="px-4 py-2 text-xs font-semibold text-left text-gray-500 uppercase dark:text-gray-400">{{ __('Value') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Tickets Touched') }}</td>
+                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200">{{ $ticketsUpdated }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Tickets Completed') }}</td>
+                            <td class="px-4 py-2 font-medium text-green-600 dark:text-green-400">{{ $ticketsCompleted }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Completion Rate') }}</td>
+                            <td class="px-4 py-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="flex-1 h-2 max-w-[120px] overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700">
+                                        <div class="h-full rounded-full {{ $completionRate >= 80 ? 'bg-green-500' : ($completionRate >= 50 ? 'bg-yellow-500' : 'bg-red-500') }}" style="width: {{ min($completionRate, 100) }}%"></div>
+                                    </div>
+                                    <span class="font-medium text-gray-800 dark:text-gray-200">{{ $completionRate }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Status Changes') }}</td>
+                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200">{{ $statusChanges }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Hours Logged') }}</td>
+                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200">{{ $totalHours }}h</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Projects Worked') }}</td>
+                            <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200">{{ count($projectBreakdown) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-                {{-- Detailed lists --}}
-                @if(!empty($summary['tickets_completed']))
-                <div class="mt-4">
-                    <h4 class="mb-2 text-xs font-semibold text-blue-600 uppercase dark:text-blue-400">{{ __('Tickets Completed') }}</h4>
-                    <div class="space-y-1">
-                        @foreach(array_slice($summary['tickets_completed'], 0, 10) as $ticket)
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="px-1.5 py-0.5 text-xs font-mono bg-green-100 text-green-700 rounded dark:bg-green-900/30 dark:text-green-400">{{ $ticket['code'] }}</span>
-                            <span class="text-gray-700 dark:text-gray-300">{{ $ticket['name'] }}</span>
-                            <span class="text-xs text-gray-400">({{ $ticket['project_name'] }})</span>
-                        </div>
-                        @endforeach
-                        @if(count($summary['tickets_completed']) > 10)
-                        <div class="text-xs text-gray-400">...and {{ count($summary['tickets_completed']) - 10 }} more</div>
-                        @endif
+            {{-- 2. Breakdown Row: Status + Type side by side --}}
+            @if(!empty($statusBreakdown) || !empty($typeBreakdown))
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                @if(!empty($statusBreakdown))
+                <div class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                    <div class="px-4 py-2 border-b border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                        <h4 class="text-xs font-semibold text-gray-600 uppercase dark:text-gray-400">{{ __('By Status') }}</h4>
                     </div>
-                </div>
-                @endif
-
-                @if(!empty($summary['tickets_updated']))
-                <div class="mt-4">
-                    <h4 class="mb-2 text-xs font-semibold text-blue-600 uppercase dark:text-blue-400">{{ __('Tickets Updated') }}</h4>
-                    <div class="space-y-1">
-                        @foreach(array_slice($summary['tickets_updated'], 0, 10) as $ticket)
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="px-1.5 py-0.5 text-xs font-mono bg-blue-100 text-blue-700 rounded dark:bg-blue-900/30 dark:text-blue-400">{{ $ticket['code'] }}</span>
-                            <span class="text-gray-700 dark:text-gray-300">{{ $ticket['name'] }}</span>
-                            <span class="px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded dark:bg-gray-700 dark:text-gray-400">{{ $ticket['status'] }}</span>
-                        </div>
-                        @endforeach
-                        @if(count($summary['tickets_updated']) > 10)
-                        <div class="text-xs text-gray-400">...and {{ count($summary['tickets_updated']) - 10 }} more</div>
-                        @endif
-                    </div>
-                </div>
-                @endif
-
-                @if(!empty($summary['status_changes']))
-                <div class="mt-4">
-                    <h4 class="mb-2 text-xs font-semibold text-blue-600 uppercase dark:text-blue-400">{{ __('Status Changes') }}</h4>
-                    <div class="space-y-1">
-                        @foreach(array_slice($summary['status_changes'], 0, 10) as $change)
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="px-1.5 py-0.5 text-xs font-mono bg-purple-100 text-purple-700 rounded dark:bg-purple-900/30 dark:text-purple-400">{{ $change['ticket_code'] }}</span>
-                            <span class="text-gray-400">{{ $change['from_status'] }}</span>
-                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            <span class="font-medium text-gray-700 dark:text-gray-300">{{ $change['to_status'] }}</span>
+                    <div class="p-3 space-y-2">
+                        @foreach($statusBreakdown as $status => $count)
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">{{ $status }}</span>
+                            <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 rounded-full dark:bg-gray-700 text-gray-700 dark:text-gray-300">{{ $count }}</span>
                         </div>
                         @endforeach
                     </div>
                 </div>
                 @endif
 
-                @if(!empty($summary['hours_logged']['entries']))
-                <div class="mt-4">
-                    <h4 class="mb-2 text-xs font-semibold text-blue-600 uppercase dark:text-blue-400">{{ __('Time Logged') }} ({{ $totalHours }}h)</h4>
-                    <div class="space-y-1">
-                        @foreach(array_slice($summary['hours_logged']['entries'], 0, 10) as $entry)
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="px-1.5 py-0.5 text-xs font-mono bg-orange-100 text-orange-700 rounded dark:bg-orange-900/30 dark:text-orange-400">{{ $entry['ticket_code'] }}</span>
-                            <span class="font-medium text-gray-700 dark:text-gray-300">{{ $entry['hours'] }}h</span>
-                            @if($entry['activity'])
-                            <span class="text-xs text-gray-400">({{ $entry['activity'] }})</span>
-                            @endif
+                @if(!empty($typeBreakdown))
+                <div class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                    <div class="px-4 py-2 border-b border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                        <h4 class="text-xs font-semibold text-gray-600 uppercase dark:text-gray-400">{{ __('By Type') }}</h4>
+                    </div>
+                    <div class="p-3 space-y-2">
+                        @foreach($typeBreakdown as $type => $count)
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">{{ $type }}</span>
+                            <span class="px-2 py-0.5 text-xs font-medium bg-gray-100 rounded-full dark:bg-gray-700 text-gray-700 dark:text-gray-300">{{ $count }}</span>
                         </div>
                         @endforeach
                     </div>
                 </div>
                 @endif
             </div>
+            @endif
+
+            {{-- 3. Tickets by Project --}}
+            @if(!empty($projectBreakdown))
+            @foreach($projectBreakdown as $projectName => $projectData)
+            <div class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                    <h4 class="text-xs font-semibold text-gray-600 uppercase dark:text-gray-400">{{ $projectName }}</h4>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-700 rounded-full dark:bg-primary-900/30 dark:text-primary-400">{{ $projectData['total'] }} {{ __('tickets') }}</span>
+                </div>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
+                    @foreach(array_slice($projectData['tickets'], 0, 15) as $ticket)
+                    <div class="flex items-center gap-2 px-4 py-2 text-sm">
+                        <span class="px-1.5 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded dark:bg-gray-700 dark:text-gray-400 shrink-0">{{ $ticket['code'] }}</span>
+                        <span class="text-gray-700 truncate dark:text-gray-300">{{ $ticket['name'] }}</span>
+                        <span class="ml-auto px-1.5 py-0.5 text-xs rounded shrink-0" style="background-color: {{ $ticket['status_color'] ?? '#6b7280' }}20; color: {{ $ticket['status_color'] ?? '#6b7280' }}">{{ $ticket['status'] }}</span>
+                    </div>
+                    @endforeach
+                    @if(count($projectData['tickets']) > 15)
+                    <div class="px-4 py-2 text-xs text-gray-400">...{{ __('and') }} {{ count($projectData['tickets']) - 15 }} {{ __('more') }}</div>
+                    @endif
+                </div>
+            </div>
+            @endforeach
+            @endif
+
+            {{-- 4. Time Log Detail --}}
+            @if(!empty($summary['hours_logged']['entries']))
+            <div class="overflow-hidden border border-gray-200 rounded-lg dark:border-gray-700">
+                <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+                    <h4 class="text-xs font-semibold text-gray-600 uppercase dark:text-gray-400">{{ __('Time Log') }}</h4>
+                    <span class="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full dark:bg-orange-900/30 dark:text-orange-400">{{ $totalHours }}h {{ __('total') }}</span>
+                </div>
+                <div class="divide-y divide-gray-100 dark:divide-gray-700/50">
+                    @foreach(array_slice($summary['hours_logged']['entries'], 0, 15) as $entry)
+                    <div class="flex items-center gap-2 px-4 py-2 text-sm">
+                        <span class="px-1.5 py-0.5 text-xs font-mono bg-gray-100 text-gray-600 rounded dark:bg-gray-700 dark:text-gray-400 shrink-0">{{ $entry['ticket_code'] }}</span>
+                        <span class="text-gray-700 truncate dark:text-gray-300">{{ $entry['ticket_name'] }}</span>
+                        <span class="ml-auto font-medium text-orange-600 shrink-0 dark:text-orange-400">{{ $entry['hours'] }}h</span>
+                        @if($entry['activity'])
+                        <span class="text-xs text-gray-400 shrink-0">({{ $entry['activity'] }})</span>
+                        @endif
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
             @endif
 
             {{-- User-Written Content --}}

@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\TicketActivity;
 use App\Models\TicketComment;
+use App\Models\WeeklyReport;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
 
@@ -90,8 +91,31 @@ class ActivityFeed extends Widget
                 ];
             });
 
+        // Get weekly report submissions
+        $weeklyReports = WeeklyReport::query()
+            ->with(['user', 'project'])
+            ->where('status', '!=', 'draft')
+            ->latest('submitted_at')
+            ->limit(10)
+            ->get()
+            ->map(function ($report) {
+                return [
+                    'type' => 'weekly_report',
+                    'id' => $report->id,
+                    'user' => $report->user,
+                    'ticket' => null,
+                    'created_at' => $report->submitted_at ?? $report->created_at,
+                    'data' => [
+                        'report' => $report,
+                        'description' => 'submitted weekly report (' . $report->week_label . ')',
+                        'project_name' => $report->project?->name ?? 'General',
+                        'status' => $report->status,
+                    ]
+                ];
+            });
+
         // Merge and sort by created_at
-        $feed = $activities->merge($comments)
+        $feed = $activities->merge($comments)->merge($weeklyReports)
             ->sortByDesc('created_at')
             ->take(15)
             ->values();

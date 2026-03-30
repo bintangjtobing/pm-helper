@@ -22,22 +22,88 @@ class WeeklyReportService
 
     public function generateAutoSummary(User $user, Carbon $weekStart, Carbon $weekEnd): array
     {
+        $ticketsUpdated = $this->getTicketsUpdated($user, $weekStart, $weekEnd);
+        $ticketsCompleted = $this->getTicketsCompleted($user, $weekStart, $weekEnd);
+        $statusChanges = $this->getStatusChanges($user, $weekStart, $weekEnd);
+        $hoursLogged = $this->getHoursLogged($user, $weekStart, $weekEnd);
+
+        // Build status breakdown from updated tickets
+        $statusBreakdown = [];
+        foreach ($ticketsUpdated as $ticket) {
+            $status = $ticket['status'];
+            $statusBreakdown[$status] = ($statusBreakdown[$status] ?? 0) + 1;
+        }
+
+        // Build project breakdown from updated tickets
+        $projectBreakdown = [];
+        foreach ($ticketsUpdated as $ticket) {
+            $project = $ticket['project_name'];
+            if (!isset($projectBreakdown[$project])) {
+                $projectBreakdown[$project] = ['total' => 0, 'tickets' => []];
+            }
+            $projectBreakdown[$project]['total']++;
+            $projectBreakdown[$project]['tickets'][] = $ticket;
+        }
+
+        // Build type breakdown from updated tickets
+        $typeBreakdown = [];
+        foreach ($ticketsUpdated as $ticket) {
+            $type = $ticket['type'] ?? 'Other';
+            $typeBreakdown[$type] = ($typeBreakdown[$type] ?? 0) + 1;
+        }
+
+        // Build priority breakdown from updated tickets
+        $priorityBreakdown = [];
+        foreach ($ticketsUpdated as $ticket) {
+            $priority = $ticket['priority'] ?? 'N/A';
+            $priorityBreakdown[$priority] = ($priorityBreakdown[$priority] ?? 0) + 1;
+        }
+
+        $totalUpdated = count($ticketsUpdated);
+        $totalCompleted = count($ticketsCompleted);
+
         return [
-            'tickets_updated' => $this->getTicketsUpdated($user, $weekStart, $weekEnd),
-            'tickets_completed' => $this->getTicketsCompleted($user, $weekStart, $weekEnd),
-            'status_changes' => $this->getStatusChanges($user, $weekStart, $weekEnd),
-            'hours_logged' => $this->getHoursLogged($user, $weekStart, $weekEnd),
+            'tickets_updated' => $ticketsUpdated,
+            'tickets_completed' => $ticketsCompleted,
+            'status_changes' => $statusChanges,
+            'hours_logged' => $hoursLogged,
+            'progress_summary' => [
+                'total_tickets_touched' => $totalUpdated,
+                'tickets_completed' => $totalCompleted,
+                'completion_rate' => $totalUpdated > 0 ? round(($totalCompleted / $totalUpdated) * 100, 1) : 0,
+                'status_changes_count' => count($statusChanges),
+                'total_hours' => $hoursLogged['total_hours'] ?? 0,
+                'projects_worked' => count($projectBreakdown),
+            ],
+            'status_breakdown' => $statusBreakdown,
+            'project_breakdown' => $projectBreakdown,
+            'type_breakdown' => $typeBreakdown,
+            'priority_breakdown' => $priorityBreakdown,
         ];
     }
 
     public function formatSummaryAsMarkdown(array $autoSummary): string
     {
         $md = '';
+        $progress = $autoSummary['progress_summary'] ?? [];
+
+        // Executive Summary
+        if (!empty($progress) && $progress['total_tickets_touched'] > 0) {
+            $md .= '<h2>Weekly Progress Summary</h2>';
+            $md .= '<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+            $md .= '<tr><td>Total Tickets Touched</td><td>' . $progress['total_tickets_touched'] . '</td></tr>';
+            $md .= '<tr><td>Tickets Completed</td><td>' . $progress['tickets_completed'] . '</td></tr>';
+            $md .= '<tr><td>Completion Rate</td><td>' . $progress['completion_rate'] . '%</td></tr>';
+            $md .= '<tr><td>Status Changes</td><td>' . $progress['status_changes_count'] . '</td></tr>';
+            $md .= '<tr><td>Hours Logged</td><td>' . $progress['total_hours'] . 'h</td></tr>';
+            $md .= '<tr><td>Projects Worked</td><td>' . $progress['projects_worked'] . '</td></tr>';
+            $md .= '</tbody></table>';
+        }
 
         // Tickets Completed
         $completed = $autoSummary['tickets_completed'] ?? [];
         if (!empty($completed)) {
-            $md .= "<h3>Tickets Completed ({$this->count($completed)})</h3><ul>";
+            $md .= "<h3>Tickets Completed (" . count($completed) . ")</h3><ul>";
             foreach (array_slice($completed, 0, 50) as $ticket) {
                 $md .= "<li><strong>{$ticket['code']}</strong> — {$ticket['name']} ({$ticket['project_name']})</li>";
             }
@@ -47,19 +113,9 @@ class WeeklyReportService
         // Tickets Updated
         $updated = $autoSummary['tickets_updated'] ?? [];
         if (!empty($updated)) {
-            $md .= "<h3>Tickets Updated ({$this->count($updated)})</h3><ul>";
+            $md .= "<h3>Tickets Updated (" . count($updated) . ")</h3><ul>";
             foreach (array_slice($updated, 0, 50) as $ticket) {
                 $md .= "<li><strong>{$ticket['code']}</strong> — {$ticket['name']} [{$ticket['status']}]</li>";
-            }
-            $md .= '</ul>';
-        }
-
-        // Status Changes
-        $changes = $autoSummary['status_changes'] ?? [];
-        if (!empty($changes)) {
-            $md .= "<h3>Status Changes ({$this->count($changes)})</h3><ul>";
-            foreach (array_slice($changes, 0, 50) as $change) {
-                $md .= "<li><strong>{$change['ticket_code']}</strong> — {$change['from_status']} → {$change['to_status']}</li>";
             }
             $md .= '</ul>';
         }
@@ -93,7 +149,7 @@ class WeeklyReportService
                   ->orWhere('responsible_id', $user->id);
             })
             ->whereBetween('updated_at', [$weekStart, $weekEnd])
-            ->with(['project', 'status'])
+            ->with(['project', 'status', 'type', 'priority'])
             ->limit(100)
             ->get()
             ->map(fn ($ticket) => [
@@ -102,6 +158,10 @@ class WeeklyReportService
                 'name' => $ticket->name,
                 'project_name' => $ticket->project?->name ?? 'N/A',
                 'status' => $ticket->status?->name ?? 'N/A',
+                'status_color' => $ticket->status?->color ?? '#6b7280',
+                'type' => $ticket->type?->name ?? 'N/A',
+                'priority' => $ticket->priority?->name ?? 'N/A',
+                'priority_color' => $ticket->priority?->color ?? '#6b7280',
             ])
             ->toArray();
     }
@@ -161,10 +221,5 @@ class WeeklyReportService
                 'comment' => $entry->comment ?? '',
             ])->toArray(),
         ];
-    }
-
-    private function count(array $items): int
-    {
-        return count($items);
     }
 }

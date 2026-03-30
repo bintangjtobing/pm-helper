@@ -76,8 +76,15 @@ class WeeklyReportResource extends Resource
             ->schema([
                 Forms\Components\Card::make()
                     ->schema([
-                        Forms\Components\Grid::make(2)
+                        Forms\Components\Grid::make(3)
                             ->schema([
+                                Forms\Components\DatePicker::make('week_start')
+                                    ->label(__('Week of'))
+                                    ->helperText(__('Select any Monday to report on that week'))
+                                    ->default(now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y-m-d'))
+                                    ->required()
+                                    ->reactive(),
+
                                 Forms\Components\Select::make('project_id')
                                     ->label(__('Project'))
                                     ->helperText(__('Optional — leave empty for a general report'))

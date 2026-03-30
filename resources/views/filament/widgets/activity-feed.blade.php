@@ -114,6 +114,21 @@
                             </div>
                         </div>
                         @endif
+
+                        @if($item['type'] === 'weekly_report')
+                        <div class="p-2 mt-2 bg-white rounded dark:bg-gray-900 border-l-3 border-blue-500">
+                            <div class="flex items-center gap-2 text-xs">
+                                <svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                                </svg>
+                                <span class="text-gray-700 dark:text-gray-300">{{ $item['data']['project_name'] }}</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium {{ $item['data']['status'] === 'acknowledged' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' }}">
+                                    {{ ucfirst($item['data']['status']) }}
+                                </span>
+                                <a href="{{ route('filament.resources.weekly-reports.view', $item['id']) }}" class="ml-auto text-xs font-medium text-primary-500 hover:underline">{{ __('View') }}</a>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
                 @empty
