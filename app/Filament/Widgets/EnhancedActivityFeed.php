@@ -129,7 +129,6 @@ class EnhancedActivityFeed extends BaseWidget
         return [
             Tables\Columns\TextColumn::make('activity_info')
                 ->label('Activity')
-                ->extraAttributes(['style' => 'max-width: none !important; min-width: 100%;'])
                 ->formatStateUsing(function ($state, $record) {
                     // Load relationships manually karena union query
                     $user = \App\Models\User::find($record->user_id);

@@ -166,6 +166,10 @@ class AppServiceProvider extends ServiceProvider
                 html.dark details { background-color: #1f2937 !important; }
                 html.dark details[open] { background-color: #374151 !important; }
                 html.dark details summary { color: #9ca3af !important; }
+
+                /* Activity feed: force full width column */
+                .filament-tables-text-column { max-width: none !important; }
+                .filament-tables-column-wrapper { max-width: none !important; }
             </style>'
         );
         // Configure application
