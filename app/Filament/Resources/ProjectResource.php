@@ -223,12 +223,12 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('cover')
+                Tables\Columns\SpatieMediaLibraryImageColumn::make('cover')
                     ->label(__('Cover image'))
-                    ->formatStateUsing(fn($state) => new HtmlString('
-                            <div style=\'background-image: url("' . $state . '")\'
-                                 class="w-8 h-8 bg-center bg-no-repeat bg-cover"></div>
-                        ')),
+                    ->collection('cover')
+                    ->rounded()
+                    ->width(40)
+                    ->height(40),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label(__('Project name'))

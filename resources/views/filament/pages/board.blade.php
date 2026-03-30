@@ -9,8 +9,9 @@
 
                 {{-- Project Header/Cover --}}
                 <div class="relative h-32 overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600">
-                    @if($project->cover)
-                    <img src="{{ $project->cover }}" alt="{{ $project->name }}" class="object-cover w-full h-full">
+                    @php($coverUrl = $project->getFirstMediaUrl('cover'))
+                    @if($coverUrl)
+                    <img src="{{ $coverUrl }}" alt="{{ $project->name }}" class="object-cover w-full h-full">
                     @endif
                     <div class="absolute inset-0 bg-black bg-opacity-20"></div>
 

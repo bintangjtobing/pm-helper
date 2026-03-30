@@ -29,7 +29,7 @@ class Board extends Page
             ->orWhereHas('users', function ($query) {
                 return $query->where('users.id', auth()->user()->id);
             })
-            ->with(['status', 'owner']) // Load relationships for better performance
+            ->with(['status', 'owner', 'media']) // Load relationships for better performance
             ->get();
     }
 
