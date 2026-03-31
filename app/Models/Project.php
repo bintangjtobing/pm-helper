@@ -17,7 +17,7 @@ class Project extends Model implements HasMedia
     use HasFactory, SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
-        'name', 'description', 'status_id', 'owner_id', 'ticket_prefix',
+        'name', 'description', 'goals', 'status_id', 'owner_id', 'ticket_prefix',
         'status_type', 'type', 'auto_complete_enabled', 'auto_complete_days',
         'auto_complete_from_status', 'auto_complete_to_status'
     ];
@@ -105,6 +105,15 @@ class Project extends Model implements HasMedia
                 return $users->unique('id');
             }
         );
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover')
+            ->singleFile();
+
+        $this->addMediaCollection('documents')
+            ->acceptsMimeTypes(['application/pdf']);
     }
 
     public function cover(): Attribute

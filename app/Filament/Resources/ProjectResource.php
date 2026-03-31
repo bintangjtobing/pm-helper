@@ -146,6 +146,33 @@ class ProjectResource extends Resource
                             ]),
                     ]),
 
+                // Project Knowledge Base
+                Forms\Components\Card::make()
+                    ->schema([
+                        Forms\Components\Placeholder::make('knowledge_base_heading')
+                            ->label('')
+                            ->content(new HtmlString('
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-medium text-gray-900">' . __('Project Knowledge Base') . '</h3>
+                                    <p class="text-sm text-gray-600">' . __('Define project goals, requirements, and upload supporting documents. The PM Assistant bot will use this information to provide better assistance.') . '</p>
+                                </div>
+                            ')),
+
+                        Forms\Components\RichEditor::make('goals')
+                            ->label(__('Project Goals & Requirements'))
+                            ->helperText(__('Define what this project aims to achieve, key requirements, acceptance criteria, and important notes. The AI assistant will use this as context.'))
+                            ->columnSpan(2),
+
+                        Forms\Components\SpatieMediaLibraryFileUpload::make('documents')
+                            ->label(__('Supporting Documents (PDF)'))
+                            ->collection('documents')
+                            ->multiple()
+                            ->acceptedFileTypes(['application/pdf'])
+                            ->maxSize(51200) // 50MB
+                            ->helperText(__('Upload PDF documents (PRD, specs, designs, etc.). Max 50MB per file. The AI assistant will read these documents.'))
+                            ->columnSpan(2),
+                    ]),
+
                 // Auto Complete Settings Card
                 Forms\Components\Card::make()
                     ->schema([

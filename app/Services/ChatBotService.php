@@ -7,8 +7,10 @@ use App\Models\ChatMessage;
 use App\Models\CustomerFeedback;
 use App\Models\Project;
 use App\Models\Ticket;
+use App\Models\WeeklyReport;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ChatBotService
 {
@@ -213,28 +215,102 @@ class ChatBotService
         $roles = $user->roles->pluck('name')->implode(', ') ?: 'User';
         $lang = $conversation->language === 'id' ? 'Bahasa Indonesia' : 'English';
 
+        // Load projects with tickets, media, and status
         $projects = Project::where('owner_id', $user->id)
             ->orWhereHas('users', fn($q) => $q->where('users.id', $user->id))
-            ->with(['status', 'tickets' => fn($q) => $q->with(['status', 'priority', 'responsible'])->latest()->limit(50)])
+            ->with([
+                'status',
+                'media',
+                'tickets' => fn($q) => $q->with(['status', 'priority', 'responsible', 'epic'])->latest()->limit(60),
+            ])
             ->get();
 
         $projectContext = '';
+        $pdfExtractor = new PdfExtractorService();
+
         foreach ($projects as $project) {
             $desc = strip_tags($project->description ?? '');
-            $projectContext .= "\n\nProject: {$project->name}";
-            $projectContext .= "\n  Status: " . ($project->status->name ?? 'N/A');
-            $projectContext .= "\n  Type: " . ucfirst($project->type ?? 'kanban');
-            if ($desc) {
-                $projectContext .= "\n  Description: " . \Illuminate\Support\Str::limit($desc, 200);
-            }
-            $projectContext .= "\n  Tickets (" . $project->tickets->count() . " shown):";
+            $goals = strip_tags($project->goals ?? '');
 
+            $projectContext .= "\n\n===== PROJECT: {$project->name} =====";
+            $projectContext .= "\nStatus: " . ($project->status->name ?? 'N/A');
+            $projectContext .= "\nType: " . ucfirst($project->type ?? 'kanban');
+
+            if ($desc) {
+                $projectContext .= "\nDescription: " . Str::limit($desc, 300);
+            }
+
+            // Project Goals
+            if ($goals) {
+                $projectContext .= "\n\nPROJECT GOALS & REQUIREMENTS:";
+                $projectContext .= "\n" . Str::limit($goals, 2000);
+            }
+
+            // Project Documents (PDF text)
+            $documents = $project->getMedia('documents');
+            if ($documents->count() > 0) {
+                $projectContext .= "\n\nPROJECT DOCUMENTS:";
+                foreach ($documents as $doc) {
+                    $projectContext .= "\n--- Document: {$doc->file_name} ({$doc->human_readable_size}) ---";
+                    $text = $pdfExtractor->extractFromMedia($doc, 3000);
+                    $projectContext .= "\n" . $text;
+                }
+            }
+
+            // Tickets
+            $totalTickets = $project->tickets->count();
+            $projectContext .= "\n\nTICKETS ({$totalTickets} shown):";
             foreach ($project->tickets as $ticket) {
                 $assignee = $ticket->responsible->name ?? 'Unassigned';
                 $status = $ticket->status->name ?? 'Unknown';
                 $priority = $ticket->priority->name ?? 'Normal';
+                $epic = $ticket->epic->name ?? '-';
                 $due = $ticket->due_date ? $ticket->due_date->format('Y-m-d') : '-';
-                $projectContext .= "\n    [{$ticket->code}] {$ticket->name} | {$status} | {$priority} | {$assignee} | Due: {$due}";
+                $desc = Str::limit(strip_tags($ticket->content ?? ''), 100);
+                $projectContext .= "\n  [{$ticket->code}] {$ticket->name}";
+                $projectContext .= "\n    Status: {$status} | Priority: {$priority} | Assignee: {$assignee} | Epic: {$epic} | Due: {$due}";
+                if ($desc && $desc !== '-') {
+                    $projectContext .= "\n    Summary: {$desc}";
+                }
+            }
+        }
+
+        // Weekly Reports (last 4 weeks across all projects)
+        $weeklyReports = WeeklyReport::where('user_id', $user->id)
+            ->orWhereHas('project', function ($q) use ($user) {
+                $q->where('owner_id', $user->id)
+                    ->orWhereHas('users', fn($q2) => $q2->where('users.id', $user->id));
+            })
+            ->with(['user', 'project', 'media'])
+            ->orderByDesc('week_start')
+            ->limit(8)
+            ->get();
+
+        $weeklyContext = '';
+        if ($weeklyReports->count() > 0) {
+            $weeklyContext .= "\n\n===== WEEKLY REPORTS =====";
+            foreach ($weeklyReports as $report) {
+                $weeklyContext .= "\n\n--- Week: {$report->week_start->format('Y-m-d')} to {$report->week_end->format('Y-m-d')} ---";
+                $weeklyContext .= "\nAuthor: " . ($report->user->name ?? 'Unknown');
+                $weeklyContext .= "\nProject: " . ($report->project->name ?? 'General');
+                $weeklyContext .= "\nStatus: {$report->status}";
+
+                if ($report->content) {
+                    $weeklyContext .= "\nContent: " . Str::limit(strip_tags($report->content), 500);
+                }
+
+                if ($report->auto_summary && is_array($report->auto_summary)) {
+                    $weeklyContext .= "\nAuto Summary: " . json_encode($report->auto_summary);
+                }
+
+                // Weekly report PDF attachments
+                $attachments = $report->getMedia('attachments');
+                foreach ($attachments as $att) {
+                    if (strtolower($att->mime_type) === 'application/pdf') {
+                        $text = $pdfExtractor->extractFromMedia($att, 2000);
+                        $weeklyContext .= "\nAttachment ({$att->file_name}): {$text}";
+                    }
+                }
             }
         }
 
@@ -244,11 +320,23 @@ You MUST respond in {$lang}.
 IMPORTANT RULES:
 - Never use em dashes in your responses. Use hyphens (-), commas, or periods instead.
 - Be informative, clear, and helpful.
-- Format responses with short paragraphs. Use bullet points for lists.
+- Use markdown formatting for readability (bold, lists, etc.).
+- When comparing goals vs tickets, analyze coverage gaps and progress.
 
 Current User: {$user->name}
 Role: {$roles}
 {$projectContext}
+{$weeklyContext}
+
+CAPABILITIES:
+You have access to project goals, uploaded documents (PDFs), ticket details, and weekly reports.
+You can:
+- Answer questions about project status, goals, and requirements
+- Compare project goals against existing tickets to find gaps
+- Summarize document contents and weekly reports
+- Suggest task priorities based on goals and deadlines
+- Identify tickets that may be at risk (overdue, unassigned, etc.)
+- Submit customer feedback and feature requests
 
 FEEDBACK HANDLING:
 When the user shares feedback, suggestions, bug reports, or feature requests:
@@ -258,13 +346,6 @@ When the user shares feedback, suggestions, bug reports, or feature requests:
 4. Always ask the user for confirmation before creating feedback.
 5. Feedback is created with 'pending' status - a project manager must approve before any ticket is created.
 6. If feedback relates to a specific ticket, include the ticket code in related_ticket_code.
-
-You can help users with:
-- Understanding project status and ticket details
-- Suggesting task priorities
-- Answering questions about the project workflow
-- Submitting customer feedback and feature requests
-- General project management guidance
 PROMPT;
     }
 

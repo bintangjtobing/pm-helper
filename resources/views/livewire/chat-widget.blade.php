@@ -228,6 +228,44 @@
         .chat-msg-assistant .chat-msg-time {
             text-align: left;
         }
+        .chat-msg-bubble p { margin: 0 0 8px 0; }
+        .chat-msg-bubble p:last-child { margin-bottom: 0; }
+        .chat-msg-bubble strong { font-weight: 600; color: #ffffff; }
+        .chat-msg-assistant .chat-msg-bubble strong { color: #f3f4f6; }
+        .chat-msg-bubble em { font-style: italic; }
+        .chat-msg-bubble ul, .chat-msg-bubble ol {
+            margin: 6px 0;
+            padding-left: 20px;
+        }
+        .chat-msg-bubble li { margin-bottom: 4px; }
+        .chat-msg-bubble ol { list-style-type: decimal; }
+        .chat-msg-bubble ul { list-style-type: disc; }
+        .chat-msg-bubble code {
+            background: rgba(0,0,0,0.3);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .chat-msg-bubble a {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+        .chat-msg-bubble h1, .chat-msg-bubble h2, .chat-msg-bubble h3,
+        .chat-msg-bubble h4, .chat-msg-bubble h5, .chat-msg-bubble h6 {
+            font-weight: 600;
+            margin: 8px 0 4px 0;
+            color: #f3f4f6;
+        }
+        .chat-msg-bubble h1 { font-size: 16px; }
+        .chat-msg-bubble h2 { font-size: 15px; }
+        .chat-msg-bubble h3 { font-size: 14px; }
+        .chat-msg-bubble blockquote {
+            border-left: 3px solid #4b5563;
+            padding-left: 10px;
+            margin: 6px 0;
+            color: #9ca3af;
+        }
         .chat-msg-meta {
             margin-top: 8px;
             padding: 8px 10px;
@@ -401,7 +439,7 @@
                     @endif
                     <div>
                         <div class="chat-msg-bubble">
-                            {!! nl2br(e($msg['content'])) !!}
+                            {!! \Illuminate\Support\Str::markdown($msg['content'], ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
                             @if(!empty($msg['metadata']))
                                 <div class="chat-msg-meta">
                                     @if(($msg['metadata']['type'] ?? '') === 'feedback_created')
