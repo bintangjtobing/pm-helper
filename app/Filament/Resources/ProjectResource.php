@@ -158,18 +158,58 @@ class ProjectResource extends Resource
                                 </div>
                             ')),
 
-                        Forms\Components\RichEditor::make('goals')
-                            ->label(__('Project Goals & Requirements'))
-                            ->helperText(__('Define what this project aims to achieve, key requirements, acceptance criteria, and important notes. The AI assistant will use this as context.'))
-                            ->columnSpan(2),
-
                         Forms\Components\SpatieMediaLibraryFileUpload::make('documents')
                             ->label(__('Supporting Documents (PDF)'))
                             ->collection('documents')
                             ->multiple()
                             ->acceptedFileTypes(['application/pdf'])
                             ->maxSize(51200) // 50MB
+                            ->enableOpen()
+                            ->enableDownload()
                             ->helperText(__('Upload PDF documents (PRD, specs, designs, etc.). Max 50MB per file. The AI assistant will read these documents.'))
+                            ->columnSpan(2),
+
+                        Forms\Components\Placeholder::make('generate_goals_btn')
+                            ->label('')
+                            ->content(new HtmlString('
+                                <button type="button"
+                                    wire:click="generateGoalsFromDocuments"
+                                    wire:loading.attr="disabled"
+                                    wire:target="generateGoalsFromDocuments"
+                                    style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;
+                                           background:#2563eb;color:white;border:none;border-radius:8px;
+                                           font-size:13px;font-weight:500;cursor:pointer;transition:background 0.15s;"
+                                    onmouseover="this.style.background=\'#1d4ed8\'"
+                                    onmouseout="this.style.background=\'#2563eb\'">
+                                    <span wire:loading.remove wire:target="generateGoalsFromDocuments">
+                                        <svg style="width:16px;height:16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                        </svg>
+                                    </span>
+                                    <span wire:loading wire:target="generateGoalsFromDocuments">
+                                        <svg style="width:16px;height:16px;animation:spin 1s linear infinite;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                        </svg>
+                                    </span>
+                                    <span wire:loading.remove wire:target="generateGoalsFromDocuments">'
+                                        . __('Generate Goals from Documents (AI)') .
+                                    '</span>
+                                    <span wire:loading wire:target="generateGoalsFromDocuments">'
+                                        . __('Analyzing documents...') .
+                                    '</span>
+                                </button>
+                                <style>@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}</style>
+                                <p style="margin-top:6px;font-size:12px;color:#9ca3af;">'
+                                    . __('AI will read all uploaded PDFs and auto-generate goals and requirements summary.') .
+                                '</p>
+                            '))
+                            ->visibleOn('edit'),
+
+                        Forms\Components\RichEditor::make('goals')
+                            ->label(__('Project Goals & Requirements'))
+                            ->helperText(__('Auto-generated from documents or manually defined. The AI assistant uses this as context.'))
                             ->columnSpan(2),
                     ]),
 
