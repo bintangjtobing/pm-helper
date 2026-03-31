@@ -55,6 +55,10 @@ return [
         'redirect' => env('TWITTER_CLIENT_CALLBACK')
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+    ],
+
     'oidc' => [
         'is_enabled' => true,
         'client_id' => env('OIDC_CLIENT_ID'),

@@ -285,6 +285,14 @@ class AppServiceProvider extends ServiceProvider
 
         Blade::component('user-avatar', \App\View\Components\UserAvatar::class);
 
+        // Chat Bot Widget - inject on every page
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => auth()->check()
+                ? Blade::render('@livewire("chat-widget")')
+                : '',
+        );
+
         // Override Filament config for user avatar (for Filament v2)
         config(['filament.user.avatar' => function ($user) {
             return $user->avatar_url ?: null;
