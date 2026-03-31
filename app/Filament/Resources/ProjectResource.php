@@ -159,14 +159,50 @@ class ProjectResource extends Resource
                             ')),
 
                         Forms\Components\SpatieMediaLibraryFileUpload::make('documents')
-                            ->label(__('Supporting Documents (PDF)'))
+                            ->label(__('Upload Documents (PDF)'))
                             ->collection('documents')
                             ->multiple()
                             ->acceptedFileTypes(['application/pdf'])
                             ->maxSize(51200) // 50MB
-                            ->enableOpen()
-                            ->enableDownload()
-                            ->helperText(__('Upload PDF documents (PRD, specs, designs, etc.). Max 50MB per file. The AI assistant will read these documents.'))
+                            ->preserveFilenames()
+                            ->helperText(__('Upload PDF documents (PRD, specs, designs, etc.). Max 50MB per file.'))
+                            ->columnSpan(2),
+
+                        Forms\Components\Placeholder::make('document_list')
+                            ->label(__('Uploaded Documents'))
+                            ->visibleOn('edit')
+                            ->content(function ($record) {
+                                if (!$record) return new HtmlString('<span style="color:#6b7280;font-size:13px;">No documents yet.</span>');
+                                $docs = $record->getMedia('documents');
+                                if ($docs->isEmpty()) return new HtmlString('<span style="color:#6b7280;font-size:13px;">No documents uploaded.</span>');
+
+                                $html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                                foreach ($docs as $doc) {
+                                    $url = $doc->getUrl();
+                                    $name = e($doc->file_name);
+                                    $size = $doc->human_readable_size;
+                                    $html .= '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'
+                                        . 'background:rgba(31,41,55,0.5);border:1px solid rgba(55,65,81,0.5);border-radius:8px;">'
+                                        . '<svg style="width:20px;height:20px;color:#ef4444;flex-shrink:0;" fill="currentColor" viewBox="0 0 20 20">'
+                                        . '<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>'
+                                        . '</svg>'
+                                        . '<div style="flex:1;min-width:0;">'
+                                        . '<div style="font-size:13px;font-weight:500;color:#f3f4f6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' . $name . '</div>'
+                                        . '<div style="font-size:11px;color:#9ca3af;">' . $size . '</div>'
+                                        . '</div>'
+                                        . '<a href="' . e($url) . '" target="_blank" rel="noopener"'
+                                        . ' style="padding:5px 12px;background:#2563eb;color:white;border-radius:6px;'
+                                        . 'font-size:12px;font-weight:500;text-decoration:none;white-space:nowrap;">'
+                                        . __('View') . '</a>'
+                                        . '<a href="' . e($url) . '" download'
+                                        . ' style="padding:5px 12px;background:#374151;color:#e5e7eb;border-radius:6px;'
+                                        . 'font-size:12px;font-weight:500;text-decoration:none;white-space:nowrap;">'
+                                        . __('Download') . '</a>'
+                                        . '</div>';
+                                }
+                                $html .= '</div>';
+                                return new HtmlString($html);
+                            })
                             ->columnSpan(2),
 
                         Forms\Components\Placeholder::make('generate_goals_btn')
