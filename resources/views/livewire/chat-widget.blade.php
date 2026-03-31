@@ -1,5 +1,9 @@
 <div>
     <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         @keyframes chatBotBounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-6px); }
@@ -476,16 +480,27 @@
                    class="chat-input"
                    wire:model.defer="message"
                    wire:keydown.enter="sendMessage"
+                   wire:loading.attr="disabled"
+                   wire:target="sendMessage"
                    placeholder="{{ $language === 'id' ? 'Ketik pesan...' : 'Type a message...' }}"
                    {{ $isLoading ? 'disabled' : '' }}
                    autocomplete="off">
             <button class="chat-send-btn"
                     wire:click="sendMessage"
                     wire:loading.attr="disabled"
+                    wire:target="sendMessage"
                     {{ $isLoading ? 'disabled' : '' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                </svg>
+                <span wire:loading.remove wire:target="sendMessage">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </span>
+                <span wire:loading wire:target="sendMessage">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         style="animation:spin 1s linear infinite;">
+                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </span>
             </button>
         </div>
         @endif
