@@ -170,7 +170,6 @@ class ProjectResource extends Resource
 
                         Forms\Components\Placeholder::make('document_list')
                             ->label(__('Uploaded Documents'))
-                            ->visibleOn('edit')
                             ->content(function ($record) {
                                 if (!$record) return new HtmlString('<span style="color:#6b7280;font-size:13px;">No documents yet.</span>');
                                 $docs = $record->getMedia('documents');
