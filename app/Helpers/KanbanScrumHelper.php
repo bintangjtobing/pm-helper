@@ -330,7 +330,13 @@ trait KanbanScrumHelper
 
     protected function formatProjectDescription(string $description): string
     {
-        $lines = preg_split('/\r?\n/', trim($description));
+        // Convert HTML to plain text with newlines preserved
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $description);
+        $text = preg_replace('/<\/(?:p|div|li|h[1-6])>/i', "\n", $text);
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+
+        $lines = preg_split('/\r?\n/', trim($text));
         $items = [];
         $i = 0;
 
