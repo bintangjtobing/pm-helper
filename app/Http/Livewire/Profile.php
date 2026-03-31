@@ -90,9 +90,7 @@ class Profile extends BaseProfile
         $localeField = Forms\Components\Select::make('locale')
             ->label(__('Language'))
             ->placeholder(__('Use system default'))
-            ->options(collect(config('system.locales'))->mapWithKeys(function ($locale) {
-                return [$locale['id'] => $locale['name']];
-            })->toArray())
+            ->options(config('system.locales.list', []))
             ->searchable()
             ->helperText(__('Choose your preferred language. Leave empty to use the system default.'));
 
