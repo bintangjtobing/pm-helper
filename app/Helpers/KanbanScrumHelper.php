@@ -376,40 +376,24 @@ trait KanbanScrumHelper
         }
 
         if (empty($items)) {
-            return '<span class="text-sm text-gray-400">Manage your project tickets with drag &amp; drop</span>';
+            return '<span style="font-size:0.875rem;color:#9ca3af;">Manage your project tickets with drag &amp; drop</span>';
         }
 
-        // Icon SVGs
-        $icons = [
-            'link' => '<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>',
-            'doc' => '<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
-            'globe' => '<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>',
-            'code' => '<svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>',
-        ];
-
-        $html = '<div class="flex flex-wrap gap-2 mt-1">';
+        $html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">';
         foreach ($items as $item) {
             if (!$item['url']) continue;
 
-            // Pick icon based on URL/label
-            $url = $item['url'];
+            $url = e($item['url']);
             $label = e($item['label']);
-            if (stripos($url, 'docs.google.com') !== false) {
-                $icon = $icons['doc'];
-            } elseif (stripos($url, '/docs/api') !== false || stripos($label, 'api') !== false) {
-                $icon = $icons['code'];
-            } elseif (stripos($label, 'staging') !== false || stripos($label, 'frontend') !== false || stripos($label, 'dashboard') !== false) {
-                $icon = $icons['globe'];
-            } else {
-                $icon = $icons['link'];
-            }
 
-            $html .= '<a href="' . e($url) . '" target="_blank" rel="noopener"'
-                . ' class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md'
-                . ' bg-gray-700/50 text-primary-400 hover:text-primary-300 hover:bg-gray-700'
-                . ' border border-gray-600/50 transition-colors duration-150">'
-                . $icon . $label
-                . '<svg class="w-2.5 h-2.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>'
+            $html .= '<a href="' . $url . '" target="_blank" rel="noopener"'
+                . ' style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;'
+                . 'font-size:12px;font-weight:500;border-radius:6px;'
+                . 'background:rgba(55,65,81,0.5);color:#60a5fa;'
+                . 'border:1px solid rgba(75,85,99,0.5);text-decoration:none;"'
+                . ' onmouseover="this.style.background=\'rgba(55,65,81,0.8)\';this.style.color=\'#93bbfd\'"'
+                . ' onmouseout="this.style.background=\'rgba(55,65,81,0.5)\';this.style.color=\'#60a5fa\'">'
+                . $label . ' &#8599;'
                 . '</a>';
         }
         $html .= '</div>';
