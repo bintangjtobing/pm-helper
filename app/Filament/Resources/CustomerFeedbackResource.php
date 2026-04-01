@@ -13,6 +13,7 @@ use App\Models\TicketPriority;
 use App\Models\User;
 use App\Notifications\FeedbackConverted;
 use App\Notifications\FeedbackUpdated;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -156,6 +157,48 @@ class CustomerFeedbackResource extends Resource
                             ]),
                     ]),
 
+                // Proposed Changes Preview
+                Forms\Components\Card::make()
+                    ->schema([
+                        Forms\Components\Placeholder::make('proposed_changes_preview')
+                            ->label('')
+                            ->content(function ($record) {
+                                if (!$record || !$record->change_type || !$record->proposed_data) return '';
+
+                                $type = $record->change_type === 'project_description'
+                                    ? __('Project Description')
+                                    : __('Project Goals & Requirements');
+                                $data = $record->proposed_data;
+
+                                $html = '<div style="margin-bottom:16px;">'
+                                    . '<h3 style="font-size:16px;font-weight:600;margin-bottom:4px;">'
+                                    . __('Proposed Changes') . ': ' . e($type) . '</h3>'
+                                    . '<p style="font-size:12px;color:#9ca3af;">Submitted by stakeholder for approval</p>'
+                                    . '</div>';
+
+                                $html .= '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">';
+
+                                // Current value
+                                $html .= '<div>'
+                                    . '<div style="font-size:12px;font-weight:600;color:#ef4444;margin-bottom:6px;">' . __('Current') . '</div>'
+                                    . '<div style="padding:12px;background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:13px;max-height:300px;overflow-y:auto;">'
+                                    . ($data['old_value'] ?: '<em style="color:#6b7280;">Empty</em>')
+                                    . '</div></div>';
+
+                                // Proposed value
+                                $html .= '<div>'
+                                    . '<div style="font-size:12px;font-weight:600;color:#22c55e;margin-bottom:6px;">' . __('Proposed') . '</div>'
+                                    . '<div style="padding:12px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.2);border-radius:8px;font-size:13px;max-height:300px;overflow-y:auto;">'
+                                    . ($data['new_value'] ?: '<em style="color:#6b7280;">Empty</em>')
+                                    . '</div></div>';
+
+                                $html .= '</div>';
+
+                                return new HtmlString($html);
+                            })
+                    ])
+                    ->visible(fn ($record) => $record?->change_type && $record?->proposed_data),
+
                 // Activity Log Card - Hanya tampil di edit/view
                 Forms\Components\Card::make()
                     ->schema([
@@ -215,6 +258,17 @@ class CustomerFeedbackResource extends Resource
                         default => $state
                     })
                     ->sortable(),
+
+                Tables\Columns\BadgeColumn::make('change_type')
+                    ->label(__('Type'))
+                    ->enum([
+                        'project_description' => 'Description Change',
+                        'project_goals' => 'Goals Change',
+                    ])
+                    ->colors([
+                        'primary' => fn ($state) => $state !== null,
+                    ])
+                    ->default('-'),
 
                 Tables\Columns\TextColumn::make('convertedTicket.code')
                     ->label(__('Ticket Code'))
@@ -314,6 +368,80 @@ class CustomerFeedbackResource extends Resource
                         return redirect()->route('filament.resources.tickets.view', $ticket);
                     }),
 
+                Tables\Actions\Action::make('apply_changes')
+                    ->label(__('Apply Changes'))
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn ($record) =>
+                        $record->status === 'pending'
+                        && $record->change_type
+                        && $record->proposed_data
+                        && auth()->user()->hasRole(['Super Admin', 'Admin', 'Project Manager'])
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading(__('Apply Proposed Changes'))
+                    ->modalSubheading(fn ($record) => __('This will update the project :field with the stakeholder\'s proposed changes.', [
+                        'field' => $record->change_type === 'project_description' ? 'description' : 'goals'
+                    ]))
+                    ->action(function (CustomerFeedback $record) {
+                        $project = $record->project;
+                        $data = $record->proposed_data;
+
+                        if (!$project || !$data) return;
+
+                        $field = $data['field'] ?? null;
+                        $newValue = $data['new_value'] ?? null;
+
+                        if ($field && in_array($field, ['description', 'goals'])) {
+                            $project->update([$field => $newValue]);
+
+                            $record->update(['status' => 'converted_to_ticket']);
+
+                            CustomerFeedbackActivity::create([
+                                'feedback_id' => $record->id,
+                                'user_id' => auth()->id(),
+                                'action' => 'changes_applied',
+                                'notes' => 'Proposed changes applied to project ' . $field,
+                            ]);
+
+                            $record->user->notify(new FeedbackUpdated(
+                                $record,
+                                'Your proposed changes to the project ' . $field . ' have been approved and applied.'
+                            ));
+
+                            Filament::notify('success', __('Changes applied to project successfully.'));
+                        }
+                    }),
+
+                Tables\Actions\Action::make('reject_changes')
+                    ->label(__('Reject'))
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn ($record) =>
+                        $record->status === 'pending'
+                        && $record->change_type
+                        && auth()->user()->hasRole(['Super Admin', 'Admin', 'Project Manager'])
+                    )
+                    ->form([
+                        Forms\Components\Textarea::make('rejection_reason')
+                            ->label(__('Reason for Rejection'))
+                            ->required()
+                            ->rows(3),
+                    ])
+                    ->action(function (CustomerFeedback $record, array $data) {
+                        $record->update(['status' => 'rejected']);
+
+                        CustomerFeedbackActivity::create([
+                            'feedback_id' => $record->id,
+                            'user_id' => auth()->id(),
+                            'action' => 'rejected',
+                            'notes' => $data['rejection_reason'],
+                        ]);
+
+                        $record->user->notify(new FeedbackUpdated($record, 'Rejected: ' . $data['rejection_reason']));
+                        Filament::notify('success', __('Feedback rejected.'));
+                    }),
+
                 Tables\Actions\Action::make('add_note')
                     ->label(__('Add Note'))
                     ->icon('heroicon-o-annotation')
@@ -344,7 +472,9 @@ class CustomerFeedbackResource extends Resource
 
     public static function getRelations(): array
     {
-        return [];
+        return [
+            \App\Filament\Resources\CustomerFeedbackResource\RelationManagers\CommentsRelationManager::class,
+        ];
     }
 
     public static function getPages(): array

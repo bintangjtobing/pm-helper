@@ -31,6 +31,7 @@ class CustomerFeedbackActivity extends Model
             'converted_to_ticket' => 'Converted to Ticket',
             'rejected' => 'Feedback Rejected',
             'noted' => 'Note Added',
+            'changes_applied' => 'Proposed Changes Applied',
             default => ucfirst(str_replace('_', ' ', $this->action))
         };
     }

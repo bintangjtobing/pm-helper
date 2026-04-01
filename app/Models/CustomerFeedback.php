@@ -14,11 +14,12 @@ class CustomerFeedback extends Model
     protected $table = 'customer_feedbacks';
     protected $fillable = [
         'project_id', 'user_id', 'title', 'description',
-        'status', 'converted_ticket_id'
+        'status', 'converted_ticket_id', 'change_type', 'proposed_data'
     ];
 
     protected $casts = [
         'status' => 'string',
+        'proposed_data' => 'array',
     ];
 
     public static function boot()
@@ -63,6 +64,11 @@ class CustomerFeedback extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(CustomerFeedbackActivity::class, 'feedback_id');
+    }
+
+    public function comments(): HasMany
+    {
+        return $this->hasMany(CustomerFeedbackComment::class, 'feedback_id');
     }
 
     public function getStatusBadgeAttribute(): string
