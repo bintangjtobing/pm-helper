@@ -453,6 +453,10 @@
                                     @elseif(($msg['metadata']['type'] ?? '') === 'feedback_linked')
                                         {{ $language === 'id' ? 'Feedback ditautkan ke tiket' : 'Feedback linked to ticket' }}
                                         {{ $msg['metadata']['linked_ticket'] ?? '' }}
+                                    @elseif(($msg['metadata']['type'] ?? '') === 'change_suggested')
+                                        {{ $language === 'id' ? 'Perubahan diajukan' : 'Change request submitted' }}
+                                        - #{{ $msg['metadata']['feedback_id'] ?? '' }}
+                                        ({{ $language === 'id' ? 'menunggu persetujuan PM' : 'pending PM approval' }})
                                     @endif
                                 </div>
                             @endif

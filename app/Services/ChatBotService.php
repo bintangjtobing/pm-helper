@@ -100,6 +100,7 @@ class ChatBotService
             $result = match ($functionName) {
                 'create_customer_feedback' => $this->executeCreateFeedback($conversation, $arguments),
                 'link_feedback_to_ticket' => $this->executeLinkFeedback($conversation, $arguments),
+                'suggest_project_change' => $this->executeSuggestProjectChange($conversation, $arguments),
                 default => ['error' => 'Unknown function: ' . $functionName],
             };
 
@@ -116,6 +117,11 @@ class ChatBotService
             if (isset($result['linked_ticket'])) {
                 $metadata['linked_ticket'] = $result['linked_ticket'];
                 $metadata['type'] = 'feedback_linked';
+            }
+            if (isset($result['change_type'])) {
+                $metadata['feedback_id'] = $result['feedback_id'] ?? null;
+                $metadata['change_type'] = $result['change_type'];
+                $metadata['type'] = 'change_suggested';
             }
         }
 
@@ -206,6 +212,55 @@ class ChatBotService
             'feedback_id' => $feedback->id,
             'linked_ticket' => $ticketCode,
             'message' => 'Feedback linked to ticket ' . $ticketCode . ' and pending PM approval.',
+        ];
+    }
+
+    private function executeSuggestProjectChange(ChatConversation $conversation, array $args): array
+    {
+        $projectName = $args['project_name'] ?? '';
+        $field = $args['field'] ?? '';
+        $proposedContent = $args['proposed_content'] ?? '';
+        $reason = $args['reason'] ?? '';
+
+        if (!in_array($field, ['description', 'goals'])) {
+            return ['error' => 'Invalid field. Must be "description" or "goals".'];
+        }
+
+        $project = Project::where('name', 'like', '%' . $projectName . '%')->first();
+        if (!$project) {
+            $project = Project::where('owner_id', $conversation->user_id)
+                ->orWhereHas('users', fn($q) => $q->where('users.id', $conversation->user_id))
+                ->first();
+        }
+
+        if (!$project) {
+            return ['error' => 'No accessible project found.'];
+        }
+
+        $currentValue = $field === 'description' ? $project->description : $project->goals;
+        $changeType = $field === 'description' ? 'project_description' : 'project_goals';
+        $fieldLabel = $field === 'description' ? 'Description' : 'Goals & Requirements';
+
+        $feedback = CustomerFeedback::create([
+            'project_id' => $project->id,
+            'user_id' => $conversation->user_id,
+            'title' => $fieldLabel . ' Change Request - ' . $project->name,
+            'description' => $reason,
+            'status' => 'pending',
+            'change_type' => $changeType,
+            'proposed_data' => [
+                'field' => $field,
+                'old_value' => $currentValue,
+                'new_value' => $proposedContent,
+            ],
+        ]);
+
+        return [
+            'success' => true,
+            'feedback_id' => $feedback->id,
+            'change_type' => $changeType,
+            'project_name' => $project->name,
+            'message' => $fieldLabel . ' change request #' . $feedback->id . ' submitted for project: ' . $project->name . '. A Project Manager will review the proposed changes.',
         ];
     }
 
@@ -337,6 +392,7 @@ You can:
 - Suggest task priorities based on goals and deadlines
 - Identify tickets that may be at risk (overdue, unassigned, etc.)
 - Submit customer feedback and feature requests
+- Help users draft and submit changes to project description or goals
 
 FEEDBACK HANDLING:
 When the user shares feedback, suggestions, bug reports, or feature requests:
@@ -346,6 +402,16 @@ When the user shares feedback, suggestions, bug reports, or feature requests:
 4. Always ask the user for confirmation before creating feedback.
 5. Feedback is created with 'pending' status - a project manager must approve before any ticket is created.
 6. If feedback relates to a specific ticket, include the ticket code in related_ticket_code.
+
+PROJECT CHANGE SUGGESTIONS:
+When the user (especially Stakeholders) wants to change the project description or goals/requirements:
+1. Show them the CURRENT content of the field they want to change.
+2. Discuss what they want to change and why. Help them refine their proposed changes.
+3. Compare the current content with what they propose. Point out what is being added, removed, or modified.
+4. Collaborate with them to reach a final version they are happy with.
+5. Once the user confirms the final version, use the suggest_project_change function to submit it.
+6. The change will be submitted as a pending request for Project Manager approval.
+7. IMPORTANT: The proposed_content must be the COMPLETE new version of the field (not just the diff). It should be in HTML format suitable for a rich text editor.
 PROMPT;
     }
 
@@ -423,6 +489,36 @@ PROMPT;
                             ],
                         ],
                         'required' => ['ticket_code', 'feedback_note'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'suggest_project_change',
+                    'description' => 'Submit a proposed change to a project\'s description or goals/requirements. Use this after discussing and finalizing the changes with the user. The change will be submitted for Project Manager approval.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'project_name' => [
+                                'type' => 'string',
+                                'description' => 'The project name',
+                            ],
+                            'field' => [
+                                'type' => 'string',
+                                'enum' => ['description', 'goals'],
+                                'description' => 'Which field to change: "description" for project description, "goals" for project goals & requirements',
+                            ],
+                            'proposed_content' => [
+                                'type' => 'string',
+                                'description' => 'The COMPLETE new content for the field in HTML format. This replaces the entire field, not a partial update.',
+                            ],
+                            'reason' => [
+                                'type' => 'string',
+                                'description' => 'Summary of why this change is needed and what was discussed',
+                            ],
+                        ],
+                        'required' => ['project_name', 'field', 'proposed_content', 'reason'],
                     ],
                 ],
             ],
