@@ -25,7 +25,6 @@ class EditWeeklyReport extends EditRecord
                 ->label(__('Generate Report from Attachments (AI)'))
                 ->icon('heroicon-o-sparkles')
                 ->color('primary')
-                ->visible(fn () => $this->record->status === 'draft')
                 ->requiresConfirmation()
                 ->modalHeading(__('Generate Report Content'))
                 ->modalSubheading(__('AI will read your uploaded PDF attachments and combine with ticket activity data to generate comprehensive report notes.'))

@@ -142,15 +142,28 @@ class WeeklyReportService
         return $md;
     }
 
+    /**
+     * Get IDs of projects the user has access to.
+     */
+    private function getUserProjectIds(User $user): array
+    {
+        $owned = \App\Models\Project::where('owner_id', $user->id)->pluck('id');
+        $member = $user->projects()->pluck('projects.id');
+        return $owned->merge($member)->unique()->toArray();
+    }
+
     private function getTicketsUpdated(User $user, Carbon $weekStart, Carbon $weekEnd): array
     {
-        return Ticket::where(function ($q) use ($user) {
+        $projectIds = $this->getUserProjectIds($user);
+
+        return Ticket::where(function ($q) use ($user, $projectIds) {
                 $q->where('owner_id', $user->id)
-                  ->orWhere('responsible_id', $user->id);
+                  ->orWhere('responsible_id', $user->id)
+                  ->orWhereIn('project_id', $projectIds);
             })
             ->whereBetween('updated_at', [$weekStart, $weekEnd])
             ->with(['project', 'status', 'type', 'priority'])
-            ->limit(100)
+            ->limit(200)
             ->get()
             ->map(fn ($ticket) => [
                 'id' => $ticket->id,
@@ -168,13 +181,16 @@ class WeeklyReportService
 
     private function getTicketsCompleted(User $user, Carbon $weekStart, Carbon $weekEnd): array
     {
-        return Ticket::where(function ($q) use ($user) {
+        $projectIds = $this->getUserProjectIds($user);
+
+        return Ticket::where(function ($q) use ($user, $projectIds) {
                 $q->where('owner_id', $user->id)
-                  ->orWhere('responsible_id', $user->id);
+                  ->orWhere('responsible_id', $user->id)
+                  ->orWhereIn('project_id', $projectIds);
             })
             ->completedBetween($weekStart, $weekEnd)
             ->with(['project', 'status'])
-            ->limit(100)
+            ->limit(200)
             ->get()
             ->map(fn ($ticket) => [
                 'id' => $ticket->id,
@@ -187,11 +203,16 @@ class WeeklyReportService
 
     private function getStatusChanges(User $user, Carbon $weekStart, Carbon $weekEnd): array
     {
-        return TicketActivity::where('user_id', $user->id)
+        $projectIds = $this->getUserProjectIds($user);
+
+        return TicketActivity::where(function ($q) use ($user, $projectIds) {
+                $q->where('user_id', $user->id)
+                  ->orWhereHas('ticket', fn($tq) => $tq->whereIn('project_id', $projectIds));
+            })
             ->whereBetween('created_at', [$weekStart, $weekEnd])
             ->with(['ticket', 'oldStatus', 'newStatus'])
             ->validStatuses()
-            ->limit(100)
+            ->limit(200)
             ->get()
             ->map(fn ($activity) => [
                 'ticket_code' => $activity->ticket?->code ?? 'N/A',
