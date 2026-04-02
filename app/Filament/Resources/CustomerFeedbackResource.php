@@ -267,8 +267,7 @@ class CustomerFeedbackResource extends Resource
                     ])
                     ->colors([
                         'primary' => fn ($state) => $state !== null,
-                    ])
-                    ->default('-'),
+                    ]),
 
                 Tables\Columns\TextColumn::make('convertedTicket.code')
                     ->label(__('Ticket Code'))
