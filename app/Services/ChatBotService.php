@@ -345,20 +345,81 @@ class ChatBotService
         if ($weeklyReports->count() > 0) {
             $weeklyContext .= "\n\n===== WEEKLY REPORTS =====";
             foreach ($weeklyReports as $report) {
-                $weeklyContext .= "\n\n--- Week: {$report->week_start->format('Y-m-d')} to {$report->week_end->format('Y-m-d')} ---";
+                $weeklyContext .= "\n\n--- Weekly Report: {$report->week_start->format('Y-m-d')} to {$report->week_end->format('Y-m-d')} ---";
                 $weeklyContext .= "\nAuthor: " . ($report->user->name ?? 'Unknown');
                 $weeklyContext .= "\nProject: " . ($report->project->name ?? 'General');
-                $weeklyContext .= "\nStatus: {$report->status}";
+                $weeklyContext .= "\nReport Status: {$report->status}";
 
+                // Parse auto_summary into readable format
+                $summary = $report->auto_summary;
+                if ($summary && is_array($summary)) {
+                    // Progress metrics
+                    $progress = $summary['progress_summary'] ?? [];
+                    if ($progress) {
+                        $weeklyContext .= "\n\nProgress Metrics:";
+                        $weeklyContext .= "\n  Tickets Touched: " . ($progress['total_tickets_touched'] ?? 0);
+                        $weeklyContext .= "\n  Tickets Completed: " . ($progress['tickets_completed'] ?? 0);
+                        $weeklyContext .= "\n  Completion Rate: " . ($progress['completion_rate'] ?? 0) . '%';
+                        $weeklyContext .= "\n  Status Changes: " . ($progress['status_changes_count'] ?? 0);
+                        $weeklyContext .= "\n  Hours Logged: " . ($progress['total_hours'] ?? 0) . 'h';
+                        $weeklyContext .= "\n  Projects Worked: " . ($progress['projects_worked'] ?? 0);
+                    }
+
+                    // Tickets updated
+                    $ticketsUpdated = $summary['tickets_updated'] ?? [];
+                    if ($ticketsUpdated) {
+                        $weeklyContext .= "\n\nTickets Worked On:";
+                        foreach (array_slice($ticketsUpdated, 0, 20) as $t) {
+                            $weeklyContext .= "\n  [{$t['code']}] {$t['name']} - Status: {$t['status']}, Priority: {$t['priority']}";
+                        }
+                    }
+
+                    // Tickets completed
+                    $ticketsCompleted = $summary['tickets_completed'] ?? [];
+                    if ($ticketsCompleted) {
+                        $weeklyContext .= "\n\nTickets Completed:";
+                        foreach (array_slice($ticketsCompleted, 0, 20) as $t) {
+                            $weeklyContext .= "\n  [{$t['code']}] {$t['name']}";
+                        }
+                    }
+
+                    // Status changes
+                    $statusChanges = $summary['status_changes'] ?? [];
+                    if ($statusChanges) {
+                        $weeklyContext .= "\n\nStatus Changes:";
+                        foreach (array_slice($statusChanges, 0, 15) as $sc) {
+                            $weeklyContext .= "\n  {$sc['ticket_code']}: {$sc['from_status']} -> {$sc['to_status']} ({$sc['changed_at']})";
+                        }
+                    }
+
+                    // Hours logged
+                    $hours = $summary['hours_logged'] ?? [];
+                    if ($hours && ($hours['total_hours'] ?? 0) > 0) {
+                        $weeklyContext .= "\n\nTime Logged: {$hours['total_hours']}h total";
+                        foreach (array_slice($hours['entries'] ?? [], 0, 10) as $entry) {
+                            $weeklyContext .= "\n  [{$entry['ticket_code']}] {$entry['hours']}h - {$entry['activity']}";
+                        }
+                    }
+
+                    // Status breakdown
+                    $statusBreakdown = $summary['status_breakdown'] ?? [];
+                    if ($statusBreakdown) {
+                        $weeklyContext .= "\n\nBy Status: " . collect($statusBreakdown)->map(fn($count, $status) => "{$status}: {$count}")->implode(', ');
+                    }
+
+                    // Type breakdown
+                    $typeBreakdown = $summary['type_breakdown'] ?? [];
+                    if ($typeBreakdown) {
+                        $weeklyContext .= "\nBy Type: " . collect($typeBreakdown)->map(fn($count, $type) => "{$type}: {$count}")->implode(', ');
+                    }
+                }
+
+                // User-written report notes
                 if ($report->content) {
-                    $weeklyContext .= "\nContent: " . Str::limit(strip_tags($report->content), 500);
+                    $weeklyContext .= "\n\nReport Notes: " . Str::limit(strip_tags($report->content), 800);
                 }
 
-                if ($report->auto_summary && is_array($report->auto_summary)) {
-                    $weeklyContext .= "\nAuto Summary: " . json_encode($report->auto_summary);
-                }
-
-                // Weekly report PDF attachments
+                // PDF attachments
                 $attachments = $report->getMedia('attachments');
                 foreach ($attachments as $att) {
                     if (strtolower($att->mime_type) === 'application/pdf') {
