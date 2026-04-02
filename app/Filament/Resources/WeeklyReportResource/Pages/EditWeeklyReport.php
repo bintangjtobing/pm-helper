@@ -147,11 +147,91 @@ class EditWeeklyReport extends EditRecord
                 return;
             }
 
+            // Extract metrics from PDF using AI
+            $metricsResponse = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+            ])->timeout(60)->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-4o',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => 'You are a data extractor. Analyze the documents and extract project progress metrics. Return ONLY valid JSON with this exact structure, no other text:
+{"total_tickets_touched": number, "tickets_completed": number, "completion_rate": number (0-100), "status_changes_count": number, "total_hours": number, "projects_worked": number, "status_breakdown": {"StatusName": count}, "type_breakdown": {"TypeName": count}, "tickets_updated": [{"code": "XXX-00", "name": "title", "status": "Status", "priority": "Priority", "type": "Type", "status_color": "#666", "priority_color": "#666"}], "tickets_completed_list": [{"code": "XXX-00", "name": "title", "project_name": "Project"}]}
+Extract real numbers from the documents. If a metric is not mentioned, use 0. For tickets, extract as many as you can find mentioned in the documents.',
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => "Extract metrics from these project documents:\n{$pdfContent}",
+                    ],
+                ],
+                'temperature' => 0.1,
+                'max_tokens' => 2000,
+            ]);
+
+            // Update auto_summary with PDF-extracted metrics
+            if ($metricsResponse->successful()) {
+                $metricsData = $metricsResponse->json();
+                $metricsJson = $metricsData['choices'][0]['message']['content'] ?? '';
+                // Strip markdown code fences if present
+                $metricsJson = preg_replace('/^```(?:json)?\s*|\s*```$/s', '', trim($metricsJson));
+                $extracted = json_decode($metricsJson, true);
+
+                if ($extracted && is_array($extracted)) {
+                    $currentSummary = $report->auto_summary ?? [];
+
+                    // Merge: use PDF data where it has higher values, keep system data otherwise
+                    $sysProgress = $currentSummary['progress_summary'] ?? [];
+                    $currentSummary['progress_summary'] = [
+                        'total_tickets_touched' => max($sysProgress['total_tickets_touched'] ?? 0, $extracted['total_tickets_touched'] ?? 0),
+                        'tickets_completed' => max($sysProgress['tickets_completed'] ?? 0, $extracted['tickets_completed'] ?? 0),
+                        'completion_rate' => max($sysProgress['completion_rate'] ?? 0, $extracted['completion_rate'] ?? 0),
+                        'status_changes_count' => max($sysProgress['status_changes_count'] ?? 0, $extracted['status_changes_count'] ?? 0),
+                        'total_hours' => max($sysProgress['total_hours'] ?? 0, $extracted['total_hours'] ?? 0),
+                        'projects_worked' => max($sysProgress['projects_worked'] ?? 0, $extracted['projects_worked'] ?? 0),
+                    ];
+
+                    // Merge ticket lists
+                    if (!empty($extracted['tickets_updated'])) {
+                        $existingCodes = collect($currentSummary['tickets_updated'] ?? [])->pluck('code')->toArray();
+                        foreach ($extracted['tickets_updated'] as $t) {
+                            if (!in_array($t['code'] ?? '', $existingCodes)) {
+                                $currentSummary['tickets_updated'][] = $t;
+                            }
+                        }
+                    }
+
+                    if (!empty($extracted['tickets_completed_list'])) {
+                        $existingCodes = collect($currentSummary['tickets_completed'] ?? [])->pluck('code')->toArray();
+                        foreach ($extracted['tickets_completed_list'] as $t) {
+                            if (!in_array($t['code'] ?? '', $existingCodes)) {
+                                $currentSummary['tickets_completed'][] = $t;
+                            }
+                        }
+                    }
+
+                    // Merge breakdowns
+                    if (!empty($extracted['status_breakdown'])) {
+                        $currentSummary['status_breakdown'] = array_merge(
+                            $currentSummary['status_breakdown'] ?? [],
+                            $extracted['status_breakdown']
+                        );
+                    }
+                    if (!empty($extracted['type_breakdown'])) {
+                        $currentSummary['type_breakdown'] = array_merge(
+                            $currentSummary['type_breakdown'] ?? [],
+                            $extracted['type_breakdown']
+                        );
+                    }
+
+                    $report->update(['auto_summary' => $currentSummary]);
+                }
+            }
+
             // Update form and database
             $this->data['content'] = $generatedContent;
             $report->update(['content' => $generatedContent]);
 
-            Filament::notify('success', __('Report notes generated from attachments successfully!'));
+            Filament::notify('success', __('Report generated from attachments! Progress summary and notes updated.'));
         } catch (\Exception $e) {
             Log::error('Weekly report generation error', ['error' => $e->getMessage()]);
             Filament::notify('danger', __('Error: ') . $e->getMessage());
