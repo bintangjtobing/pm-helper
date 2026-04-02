@@ -174,9 +174,8 @@ class WeeklyReportResource extends Resource
 
                 Tables\Columns\TextColumn::make('submitted_at')
                     ->label(__('Submitted'))
-                    ->dateTime()
-                    ->sortable()
-                    ->placeholder('-'),
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('M d, Y H:i') : '-')
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Created'))
