@@ -34,11 +34,12 @@
             @php
                 $summary = $record->auto_summary;
                 $progress = $summary['progress_summary'] ?? [];
-                $ticketsUpdated = count($summary['tickets_updated'] ?? []);
-                $ticketsCompleted = count($summary['tickets_completed'] ?? []);
-                $statusChanges = count($summary['status_changes'] ?? []);
-                $totalHours = $summary['hours_logged']['total_hours'] ?? 0;
-                $completionRate = $progress['completion_rate'] ?? ($ticketsUpdated > 0 ? round(($ticketsCompleted / $ticketsUpdated) * 100, 1) : 0);
+                $ticketsUpdated = $progress['total_tickets_touched'] ?? count($summary['tickets_updated'] ?? []);
+                $ticketsChangedThisWeek = $progress['tickets_updated_this_week'] ?? count($summary['tickets_changed_this_week'] ?? []);
+                $ticketsCompleted = $progress['tickets_completed'] ?? count($summary['tickets_completed'] ?? []);
+                $statusChanges = $progress['status_changes_count'] ?? count($summary['status_changes'] ?? []);
+                $totalHours = $progress['total_hours'] ?? ($summary['hours_logged']['total_hours'] ?? 0);
+                $completionRate = $progress['completion_rate'] ?? 0;
                 $projectBreakdown = $summary['project_breakdown'] ?? [];
                 $statusBreakdown = $summary['status_breakdown'] ?? [];
                 $typeBreakdown = $summary['type_breakdown'] ?? [];
@@ -58,8 +59,12 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                         <tr>
-                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Tickets Touched') }}</td>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Total Tickets') }}</td>
                             <td class="px-4 py-2 font-medium text-gray-800 dark:text-gray-200">{{ $ticketsUpdated }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Updated This Week') }}</td>
+                            <td class="px-4 py-2 font-medium text-blue-600 dark:text-blue-400">{{ $ticketsChangedThisWeek }}</td>
                         </tr>
                         <tr>
                             <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ __('Tickets Completed') }}</td>

@@ -22,21 +22,33 @@ class WeeklyReportService
 
     public function generateAutoSummary(User $user, Carbon $weekStart, Carbon $weekEnd): array
     {
+        $projectIds = $this->getUserProjectIds($user);
+
+        // Snapshot: ALL tickets in user's projects (current state)
+        $allTickets = $this->getAllProjectTickets($projectIds);
+
+        // Activity: tickets specifically updated THIS week
         $ticketsUpdated = $this->getTicketsUpdated($user, $weekStart, $weekEnd);
         $ticketsCompleted = $this->getTicketsCompleted($user, $weekStart, $weekEnd);
         $statusChanges = $this->getStatusChanges($user, $weekStart, $weekEnd);
         $hoursLogged = $this->getHoursLogged($user, $weekStart, $weekEnd);
 
-        // Build status breakdown from updated tickets
+        // Build breakdowns from ALL project tickets (snapshot)
         $statusBreakdown = [];
-        foreach ($ticketsUpdated as $ticket) {
+        $typeBreakdown = [];
+        $priorityBreakdown = [];
+        $projectBreakdown = [];
+
+        foreach ($allTickets as $ticket) {
             $status = $ticket['status'];
             $statusBreakdown[$status] = ($statusBreakdown[$status] ?? 0) + 1;
-        }
 
-        // Build project breakdown from updated tickets
-        $projectBreakdown = [];
-        foreach ($ticketsUpdated as $ticket) {
+            $type = $ticket['type'] ?? 'Other';
+            $typeBreakdown[$type] = ($typeBreakdown[$type] ?? 0) + 1;
+
+            $priority = $ticket['priority'] ?? 'N/A';
+            $priorityBreakdown[$priority] = ($priorityBreakdown[$priority] ?? 0) + 1;
+
             $project = $ticket['project_name'];
             if (!isset($projectBreakdown[$project])) {
                 $projectBreakdown[$project] = ['total' => 0, 'tickets' => []];
@@ -45,32 +57,31 @@ class WeeklyReportService
             $projectBreakdown[$project]['tickets'][] = $ticket;
         }
 
-        // Build type breakdown from updated tickets
-        $typeBreakdown = [];
-        foreach ($ticketsUpdated as $ticket) {
-            $type = $ticket['type'] ?? 'Other';
-            $typeBreakdown[$type] = ($typeBreakdown[$type] ?? 0) + 1;
-        }
-
-        // Build priority breakdown from updated tickets
-        $priorityBreakdown = [];
-        foreach ($ticketsUpdated as $ticket) {
-            $priority = $ticket['priority'] ?? 'N/A';
-            $priorityBreakdown[$priority] = ($priorityBreakdown[$priority] ?? 0) + 1;
-        }
-
+        $totalAll = count($allTickets);
         $totalUpdated = count($ticketsUpdated);
         $totalCompleted = count($ticketsCompleted);
 
+        // Completion rate based on "done" statuses across all tickets
+        $doneStatuses = ['QA Passed', 'Done', 'Completed', 'Closed', 'Resolved'];
+        $completedCount = 0;
+        foreach ($allTickets as $t) {
+            if (in_array($t['status'], $doneStatuses)) {
+                $completedCount++;
+            }
+        }
+        $completionRate = $totalAll > 0 ? round(($completedCount / $totalAll) * 100, 1) : 0;
+
         return [
-            'tickets_updated' => $ticketsUpdated,
+            'tickets_updated' => $allTickets, // Full snapshot
+            'tickets_changed_this_week' => $ticketsUpdated, // Only changed this week
             'tickets_completed' => $ticketsCompleted,
             'status_changes' => $statusChanges,
             'hours_logged' => $hoursLogged,
             'progress_summary' => [
-                'total_tickets_touched' => $totalUpdated,
-                'tickets_completed' => $totalCompleted,
-                'completion_rate' => $totalUpdated > 0 ? round(($totalCompleted / $totalUpdated) * 100, 1) : 0,
+                'total_tickets_touched' => $totalAll,
+                'tickets_updated_this_week' => $totalUpdated,
+                'tickets_completed' => $completedCount,
+                'completion_rate' => $completionRate,
                 'status_changes_count' => count($statusChanges),
                 'total_hours' => $hoursLogged['total_hours'] ?? 0,
                 'projects_worked' => count($projectBreakdown),
@@ -150,6 +161,26 @@ class WeeklyReportService
         $owned = \App\Models\Project::where('owner_id', $user->id)->pluck('id');
         $member = $user->projects()->pluck('projects.id');
         return $owned->merge($member)->unique()->toArray();
+    }
+
+    private function getAllProjectTickets(array $projectIds): array
+    {
+        return Ticket::whereIn('project_id', $projectIds)
+            ->with(['project', 'status', 'type', 'priority'])
+            ->orderBy('code')
+            ->get()
+            ->map(fn ($ticket) => [
+                'id' => $ticket->id,
+                'code' => $ticket->code,
+                'name' => $ticket->name,
+                'project_name' => $ticket->project?->name ?? 'N/A',
+                'status' => $ticket->status?->name ?? 'N/A',
+                'status_color' => $ticket->status?->color ?? '#6b7280',
+                'type' => $ticket->type?->name ?? 'N/A',
+                'priority' => $ticket->priority?->name ?? 'N/A',
+                'priority_color' => $ticket->priority?->color ?? '#6b7280',
+            ])
+            ->toArray();
     }
 
     private function getTicketsUpdated(User $user, Carbon $weekStart, Carbon $weekEnd): array
