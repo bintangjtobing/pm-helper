@@ -176,7 +176,7 @@ class WeeklyReportResource extends Resource
                     ->label(__('Submitted'))
                     ->dateTime()
                     ->sortable()
-                    ->default('-'),
+                    ->placeholder('-'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Created'))
