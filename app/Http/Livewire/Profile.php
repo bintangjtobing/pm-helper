@@ -19,23 +19,10 @@ class Profile extends BaseProfile
     // Add property for avatar upload
     public $avatar;
 
-    // Add listeners for avatar upload and page scripts
-    protected $listeners = [
-        'upload:finished' => 'handleAvatarUpload'
-    ];
 
     public function mount(): void
     {
         parent::mount();
-
-        // Add script to handle page refresh
-        $this->dispatchBrowserEvent('profile-scripts', [
-            'script' => "
-                document.addEventListener('refresh-page', function() {
-                    window.location.reload();
-                });
-            "
-        ]);
     }
 
     protected function getUpdateProfileFormSchema(): array
@@ -231,7 +218,7 @@ class Profile extends BaseProfile
             $this->user->update(['avatar_url' => '/storage/' . $filename]);
             $this->user->refresh();
             $this->notify('success', __('Foto profil berhasil diupload'));
-            $this->dispatchBrowserEvent('refresh-page');
+            return redirect(request()->header('Referer', route('filament.pages.my-profile')));
 
         } catch (\Exception $e) {
             \Log::error('Failed to upload avatar: ' . $e->getMessage());
@@ -296,6 +283,6 @@ class Profile extends BaseProfile
         $this->user->update(['avatar_url' => null]);
         $this->user->refresh();
         $this->notify('success', __('Foto profil berhasil dihapus'));
-        $this->dispatchBrowserEvent('refresh-page');
+        return redirect(request()->header('Referer', route('filament.pages.my-profile')));
     }
 }
