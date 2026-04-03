@@ -82,18 +82,16 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label(__('Full name'))
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('username')
-                    ->label(__('Username'))
-                    ->sortable()
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('email')
-                    ->label(__('Email address'))
-                    ->sortable()
-                    ->searchable(),
+                Tables\Columns\ViewColumn::make('user_card')
+                    ->label(__('User'))
+                    ->view('partials.filament.resources.user-card-column')
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                              ->orWhere('username', 'like', "%{$search}%")
+                              ->orWhere('email', 'like', "%{$search}%");
+                        });
+                    }),
 
                 Tables\Columns\TagsColumn::make('roles.name')
                     ->label(__('Roles'))
@@ -102,18 +100,12 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('email_verified_at')
                     ->label(__('Email verified at'))
                     ->dateTime()
-                    ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('socials')
-                    ->label(__('Linked social networks'))
-                    ->view('partials.filament.resources.social-icon'),
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label(__('Created at'))
                     ->dateTime()
-                    ->sortable()
-                    ->searchable(),
+                    ->sortable(),
             ])
             ->filters([
                 //
