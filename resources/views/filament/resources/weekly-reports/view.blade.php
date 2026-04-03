@@ -366,6 +366,38 @@
                 </span>
             </div>
 
+            {{-- Viewed By --}}
+            @if($record->status !== 'draft')
+            @php
+                $reportViews = $record->views()->with('user')->latest('viewed_at')->get();
+            @endphp
+            <div class="flex flex-col gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {{ __('Viewed by') }}
+                    @if($reportViews->count() > 0)
+                    <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                        {{ $reportViews->count() }}
+                    </span>
+                    @endif
+                </span>
+                @forelse($reportViews as $view)
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <x-user-avatar :user="$view->user" />
+                        <span class="text-xs text-gray-700 dark:text-gray-300">{{ $view->user->name }}</span>
+                    </div>
+                    <span class="text-xs text-gray-400" title="{{ $view->viewed_at->format('Y-m-d g:i A') }}">
+                        {{ $view->viewed_at->diffForHumans() }}
+                    </span>
+                </div>
+                @empty
+                <div class="py-2 text-xs text-center text-gray-400 dark:text-gray-500">
+                    {{ __('No one has viewed this report yet.') }}
+                </div>
+                @endforelse
+            </div>
+            @endif
+
             {{-- Attachments --}}
             <div class="flex flex-col gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
                 <span class="text-sm font-medium text-gray-500 dark:text-gray-400">

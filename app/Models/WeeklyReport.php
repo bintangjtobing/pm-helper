@@ -59,6 +59,11 @@ class WeeklyReport extends Model implements HasMedia
         return $this->hasMany(WeeklyReportFeedback::class);
     }
 
+    public function views(): HasMany
+    {
+        return $this->hasMany(WeeklyReportView::class);
+    }
+
     public function isEditable(): bool
     {
         return $this->status === 'draft';

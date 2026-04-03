@@ -5,6 +5,7 @@ namespace App\Filament\Resources\WeeklyReportResource\Pages;
 use App\Filament\Resources\WeeklyReportResource;
 use App\Models\User;
 use App\Models\WeeklyReportFeedback;
+use App\Models\WeeklyReportView;
 use App\Notifications\WeeklyReportSubmitted;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -26,6 +27,24 @@ class ViewWeeklyReport extends ViewRecord implements HasForms
     {
         parent::mount($record);
         $this->form->fill();
+        $this->recordView();
+    }
+
+    protected function recordView(): void
+    {
+        if ($this->record->status === 'draft') {
+            return;
+        }
+
+        WeeklyReportView::updateOrCreate(
+            [
+                'weekly_report_id' => $this->record->id,
+                'user_id' => auth()->id(),
+            ],
+            [
+                'viewed_at' => now(),
+            ]
+        );
     }
 
     protected function getActions(): array
