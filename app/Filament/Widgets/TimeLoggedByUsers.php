@@ -38,24 +38,19 @@ class TimeLoggedByUsers extends BaseWidget
             Tables\Columns\TextColumn::make('name')
                 ->label('User')
                 ->formatStateUsing(function ($state, $record) {
-                    try {
-                        $avatarUrl = $record->avatar_url ?: 'https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&background=random&color=ffffff';
-                        $totalTickets = (int) ($record->total_tickets_count ?? 0);
+                    $avatarUrl = $record->getAttributes()['avatar_url']
+                        ?? ('https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&size=64&background=' . substr(md5($record->id), 0, 6) . '&color=ffffff');
+                    $totalTickets = (int) ($record->total_tickets_count ?? 0);
 
-                        return new HtmlString('
-                            <div class="flex items-center gap-3">
-                                <img src="' . e($avatarUrl) . '"
-                                     alt="' . e($record->name) . '"
-                                     class="w-8 h-8 rounded-full object-cover">
-                                <div>
-                                    <div class="font-medium text-gray-900">' . e($record->name) . '</div>
-                                    <div class="text-sm text-gray-500">' . $totalTickets . ' assigned tickets</div>
-                                </div>
+                    return new HtmlString('
+                        <div class="flex items-center gap-3">
+                            <img src="' . e($avatarUrl) . '" alt="' . e($record->name) . '" class="w-8 h-8 rounded-full object-cover" loading="lazy">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->name) . '</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">' . $totalTickets . ' ' . __('assigned tickets') . '</div>
                             </div>
-                        ');
-                    } catch (\Exception $e) {
-                        return new HtmlString('<div class="text-red-500">Error loading user data</div>');
-                    }
+                        </div>
+                    ');
                 })
                 ->searchable()
                 ->sortable(),

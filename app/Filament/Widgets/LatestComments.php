@@ -2,16 +2,12 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Project;
-use App\Models\Ticket;
 use App\Models\TicketComment;
-use Closure;
 use Filament\Forms\Components\RichEditor;
 use Filament\Tables;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
-use Illuminate\Support\Str;
 
 class LatestComments extends BaseWidget
 {
@@ -61,29 +57,36 @@ class LatestComments extends BaseWidget
                 ->label(__('Ticket'))
                 ->formatStateUsing(function ($state) {
                     return new HtmlString('
-                    <div class="flex flex-col gap-1">
-                        <span class="text-gray-400 font-medium text-xs">
-                            ' . $state->project->name . '
-                        </span>
-                        <span>
-                            <a href="' . route('filament.resources.tickets.share', $state->code)
-                        . '" target="_blank" class="text-primary-500 text-sm hover:underline">'
-                        . $state->code
-                        . '</a>
-                            <span class="text-sm text-gray-400">|</span> '
-                        . $state->name . '
-                        </span>
-                    </div>
-                ');
+                        <div class="flex flex-col gap-0.5">
+                            <span class="px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase rounded bg-primary-500/10 text-primary-500 self-start">'
+                                . e($state->project->name) .
+                            '</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-mono text-gray-400 dark:text-gray-500">' . e($state->code) . '</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">' . e($state->name) . '</span>
+                            </div>
+                        </div>
+                    ');
                 }),
 
             Tables\Columns\TextColumn::make('user.name')
-                ->label(__('Owner'))
-                ->formatStateUsing(fn($record) => view('components.user-avatar', ['user' => $record->user])),
+                ->label(__('By'))
+                ->formatStateUsing(function ($record) {
+                    $user = $record->user;
+                    if (!$user) return '-';
+                    $avatar = $user->getAttributes()['avatar_url']
+                        ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
+                    return new HtmlString('
+                        <div class="flex items-center gap-2">
+                            <img src="' . e($avatar) . '" class="w-6 h-6 rounded-full" loading="lazy" />
+                            <span class="text-xs text-gray-700 dark:text-gray-300">' . e($user->name) . '</span>
+                        </div>
+                    ');
+                }),
 
             Tables\Columns\TextColumn::make('created_at')
-                ->label(__('Commented at'))
-                ->dateTime()
+                ->label(__('When'))
+                ->since(),
         ];
     }
 
@@ -94,6 +97,7 @@ class LatestComments extends BaseWidget
                 ->label(__('View'))
                 ->icon('heroicon-s-eye')
                 ->color('secondary')
+                ->iconButton()
                 ->modalHeading(__('Comment details'))
                 ->modalButton(__('View ticket'))
                 ->form([

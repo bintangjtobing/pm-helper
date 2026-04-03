@@ -149,17 +149,30 @@ class WeeklyReportResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
                     ->label(__('Author'))
+                    ->formatStateUsing(function ($record) {
+                        $user = $record->user;
+                        $avatar = $user->getAttributes()['avatar_url']
+                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
+                        return new HtmlString('
+                            <div class="flex items-center gap-2.5">
+                                <img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover" loading="lazy" />
+                                <div class="min-w-0">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($user->name) . '</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">' . e($record->week_label) . '</div>
+                                </div>
+                            </div>
+                        ');
+                    })
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('week_start')
-                    ->label(__('Week'))
-                    ->formatStateUsing(fn ($record) => $record->week_label)
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('project.name')
                     ->label(__('Project'))
-                    ->default('General')
+                    ->formatStateUsing(fn ($record) => new HtmlString(
+                        '<span class="px-2 py-0.5 text-xs font-medium rounded bg-primary-500/10 text-primary-500">'
+                        . e($record->project?->name ?? __('General'))
+                        . '</span>'
+                    ))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
@@ -170,16 +183,14 @@ class WeeklyReportResource extends Resource
                 Tables\Columns\TextColumn::make('feedbacks_count')
                     ->counts('feedbacks')
                     ->label(__('Feedback'))
+                    ->formatStateUsing(fn ($state) => $state > 0
+                        ? new HtmlString('<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-500">' . $state . '</span>')
+                        : new HtmlString('<span class="text-xs text-gray-400">0</span>'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('submitted_at')
                     ->label(__('Submitted'))
-                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('M d, Y H:i') : '-')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created'))
-                    ->dateTime()
+                    ->since()
                     ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')

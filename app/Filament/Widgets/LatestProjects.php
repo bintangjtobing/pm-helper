@@ -49,27 +49,44 @@ class LatestProjects extends BaseWidget
     {
         return [
             Tables\Columns\TextColumn::make('name')
-                ->label(__('Project name'))
-                ->formatStateUsing(fn($record) => new HtmlString('
-                            <div class="w-full flex items-center gap-2">
-                                <div style=\'background-image: url("' . $record->cover . '")\'
-                                 class="w-8 h-8 bg-cover bg-center bg-no-repeat"></div>
-                                ' . $record->name . '
-                            </div>
-                        ')),
+                ->label(__('Project'))
+                ->formatStateUsing(function ($record) {
+                    $cover = $record->getFirstMediaUrl('cover');
+                    $initials = strtoupper(substr($record->name, 0, 2));
+                    $bg = substr(md5($record->name), 0, 6);
+                    $avatar = $cover
+                        ? '<img src="' . e($cover) . '" class="w-9 h-9 rounded-lg object-cover shrink-0" loading="lazy" />'
+                        : '<div class="flex items-center justify-center w-9 h-9 text-xs font-bold text-white rounded-lg shrink-0" style="background:linear-gradient(135deg,#' . $bg . ',#' . substr(md5($record->name . 'x'), 0, 6) . ')">' . $initials . '</div>';
 
-            Tables\Columns\TextColumn::make('owner.name')
-                ->label(__('Project owner')),
+                    $ownerAvatar = '';
+                    if ($record->owner) {
+                        $ownerUrl = $record->owner->getAttributes()['avatar_url']
+                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($record->owner->name) . '&size=64&background=' . substr(md5($record->owner->id), 0, 6) . '&color=ffffff');
+                        $ownerAvatar = '<img src="' . e($ownerUrl) . '" class="w-4 h-4 rounded-full" loading="lazy" />';
+                    }
+
+                    return new HtmlString('
+                        <div class="flex items-center gap-3">
+                            ' . $avatar . '
+                            <div class="min-w-0">
+                                <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">' . e($record->name) . '</div>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    ' . $ownerAvatar . '
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">' . e($record->owner?->name) . '</span>
+                                </div>
+                            </div>
+                        </div>
+                    ');
+                }),
 
             Tables\Columns\TextColumn::make('status.name')
-                ->label(__('Project status'))
-                ->formatStateUsing(fn($record) => new HtmlString('
-                            <div class="flex items-center gap-2">
-                                <span class="filament-tables-color-column relative flex h-6 w-6 rounded-md"
-                                    style="background-color: ' . $record->status->color . '"></span>
-                                <span>' . $record->status->name . '</span>
-                            </div>
-                        ')),
+                ->label(__('Status'))
+                ->formatStateUsing(fn($record) => new HtmlString(
+                    '<span class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md" style="background-color: ' . $record->status->color . '20; color: ' . $record->status->color . '">'
+                    . '<span class="w-1.5 h-1.5 rounded-full" style="background-color: ' . $record->status->color . '"></span>'
+                    . e($record->status->name)
+                    . '</span>'
+                )),
         ];
     }
 }
