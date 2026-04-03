@@ -7,9 +7,8 @@ use Illuminate\Support\HtmlString;
 use JeffGreco13\FilamentBreezy\Pages\MyProfile as BaseProfile;
 use App\Models\User;
 use Livewire\WithFileUploads;
-use App\Services\CloudinaryService;
 use Illuminate\Validation\Rule;
-use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Storage;
 
 class Profile extends BaseProfile
 {
@@ -65,9 +64,9 @@ class Profile extends BaseProfile
             ->imageResizeTargetHeight('200')
             ->placeholder(function () {
                 if ($this->user->avatar_url) {
-                    return 'Current profile picture is using Cloudinary';
+                    return __('Upload new picture to replace current one');
                 }
-                return 'No profile picture set';
+                return __('No profile picture set');
             })
             // Add events to auto-save when upload complete
             ->uploadProgressIndicatorPosition('left')
@@ -162,7 +161,6 @@ class Profile extends BaseProfile
         return $rules;
     }
 
-    // This method will handle auto-upload when a file is selected
     public function uploadAvatar($avatar)
     {
         if (!$avatar) {
@@ -170,27 +168,77 @@ class Profile extends BaseProfile
         }
 
         try {
-            // Use the CloudinaryService to upload the image
-            $cloudinaryService = new CloudinaryService();
-            $result = $cloudinaryService->uploadImage($avatar);
+            $path = is_string($avatar)
+                ? Storage::disk('public')->path($avatar)
+                : $avatar->getRealPath();
 
-            // Save the Cloudinary URL to the user's avatar_url field
-            if (isset($result['secure_url'])) {
-                $this->user->update(['avatar_url' => $result['secure_url']]);
-                $this->user->refresh();
-                $this->notify('success', __('Foto profil berhasil diupload'));
-
-                // Refresh the page to show the new avatar
-                $this->emit('refresh');
-                $this->dispatchBrowserEvent('refresh-page');
+            $info = getimagesize($path);
+            if (!$info) {
+                $this->notify('error', __('File bukan gambar yang valid.'));
+                return;
             }
+
+            $mime = $info['mime'];
+            $source = match ($mime) {
+                'image/jpeg' => imagecreatefromjpeg($path),
+                'image/png' => imagecreatefrompng($path),
+                'image/webp' => imagecreatefromwebp($path),
+                default => null,
+            };
+
+            if (!$source) {
+                $this->notify('error', __('Format gambar tidak didukung. Gunakan JPG, PNG, atau WebP.'));
+                return;
+            }
+
+            // Resize to 200x200
+            $size = 200;
+            $srcW = imagesx($source);
+            $srcH = imagesy($source);
+            $cropSize = min($srcW, $srcH);
+            $srcX = (int)(($srcW - $cropSize) / 2);
+            $srcY = (int)(($srcH - $cropSize) / 2);
+
+            $thumb = imagecreatetruecolor($size, $size);
+            imagecopyresampled($thumb, $source, 0, 0, $srcX, $srcY, $size, $size, $cropSize, $cropSize);
+            imagedestroy($source);
+
+            // Save as compressed JPEG
+            $filename = 'avatars/' . $this->user->id . '_' . time() . '.jpg';
+            $fullPath = Storage::disk('public')->path($filename);
+
+            // Ensure directory exists
+            $dir = dirname($fullPath);
+            if (!is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+
+            imagejpeg($thumb, $fullPath, 80);
+            imagedestroy($thumb);
+
+            // Delete old avatar file if it's a local file
+            $oldUrl = $this->user->avatar_url;
+            if ($oldUrl && str_contains($oldUrl, '/storage/avatars/')) {
+                $oldFile = str_replace('/storage/', '', parse_url($oldUrl, PHP_URL_PATH));
+                Storage::disk('public')->delete($oldFile);
+            }
+
+            // Clean up the temp uploaded file
+            if (is_string($avatar)) {
+                Storage::disk('public')->delete($avatar);
+            }
+
+            $this->user->update(['avatar_url' => '/storage/' . $filename]);
+            $this->user->refresh();
+            $this->notify('success', __('Foto profil berhasil diupload'));
+            $this->dispatchBrowserEvent('refresh-page');
+
         } catch (\Exception $e) {
-            \Log::error('Failed to upload avatar to Cloudinary: ' . $e->getMessage());
+            \Log::error('Failed to upload avatar: ' . $e->getMessage());
             $this->notify('error', __('Upload foto profil gagal. Silakan coba lagi.'));
         }
     }
 
-    // Handle when upload is finished
     public function handleAvatarUpload($upload)
     {
         if (isset($upload['avatar']) && $upload['avatar']) {
@@ -239,11 +287,15 @@ class Profile extends BaseProfile
      */
     public function removeAvatar()
     {
+        $oldUrl = $this->user->avatar_url;
+        if ($oldUrl && str_contains($oldUrl, '/storage/avatars/')) {
+            $oldFile = str_replace('/storage/', '', parse_url($oldUrl, PHP_URL_PATH));
+            Storage::disk('public')->delete($oldFile);
+        }
+
         $this->user->update(['avatar_url' => null]);
         $this->user->refresh();
         $this->notify('success', __('Foto profil berhasil dihapus'));
-
-        // Refresh the page to update the avatar preview
         $this->dispatchBrowserEvent('refresh-page');
     }
 }

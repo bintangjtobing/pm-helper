@@ -13,7 +13,7 @@
 
         <div class="text-center">
             <h3 class="text-sm font-medium text-gray-700">Current Profile Picture</h3>
-            <p class="mt-1 text-xs text-gray-500">This image is stored on Cloudinary</p>
+            <p class="mt-1 text-xs text-gray-500">{{ __('Current Profile Picture') }}</p>
         </div>
 
         <button type="button" wire:click="removeAvatar" class="text-sm text-red-600 hover:text-red-800 hover:underline">
