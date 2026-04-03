@@ -69,7 +69,7 @@ class Profile extends BaseProfile
 
         // Custom avatar preview
         $avatarPreview = Forms\Components\View::make('components.profile.avatar-preview')
-            ->visible(fn () => $this->user->avatar_url !== null)
+            ->visible(fn () => !empty($this->user->getAttributes()['avatar_url']))
             ->label('Current Avatar');
 
         // Locale selection field

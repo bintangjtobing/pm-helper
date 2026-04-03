@@ -247,18 +247,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 
     public function getFilamentAvatarUrl(): ?string
     {
-        return $this->avatar_url ?: null;
+        return $this->attributes['avatar_url'] ?? null;
     }
 
     public function avatarUrl(): Attribute
     {
         return new Attribute(
-            get: function () {
-                if (!empty($this->avatar_url)) {
-                    return $this->avatar_url;
+            get: function ($value) {
+                if (!empty($value)) {
+                    return $value;
                 }
 
-                // Default avatar fallback using first letter of name
                 return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=random&color=ffffff';
             }
         );
