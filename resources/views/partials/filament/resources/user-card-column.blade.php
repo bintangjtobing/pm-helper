@@ -8,7 +8,7 @@
             {{ $getRecord()->name }}
         </div>
         <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-            @{{ $getRecord()->username }} &middot; {{ $getRecord()->email }}
+            {{ '@' . $getRecord()->username }} &middot; {{ $getRecord()->email }}
         </div>
     </div>
 </div>
