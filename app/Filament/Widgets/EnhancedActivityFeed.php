@@ -124,157 +124,120 @@ class EnhancedActivityFeed extends BaseWidget
             ->limit(10);
     }
 
+    private function getUserAvatar($user): string
+    {
+        return $user->getAttributes()['avatar_url']
+            ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
+    }
+
     protected function getTableColumns(): array
     {
         return [
             Tables\Columns\TextColumn::make('activity_info')
                 ->label('Activity')
                 ->formatStateUsing(function ($state, $record) {
-                    // Load relationships manually karena union query
                     $user = \App\Models\User::find($record->user_id);
                     $ticket = \App\Models\Ticket::with('project')->find($record->ticket_id);
 
-                    if (!$user) {
-                        return new HtmlString('<div class="text-red-500">Error loading data</div>');
-                    }
+                    if (!$user) return new HtmlString('<span class="text-gray-400">-</span>');
 
-                    $typeIcon = match($record->type) {
-                        'activity' => '<div class="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                             <svg class="w-3 h-3 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                               <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                             </svg>
-                           </div>',
-                        'weekly_report' => '<div class="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                             <svg class="w-3 h-3 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                               <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
-                             </svg>
-                           </div>',
-                        default => '<div class="w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                             <svg class="w-3 h-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                               <path fill-rule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clip-rule="evenodd"></path>
-                             </svg>
-                           </div>',
-                    };
+                    $avatarUrl = $this->getUserAvatar($user);
+                    $timeAgo = $record->created_at->diffForHumans();
 
-                    // Handle weekly report type (no ticket)
+                    // === Weekly Report ===
                     if ($record->type === 'weekly_report') {
-                        $timeAgo = $record->created_at->diffForHumans();
                         $viewUrl = route('filament.resources.weekly-reports.view', $record->id);
                         $descriptionText = $record->getAttributes()['description'] ?? 'submitted weekly report';
 
                         return new HtmlString('
-                            <div class="flex items-start gap-3">
-                                <img src="' . ($user->avatar_url ?: 'https://ui-avatars.com/api/?name=' . urlencode($user->name)) . '"
-                                     alt="' . e($user->name) . '"
-                                     class="w-8 h-8 rounded-full object-cover shrink-0">
+                            <div class="flex items-start gap-3 py-1">
+                                <img src="' . e($avatarUrl) . '" class="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-purple-500/20" loading="lazy" />
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
-                                            <div class="flex items-center gap-2 mb-0.5">
-                                                ' . $typeIcon . '
-                                                <span class="font-medium text-sm">' . e($user->name) . '</span>
-                                                <span class="text-gray-500 dark:text-gray-400 text-sm">' . e($descriptionText) . '</span>
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <span class="text-sm font-semibold text-gray-900 dark:text-white">' . e($user->name) . '</span>
+                                                <span class="text-sm text-gray-500 dark:text-gray-400">' . e($descriptionText) . '</span>
                                             </div>
                                         </div>
-                                        <div class="flex items-center gap-3 shrink-0">
-                                            <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">' . $timeAgo . '</span>
-                                            <a href="' . $viewUrl . '"
-                                               class="text-xs text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 whitespace-nowrap">
-                                                <svg class="w-4 h-4 inline -mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                View
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <span class="text-xs text-gray-400 dark:text-gray-500">' . $timeAgo . '</span>
+                                            <a href="' . $viewUrl . '" class="p-1 text-gray-400 hover:text-primary-500 rounded transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                             </a>
                                         </div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 mt-1">
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-full bg-purple-500/10 text-purple-500 ring-1 ring-purple-500/20">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+                                            Weekly Report
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         ');
                     }
 
-                    if (!$ticket) {
-                        return new HtmlString('<div class="text-red-500">Error loading data</div>');
-                    }
+                    if (!$ticket) return new HtmlString('<span class="text-gray-400">-</span>');
 
+                    $viewUrl = route('filament.resources.tickets.share', $ticket->code);
+                    $descriptionText = $record->type === 'comment' ? __('added a comment') : ($record->getAttributes()['description'] ?? __('updated ticket'));
+
+                    // === Status Change Badges ===
                     $statusBadges = '';
                     if ($record->type === 'activity' && $record->old_status_id && $record->new_status_id) {
-                        $oldStatus = \App\Models\TicketStatus::withTrashed()->find($record->old_status_id);
-                        $newStatus = \App\Models\TicketStatus::withTrashed()->find($record->new_status_id);
-
+                        $oldStatus = TicketStatus::withTrashed()->find($record->old_status_id);
+                        $newStatus = TicketStatus::withTrashed()->find($record->new_status_id);
                         if ($oldStatus && $newStatus) {
                             $statusBadges = '
-                                <div class="flex items-center gap-2 mt-2">
-                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white rounded-full"
-                                          style="background-color: ' . ($oldStatus->color ?? '#6B7280') . '">' . e($oldStatus->name) . '</span>
-                                    <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white rounded-full"
-                                          style="background-color: ' . ($newStatus->color ?? '#6B7280') . '">' . e($newStatus->name) . '</span>
-                                </div>';
-                        } else {
-                            // Fallback jika status tidak ditemukan
-                            $statusBadges = '
-                                <div class="flex items-center gap-2 mt-2">
-                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gray-500 rounded-full">Status Updated</span>
+                                <div class="flex items-center gap-1.5 mt-1.5">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md" style="background-color: ' . ($oldStatus->color ?? '#6B7280') . '20; color: ' . ($oldStatus->color ?? '#6B7280') . '">
+                                        <span class="w-1.5 h-1.5 rounded-full" style="background-color: ' . ($oldStatus->color ?? '#6B7280') . '"></span>
+                                        ' . e($oldStatus->name) . '
+                                    </span>
+                                    <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-md" style="background-color: ' . ($newStatus->color ?? '#6B7280') . '20; color: ' . ($newStatus->color ?? '#6B7280') . '">
+                                        <span class="w-1.5 h-1.5 rounded-full" style="background-color: ' . ($newStatus->color ?? '#6B7280') . '"></span>
+                                        ' . e($newStatus->name) . '
+                                    </span>
                                 </div>';
                         }
                     }
 
+                    // === Comment Preview ===
                     $commentPreview = '';
                     if ($record->type === 'comment' && $record->content) {
-                        $plainText = Str::limit(strip_tags(Str::markdown($record->content)), 100);
+                        $plainText = Str::limit(strip_tags(Str::markdown($record->content)), 120);
                         $commentPreview = '
-                            <div class="mt-2 p-2 bg-gray-50 dark:bg-gray-900 rounded border-l-3 border-green-500">
-                                <div class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">'
-                                    . e($plainText) .
-                                '</div>
+                            <div class="mt-1.5 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-2 border-green-500/50">
+                                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">' . e($plainText) . '</p>
                             </div>';
                     }
 
-                    // Build description based on type to avoid model accessor override
-                    $descriptionText = $record->type === 'comment'
-                        ? 'added a comment'
-                        : $record->getAttributes()['description'] ?? 'updated ticket status';
-
-                    $timeAgo = $record->created_at->diffForHumans();
-                    $viewUrl = route('filament.resources.tickets.share', $ticket->code);
+                    $ringColor = $record->type === 'activity' ? 'ring-blue-500/20' : 'ring-green-500/20';
 
                     return new HtmlString('
-                        <div class="flex items-start gap-3">
-                            <img src="' . ($user->avatar_url ?: 'https://ui-avatars.com/api/?name=' . urlencode($user->name)) . '"
-                                 alt="' . e($user->name) . '"
-                                 class="w-8 h-8 rounded-full object-cover shrink-0">
+                        <div class="flex items-start gap-3 py-1">
+                            <img src="' . e($avatarUrl) . '" class="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ' . $ringColor . '" loading="lazy" />
                             <div class="flex-1 min-w-0">
-                                <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-center justify-between gap-3">
                                     <div class="min-w-0">
-                                        <div class="flex items-center gap-2 mb-0.5">
-                                            ' . $typeIcon . '
-                                            <span class="font-medium text-sm">' . e($user->name) . '</span>
-                                            <span class="text-gray-500 dark:text-gray-400 text-sm">' . e($descriptionText) . '</span>
-                                        </div>
-                                        <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                                            <span>' . e($ticket->project->name) . '</span>
-                                            <span>•</span>
-                                            <a href="' . $viewUrl . '" target="_blank"
-                                               class="text-primary-600 hover:text-primary-800 hover:underline font-medium">
-                                                ' . e($ticket->code) . '
-                                            </a>
-                                            <span class="truncate">' . e(Str::limit($ticket->name, 50)) . '</span>
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="text-sm font-semibold text-gray-900 dark:text-white">' . e($user->name) . '</span>
+                                            <span class="text-sm text-gray-500 dark:text-gray-400">' . e($descriptionText) . '</span>
                                         </div>
                                     </div>
-                                    <div class="flex items-center gap-3 shrink-0">
-                                        <span class="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">' . $timeAgo . '</span>
-                                        <a href="' . $viewUrl . '" target="_blank"
-                                           class="text-xs text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400 whitespace-nowrap">
-                                            <svg class="w-4 h-4 inline -mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
-                                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            View
+                                    <div class="flex items-center gap-2 shrink-0">
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">' . $timeAgo . '</span>
+                                        <a href="' . $viewUrl . '" target="_blank" class="p-1 text-gray-400 hover:text-primary-500 rounded transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                         </a>
                                     </div>
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-0.5">
+                                    <span class="px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase rounded bg-primary-500/10 text-primary-500">' . e($ticket->project->name) . '</span>
+                                    <span class="text-xs font-mono text-gray-400 dark:text-gray-500">' . e($ticket->code) . '</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 truncate">' . e(Str::limit($ticket->name, 45)) . '</span>
                                 </div>
                                 ' . $statusBadges . '
                                 ' . $commentPreview . '
