@@ -82,30 +82,22 @@ class UserResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ViewColumn::make('user_card')
-                    ->label(__('User'))
-                    ->view('partials.filament.resources.user-card-column')
-                    ->searchable(query: function ($query, string $search) {
-                        $query->where(function ($q) use ($search) {
-                            $q->where('name', 'like', "%{$search}%")
-                              ->orWhere('username', 'like', "%{$search}%")
-                              ->orWhere('email', 'like', "%{$search}%");
-                        });
-                    }),
-
-                Tables\Columns\TagsColumn::make('roles.name')
-                    ->label(__('Roles'))
-                    ->limit(2),
-
-                Tables\Columns\TextColumn::make('email_verified_at')
-                    ->label(__('Email verified at'))
-                    ->dateTime()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created at'))
-                    ->dateTime()
-                    ->sortable(),
+                Tables\Columns\Layout\Split::make([
+                    Tables\Columns\ViewColumn::make('user_card')
+                        ->view('partials.filament.resources.user-card-column')
+                        ->searchable(query: function ($query, string $search) {
+                            $query->where(function ($q) use ($search) {
+                                $q->where('name', 'like', "%{$search}%")
+                                  ->orWhere('username', 'like', "%{$search}%")
+                                  ->orWhere('email', 'like', "%{$search}%");
+                            });
+                        }),
+                ]),
+            ])
+            ->contentGrid([
+                'md' => 2,
+                'lg' => 3,
+                'xl' => 4,
             ])
             ->filters([
                 //
