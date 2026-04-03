@@ -46,7 +46,7 @@ class Profile extends BaseProfile
         // Add username field after name field (position 1)
         $usernameField = Forms\Components\TextInput::make('username')
             ->label(__('Username'))
-            ->unique(User::class, 'username', ignoreRecord: true)
+            ->unique(User::class, 'username', ignorable: $this->user)
             ->helperText(__('Your unique username for mentions (@username). Only letters, numbers, and underscores allowed.'))
             ->required()
             ->rules(['regex:/^[a-zA-Z0-9_]+$/']);
@@ -218,12 +218,8 @@ class Profile extends BaseProfile
         $this->user->update($data);
         $this->user->refresh();
 
-        // Update form with latest data including username
-        $this->updateProfileForm->fill([
-            'name' => $this->user->name,
-            'username' => $this->user->username,
-            'email' => $this->user->email
-        ]);
+        // Update form with latest data
+        $this->updateProfileForm->fill($this->user->toArray());
 
         if ($loginColumnValue != $this->user->{$this->loginColumn}) {
             $this->user->newEmail($loginColumnValue);
