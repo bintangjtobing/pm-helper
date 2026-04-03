@@ -2,41 +2,56 @@
     $record = $getRecord();
     $roles = $record->roles->pluck('name')->toArray();
     $roleColors = [
-        'Super Admin' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-        'Project Manager' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-        'Developer' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-        'QA / Tester' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-        'DevOps' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-        'Stakeholder' => 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+        'Super Admin' => 'bg-red-500/10 text-red-500 ring-red-500/20',
+        'Project Manager' => 'bg-blue-500/10 text-blue-500 ring-blue-500/20',
+        'Developer' => 'bg-emerald-500/10 text-emerald-500 ring-emerald-500/20',
+        'QA / Tester' => 'bg-amber-500/10 text-amber-500 ring-amber-500/20',
+        'DevOps' => 'bg-violet-500/10 text-violet-500 ring-violet-500/20',
+        'Stakeholder' => 'bg-orange-500/10 text-orange-500 ring-orange-500/20',
     ];
+    $rawAvatar = $record->getAttributes()['avatar_url'] ?? null;
+    $avatarSrc = $rawAvatar ?: ('https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&size=128&background=' . substr(md5($record->id), 0, 6) . '&color=ffffff&bold=true');
 @endphp
-<div class="flex flex-col items-center w-full p-2 text-center">
-    <img src="{{ $record->avatar_url }}"
-         alt="{{ $record->name }}"
-         class="object-cover w-16 h-16 rounded-full"
-         loading="lazy" />
+<div class="flex flex-col items-center w-full px-4 py-5 text-center">
+    {{-- Avatar --}}
+    <div class="relative">
+        <img src="{{ $avatarSrc }}"
+             alt="{{ $record->name }}"
+             class="object-cover w-20 h-20 rounded-full ring-4 ring-gray-100 dark:ring-gray-600"
+             loading="lazy" />
+        @if($record->email_verified_at)
+        <div class="absolute bottom-0 right-0 flex items-center justify-center w-5 h-5 bg-green-500 rounded-full ring-2 ring-white dark:ring-gray-800" title="{{ __('Verified') }}">
+            <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        </div>
+        @endif
+    </div>
 
-    <div class="mt-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+    {{-- Name --}}
+    <div class="mt-3 text-sm font-bold text-gray-900 dark:text-white">
         {{ $record->name }}
     </div>
 
-    <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+    {{-- Username --}}
+    <div class="mt-0.5 text-xs font-medium text-gray-400 dark:text-gray-500">
         {{ '@' . $record->username }}
     </div>
 
-    <div class="mt-1 text-xs text-gray-400 dark:text-gray-500 truncate max-w-full">
+    {{-- Email --}}
+    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
         {{ $record->email }}
     </div>
 
-    <div class="flex flex-wrap justify-center gap-1 mt-2">
+    {{-- Roles --}}
+    <div class="flex flex-wrap justify-center gap-1.5 mt-3">
         @foreach($roles as $role)
-        <span class="px-2 py-0.5 text-xs font-medium rounded-full {{ $roleColors[$role] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' }}">
+        <span class="px-2.5 py-1 text-[10px] font-semibold tracking-wide uppercase rounded-full ring-1 {{ $roleColors[$role] ?? 'bg-gray-500/10 text-gray-500 ring-gray-500/20' }}">
             {{ $role }}
         </span>
         @endforeach
     </div>
 
-    <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-        {{ __('Joined') }} {{ $record->created_at->format('M d, Y') }}
+    {{-- Join date --}}
+    <div class="mt-3 text-[11px] text-gray-400 dark:text-gray-500">
+        {{ __('Member since') }} {{ $record->created_at->format('M Y') }}
     </div>
 </div>
