@@ -325,62 +325,34 @@ class ProjectResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\SpatieMediaLibraryImageColumn::make('cover')
-                    ->label(__('Cover image'))
-                    ->collection('cover')
-                    ->rounded()
-                    ->width(40)
-                    ->height(40),
-
-                Tables\Columns\TextColumn::make('name')
-                    ->label(__('Project name'))
-                    ->sortable()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('owner.name')
-                    ->label(__('Project owner'))
-                    ->sortable()
-                    ->searchable(),
+                Tables\Columns\ViewColumn::make('project_info')
+                    ->label(__('Project'))
+                    ->view('partials.filament.resources.project-info-column')
+                    ->searchable(query: function ($query, string $search) {
+                        $query->where(function ($q) use ($search) {
+                            $q->where('name', 'like', "%{$search}%")
+                              ->orWhereHas('owner', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+                        });
+                    }),
 
                 Tables\Columns\TextColumn::make('status.name')
-                    ->label(__('Project status'))
-                    ->formatStateUsing(fn($record) => new HtmlString('
-                            <div class="flex items-center gap-2">
-                                <span class="relative flex w-6 h-6 rounded-md filament-tables-color-column"
-                                    style="background-color: ' . $record->status->color . '"></span>
-                                <span>' . $record->status->name . '</span>
-                            </div>
-                        '))
-                    ->sortable()
-                    ->searchable(),
+                    ->label(__('Status'))
+                    ->formatStateUsing(fn($record) => new HtmlString(
+                        '<span class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md" style="background-color: ' . $record->status->color . '20; color: ' . $record->status->color . '">'
+                        . '<span class="w-1.5 h-1.5 rounded-full" style="background-color: ' . $record->status->color . '"></span>'
+                        . e($record->status->name)
+                        . '</span>'
+                    ))
+                    ->sortable(),
 
-                Tables\Columns\TagsColumn::make('users.name')
-                    ->label(__('Affected users'))
-                    ->limit(2),
-
-                Tables\Columns\BadgeColumn::make('type')
-                    ->enum([
-                        'kanban' => __('Kanban'),
-                        'scrum' => __('Scrum')
-                    ])
-                    ->colors([
-                        'secondary' => 'kanban',
-                        'warning' => 'scrum',
-                    ]),
-
-                Tables\Columns\IconColumn::make('auto_complete_enabled')
-                    ->label(__('Auto Complete'))
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('gray'),
+                Tables\Columns\ViewColumn::make('team')
+                    ->label(__('Team'))
+                    ->view('partials.filament.resources.project-team-column'),
 
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created at'))
-                    ->dateTime()
-                    ->sortable()
-                    ->searchable(),
+                    ->label(__('Created'))
+                    ->since()
+                    ->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('owner_id')

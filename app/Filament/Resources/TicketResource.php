@@ -320,84 +320,51 @@ class TicketResource extends Resource
             ]);
     }
 
-    // Sisanya tetap sama seperti kode asli...
     public static function tableColumns(bool $withProject = true): array
     {
-        $columns = [];
-        if ($withProject) {
-            $columns[] = Tables\Columns\TextColumn::make('project.name')
-                ->label(__('Project'))
-                ->sortable()
-                ->searchable();
-        }
-        $columns = array_merge($columns, [
-            Tables\Columns\TextColumn::make('name')
-                ->label(__('Ticket name'))
-                ->sortable()
-                ->searchable(),
+        return [
+            Tables\Columns\ViewColumn::make('ticket_info')
+                ->label(__('Ticket'))
+                ->view('partials.filament.resources.ticket-info-column')
+                ->searchable(query: function ($query, string $search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                          ->orWhere('code', 'like', "%{$search}%")
+                          ->orWhereHas('project', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+                    });
+                }),
 
-            Tables\Columns\TextColumn::make('owner.name')
-                ->label(__('Owner'))
-                ->sortable()
-                ->formatStateUsing(fn($record) => view('components.user-avatar', ['user' => $record->owner]))
-                ->searchable(),
-
-            Tables\Columns\TextColumn::make('responsible.name')
-                ->label(__('Responsible'))
-                ->sortable()
-                ->formatStateUsing(fn($record) => view('components.user-avatar', ['user' => $record->responsible]))
-                ->searchable(),
+            Tables\Columns\ViewColumn::make('assignees')
+                ->label(__('Assignees'))
+                ->view('partials.filament.resources.ticket-assignees-column'),
 
             Tables\Columns\TextColumn::make('status.name')
                 ->label(__('Status'))
-                ->formatStateUsing(fn($record) => new HtmlString('
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="relative flex w-6 h-6 rounded-md filament-tables-color-column"
-                                    style="background-color: ' . $record->status->color . '"></span>
-                                <span>' . $record->status->name . '</span>
-                            </div>
-                        '))
-                ->sortable()
-                ->searchable(),
-
-            Tables\Columns\TextColumn::make('type.name')
-                ->label(__('Type'))
-                ->formatStateUsing(
-                    fn($record) => view('partials.filament.resources.ticket-type', ['state' => $record->type])
-                )
-                ->sortable()
-                ->searchable(),
+                ->formatStateUsing(fn($record) => new HtmlString(
+                    '<span class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md" style="background-color: ' . $record->status->color . '20; color: ' . $record->status->color . '">'
+                    . '<span class="w-1.5 h-1.5 rounded-full" style="background-color: ' . $record->status->color . '"></span>'
+                    . e($record->status->name)
+                    . '</span>'
+                ))
+                ->sortable(),
 
             Tables\Columns\TextColumn::make('priority.name')
                 ->label(__('Priority'))
-                ->formatStateUsing(fn($record) => new HtmlString('
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="relative flex w-6 h-6 rounded-md filament-tables-color-column"
-                                    style="background-color: ' . $record->priority->color . '"></span>
-                                <span>' . $record->priority->name . '</span>
-                            </div>
-                        '))
-                ->sortable()
-                ->searchable(),
-
-            Tables\Columns\TextColumn::make('estimation')
-                ->label(__('Estimation'))
-                ->formatStateUsing(fn($state) => $state ? $state . ' hours' : '-')
+                ->formatStateUsing(fn($record) => new HtmlString(
+                    '<span class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium rounded-md" style="background-color: ' . $record->priority->color . '20; color: ' . $record->priority->color . '">'
+                    . '<span class="w-1.5 h-1.5 rounded-full" style="background-color: ' . $record->priority->color . '"></span>'
+                    . e($record->priority->name)
+                    . '</span>'
+                ))
                 ->sortable(),
 
-            Tables\Columns\TextColumn::make('due_date')
-                ->label(__('Due Date'))
-                ->date()
-                ->sortable()
-                ->color(fn ($record) => $record->due_date && $record->due_date->isPast() ? 'danger' : null),
-
-            Tables\Columns\TextColumn::make('created_at')
-                ->label(__('Created at'))
-                ->dateTime()
-                ->sortable()
-                ->searchable(),
-        ]);
-        return $columns;
+            Tables\Columns\ViewColumn::make('due_info')
+                ->label(__('Due'))
+                ->view('partials.filament.resources.ticket-due-column')
+                ->sortable(query: function ($query, string $direction) {
+                    $query->orderBy('due_date', $direction);
+                }),
+        ];
     }
 
     public static function table(Table $table): Table
