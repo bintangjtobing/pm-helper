@@ -135,6 +135,7 @@ class EnhancedActivityFeed extends BaseWidget
         return [
             Tables\Columns\TextColumn::make('activity_info')
                 ->label('Activity')
+                ->extraAttributes(['style' => 'max-width:none;'])
                 ->formatStateUsing(function ($state, $record) {
                     $user = \App\Models\User::find($record->user_id);
                     $ticket = \App\Models\Ticket::with('project')->find($record->ticket_id);

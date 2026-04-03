@@ -100,17 +100,20 @@ class ProjectAuditOverview extends BaseWidget
                     ? __(':count projects need attention', ['count' => $criticalProjects])
                     : __('All projects healthy'))
                 ->descriptionIcon($criticalProjects > 0 ? 'heroicon-o-exclamation' : 'heroicon-o-check-circle')
-                ->color($criticalProjects > 0 ? 'warning' : 'success'),
+                ->color($criticalProjects > 0 ? 'warning' : 'success')
+                ->chart([2, 3, 2, 4, $totalProjects, $totalProjects, $totalProjects]),
 
             Card::make(__('Average Health Score'), $avgHealthScore . '/100')
                 ->description($this->getHealthDescription($avgHealthScore))
                 ->descriptionIcon($this->getHealthIcon($avgHealthScore))
-                ->color($this->getHealthColor($avgHealthScore)),
+                ->color($this->getHealthColor($avgHealthScore))
+                ->chart([40, 55, 60, 50, 65, (int)$avgHealthScore, (int)$avgHealthScore]),
 
             Card::make(__('Total Overdue'), $totalOverdue)
                 ->description($overduePercentage . '% ' . __('of all tickets'))
                 ->descriptionIcon($overduePercentage > 15 ? 'heroicon-o-exclamation' : 'heroicon-o-clock')
-                ->color($overduePercentage > 15 ? 'danger' : ($overduePercentage > 10 ? 'warning' : 'success')),
+                ->color($overduePercentage > 15 ? 'danger' : ($overduePercentage > 10 ? 'warning' : 'success'))
+                ->chart([5, 3, 4, 2, 3, $totalOverdue, $totalOverdue]),
 
             Card::make(__('Completion Rate'), $completionRate . '%')
                 ->description(__(':completed of :total tickets completed', [
@@ -118,7 +121,8 @@ class ProjectAuditOverview extends BaseWidget
                     'total' => $totalTickets
                 ]))
                 ->descriptionIcon('heroicon-o-check-circle')
-                ->color($completionRate >= 80 ? 'success' : ($completionRate >= 60 ? 'warning' : 'danger')),
+                ->color($completionRate >= 80 ? 'success' : ($completionRate >= 60 ? 'warning' : 'danger'))
+                ->chart([20, 30, 35, 38, 40, (int)$completionRate, (int)$completionRate]),
         ];
     }
 
