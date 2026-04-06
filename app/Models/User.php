@@ -38,6 +38,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'username',
         'email',
         'secondary_email',
+        'gender',
+        'birthday',
+        'department_id',
+        'position_id',
+        'supervisor_id',
         'password',
         'creation_token',
         'type',
@@ -66,7 +71,28 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'birthday' => 'date',
     ];
+
+    public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function position(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Position::class);
+    }
+
+    public function supervisor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function subordinates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(User::class, 'supervisor_id');
+    }
 
     public static function boot()
     {

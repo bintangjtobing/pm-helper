@@ -275,6 +275,7 @@ class AppServiceProvider extends ServiceProvider
         Filament::registerNavigationGroups([
             __('Management'),
             __('Reports'),
+            __('Organization'),
             __('Referential'),
             __('Security'),
             __('Settings'),

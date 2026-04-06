@@ -3,41 +3,27 @@
 namespace App\Notifications;
 
 use App\Models\TicketComment;
+use App\Models\User;
+use Filament\Notifications\Actions\Action;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TicketMentioned extends Notification
+class TicketMentioned extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new notification instance.
-     *
-     * @return void
-     */
     public function __construct(
         public TicketComment $comment
     ) {}
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
     public function via($notifiable)
     {
         return ['mail', 'database'];
     }
 
-    /**
-     * Get the mail representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return \Illuminate\Notifications\Messages\MailMessage
-     */
     public function toMail($notifiable)
     {
         $ticket = $this->comment->ticket;
@@ -50,25 +36,22 @@ class TicketMentioned extends Notification
             ->line('**' . $mentionedBy->name . '** mentioned you in a comment on **' . $ticket->code . '** — ' . $ticket->name . ':')
             ->line('> ' . $preview)
             ->line('**Project:** ' . $ticket->project->name)
-            ->action('View Ticket', route('filament.resources.tickets.view', $ticket->id))
-            ->salutation('— ' . config('app.name'));
+            ->action('View Ticket', route('filament.resources.tickets.share', $ticket->code))
+            ->salutation('— PM Helper on Capella Digicrats ID');
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @param  mixed  $notifiable
-     * @return array
-     */
-    public function toArray($notifiable)
+    public function toDatabase(User $notifiable): array
     {
-        return [
-            'ticket_id' => $this->comment->ticket->id,
-            'ticket_code' => $this->comment->ticket->code,
-            'ticket_name' => $this->comment->ticket->name,
-            'comment_id' => $this->comment->id,
-            'mentioned_by' => $this->comment->user->name,
-            'comment_content' => strip_tags($this->comment->content),
-        ];
+        return FilamentNotification::make()
+            ->title($this->comment->user->name . ' mentioned you')
+            ->icon('heroicon-o-at-symbol')
+            ->body(fn () => $this->comment->ticket->code . ' — ' . $this->comment->ticket->name)
+            ->actions([
+                Action::make('view')
+                    ->link()
+                    ->icon('heroicon-s-eye')
+                    ->url(fn () => route('filament.resources.tickets.share', $this->comment->ticket->code)),
+            ])
+            ->getDatabaseMessage();
     }
 }

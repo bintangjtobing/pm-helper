@@ -79,6 +79,54 @@ class Profile extends BaseProfile
             ->helperText(__('Optional — this email will be CC\'d on notifications sent to you.'))
             ->placeholder('e.g. personal@gmail.com');
 
+        // Gender field
+        $genderField = Forms\Components\Select::make('gender')
+            ->label(__('Gender'))
+            ->options([
+                'male' => __('Male'),
+                'female' => __('Female'),
+                'other' => __('Other'),
+            ])
+            ->placeholder(__('Select gender'));
+
+        // Birthday field
+        $birthdayField = Forms\Components\DatePicker::make('birthday')
+            ->label(__('Birthday'))
+            ->maxDate(now()->subYears(16));
+
+        // Department field
+        $departmentField = Forms\Components\Select::make('department_id')
+            ->label(__('Department'))
+            ->options(\App\Models\Department::orderBy('sort_order')->pluck('name', 'id'))
+            ->searchable()
+            ->reactive()
+            ->afterStateUpdated(fn (callable $set) => $set('position_id', null))
+            ->placeholder(__('Select department'));
+
+        // Position field (filtered by department)
+        $positionField = Forms\Components\Select::make('position_id')
+            ->label(__('Position'))
+            ->options(function (callable $get) {
+                $deptId = $get('department_id');
+                if (!$deptId) return [];
+                return \App\Models\Position::where('department_id', $deptId)->orderBy('sort_order')->pluck('name', 'id');
+            })
+            ->searchable()
+            ->placeholder(__('Select position'));
+
+        // Direct supervisor field
+        $supervisorField = Forms\Components\Select::make('supervisor_id')
+            ->label(__('Direct Supervisor'))
+            ->options(function () {
+                return User::where('id', '!=', $this->user->id)
+                    ->orderBy('name')
+                    ->get()
+                    ->mapWithKeys(fn ($u) => [$u->id => $u->name . ($u->position ? ' — ' . $u->position->name : '')])
+                    ->toArray();
+            })
+            ->searchable()
+            ->placeholder(__('Select supervisor'));
+
         // Locale selection field
         $localeField = Forms\Components\Select::make('locale')
             ->label(__('Language'))
@@ -106,6 +154,11 @@ class Profile extends BaseProfile
         array_splice($fields, 0, 0, [$avatarPreview, $avatarField]); // Add avatar fields at the beginning
         array_splice($fields, 3, 0, [$usernameField]); // Add username after name (now at position 3)
         $fields[] = $secondaryEmailField;
+        $fields[] = $genderField;
+        $fields[] = $birthdayField;
+        $fields[] = $departmentField;
+        $fields[] = $positionField;
+        $fields[] = $supervisorField;
         $fields[] = $localeField;
         $fields[] = $defaultProjectField;
 
