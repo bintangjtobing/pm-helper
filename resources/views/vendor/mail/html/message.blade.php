@@ -7,16 +7,7 @@
     </x-slot:header>
 
     {{-- Body --}}
-    <div class="notification-header">
-        <div class="notification-badge">
-            NOTIFICATION
-        </div>
-    </div>
-
-    <div class="notification-box">
-        <div class="decorative-line"></div>
-        {{ $slot }}
-    </div>
+    {{ $slot }}
 
     {{-- Subcopy --}}
     @isset($subcopy)
