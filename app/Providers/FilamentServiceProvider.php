@@ -39,6 +39,7 @@ class FilamentServiceProvider extends ServiceProvider
             Filament::registerScripts([
                 asset('js/toast-notifications.js'),
                 asset('js/timezone-detect.js'),
+                asset('js/birthday-avatar.js'),
             ], true);
             // Register ProjectAuditResource
             Filament::registerResources([

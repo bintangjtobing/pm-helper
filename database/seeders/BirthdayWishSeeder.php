@@ -18,9 +18,9 @@ class BirthdayWishSeeder extends Seeder
 
         while (($row = fgetcsv($handle)) !== false) {
             if (count($row) >= 2 && !empty($row[1])) {
-                BirthdayWish::firstOrCreate(
+                BirthdayWish::updateOrCreate(
                     ['wish' => $row[1]],
-                    ['tone' => $row[2] ?? null, 'is_active' => true]
+                    ['tone' => $row[2] ?? null, 'audience' => $row[3] ?? 'Universal', 'is_active' => true]
                 );
                 $count++;
             }

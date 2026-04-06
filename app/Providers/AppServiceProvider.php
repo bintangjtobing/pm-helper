@@ -269,6 +269,7 @@ class AppServiceProvider extends ServiceProvider
             new HtmlString('<link rel="icon" type="image/x-icon" href="' . $favicon . '">'),
             new HtmlString('<link rel="icon" type="image/x-icon" href="' . $favicon . '" media="(prefers-color-scheme: dark)">'),
             new HtmlString('<meta name="user-id" content="' . (auth()->id() ?? '') . '">'),
+            new HtmlString('<meta name="user-birthday-today" content="' . (auth()->check() && auth()->user()->birthday && auth()->user()->birthday->format('m-d') === now()->format('m-d') ? '1' : '0') . '">'),
         ]);
 
         // Register navigation groups

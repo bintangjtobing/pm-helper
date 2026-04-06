@@ -1,7 +1,10 @@
 @php
     $illustrationIndex = (now()->dayOfYear % 4) + 1;
     $illustration = asset("images/birthday/{$illustrationIndex}.png");
-    $wish = \App\Models\BirthdayWish::random();
+    // Calculate ages and get age-appropriate wish
+    $ages = $birthdayUsers->map(fn($u) => $u->birthday ? $u->birthday->age : null)->filter();
+    $avgAge = $ages->isNotEmpty() ? (int) $ages->avg() : null;
+    $wish = \App\Models\BirthdayWish::randomForAge($avgAge);
     $balloonColors = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#60a5fa', '#a78bfa', '#f472b6'];
 @endphp
 
@@ -13,7 +16,8 @@
                 <p class="mt-0.5 text-xs text-gray-400">
                     Let's celebrate
                     @foreach($birthdayUsers as $index => $bUser)
-                        <strong class="text-white">{{ $bUser->name }}</strong>@if($index < $birthdayUsers->count() - 2), @elseif($index === $birthdayUsers->count() - 2) & @endif
+                        @php $age = $bUser->birthday ? $bUser->birthday->age : null; @endphp
+                        <strong class="text-white">{{ $bUser->name }}</strong>@if($age) <span class="text-gray-500">(turns {{ $age }})</span>@endif@if($index < $birthdayUsers->count() - 2), @elseif($index === $birthdayUsers->count() - 2) & @endif
                     @endforeach
                     today!
                 </p>
@@ -64,9 +68,8 @@
     <style>
         @keyframes balloonFloat {
             0% { transform: translateY(0) scale(0.3); opacity: 0; }
-            10% { opacity: 0.9; transform: translateY(-5px) scale(1); }
-            50% { opacity: 0.7; }
-            90% { opacity: 0; }
+            8% { opacity: 1; transform: translateY(-5px) scale(1); }
+            70% { opacity: 1; }
             100% { transform: translateY(-70px) translateX({{ rand(-8, 8) }}px) scale(0.6); opacity: 0; }
         }
     </style>
