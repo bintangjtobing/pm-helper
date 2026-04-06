@@ -41,12 +41,13 @@ class DailyReportSubmitted extends Notification implements ShouldQueue
             ->line('**Project:** ' . $project);
 
         if ($this->report->accomplished) {
-            $preview = \Illuminate\Support\Str::limit(strip_tags($this->report->accomplished), 150);
-            $mail->line('**Accomplished:** ' . $preview);
+            $preview = trim(preg_replace('/\s+/', ' ', preg_replace(['/#{1,6}\s?/', '/\*{1,2}/', '/~~/', '/`{1,3}/'], '', strip_tags($this->report->accomplished))));
+            $mail->line('**Accomplished:** ' . \Illuminate\Support\Str::limit($preview, 150));
         }
 
         if ($this->report->blockers) {
-            $mail->line('**Blockers:** ' . \Illuminate\Support\Str::limit(strip_tags($this->report->blockers), 100));
+            $preview = trim(preg_replace('/\s+/', ' ', preg_replace(['/#{1,6}\s?/', '/\*{1,2}/', '/~~/', '/`{1,3}/'], '', strip_tags($this->report->blockers))));
+            $mail->line('**Blockers:** ' . \Illuminate\Support\Str::limit($preview, 100));
         }
 
         $mail->action('View Report', route('filament.resources.daily-reports.view', $this->report->id))
