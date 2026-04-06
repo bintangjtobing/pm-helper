@@ -320,8 +320,21 @@ class Profile extends BaseProfile
         // Remove the avatar field as we handle it separately
         unset($data['avatar']);
 
+        // Check if gender changed and user has no custom uploaded avatar
+        $genderChanged = isset($data['gender']) && $data['gender'] !== $this->user->gender;
+
         $this->user->update($data);
         $this->user->refresh();
+
+        // Assign gender avatar if gender was set/changed and no custom upload
+        if ($genderChanged && $this->user->gender && in_array($this->user->gender, ['male', 'female'])) {
+            $currentAvatar = $this->user->getAttributes()['avatar_url'] ?? null;
+            // Only assign if no avatar or current is a default avatar (not a custom upload with user id)
+            if (!$currentAvatar || !str_contains($currentAvatar, '/' . $this->user->id . '_')) {
+                $this->user->assignGenderAvatar();
+                $this->user->refresh();
+            }
+        }
 
         // Update form with latest data
         $this->updateProfileForm->fill($this->user->toArray());

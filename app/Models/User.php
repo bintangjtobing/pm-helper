@@ -95,6 +95,39 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return $this->hasMany(User::class, 'supervisor_id');
     }
 
+    /**
+     * Assign a random default avatar based on gender.
+     * Copies from public/images/default-avatars/{gender}/ to storage/avatars/
+     */
+    public function assignGenderAvatar(): void
+    {
+        if (!$this->gender || in_array($this->gender, ['other'])) return;
+
+        // Don't override if user already uploaded a custom avatar (stored in /storage/avatars/ with user id)
+        $currentAvatar = $this->getAttributes()['avatar_url'] ?? null;
+        if ($currentAvatar && str_contains($currentAvatar, '/' . $this->id . '_')) return;
+
+        $gender = $this->gender; // male or female
+        $sourceDir = public_path("images/default-avatars/{$gender}");
+
+        if (!is_dir($sourceDir)) return;
+
+        $files = glob($sourceDir . '/*.png');
+        if (empty($files)) return;
+
+        $sourceFile = $files[array_rand($files)];
+        $randomSuffix = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
+        $baseName = pathinfo($sourceFile, PATHINFO_FILENAME);
+        $filename = "avatars/{$baseName}-{$randomSuffix}.png";
+
+        // Ensure directory exists
+        $destDir = Storage::disk('public')->path('avatars');
+        if (!is_dir($destDir)) mkdir($destDir, 0755, true);
+
+        copy($sourceFile, Storage::disk('public')->path($filename));
+        $this->update(['avatar_url' => '/storage/' . $filename]);
+    }
+
     public static function boot()
     {
         parent::boot();
