@@ -35,18 +35,17 @@
 
                     {{-- Linked ticket / project --}}
                     @if($record->ticket || $record->project)
-                    <div class="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex flex-wrap items-center gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                         @if($record->project)
-                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-primary-500/10 text-primary-500">
+                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded bg-primary-500/10 text-primary-500">
                             {{ $record->project->name }}
                         </span>
                         @endif
                         @if($record->ticket)
                         <a href="{{ route('filament.resources.tickets.share', $record->ticket->code) }}"
                            target="_blank"
-                           class="flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                            {{ $record->ticket->code }} — {{ $record->ticket->name }}
+                           class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors">
+                            &#128279; {{ $record->ticket->code }} — {{ $record->ticket->name }}
                         </a>
                         @endif
                     </div>

@@ -122,32 +122,37 @@ class DiscussionResource extends Resource
                 Tables\Columns\TextColumn::make('title')
                     ->label(__('Topic'))
                     ->formatStateUsing(function ($record) {
+                        $user = $record->user;
+                        $avatar = $user->getAttributes()['avatar_url']
+                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
                         $replyCount = $record->replies_count ?? 0;
-                        $replyBadge = $replyCount > 0
-                            ? '<span class="ml-2 px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-500">' . $replyCount . ' replies</span>'
-                            : '';
+
+                        $badges = '';
+                        if ($record->ticket) {
+                            $badges .= '<span class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-blue-500/10 text-blue-500">' . e($record->ticket->code) . '</span>';
+                        }
+                        if ($replyCount > 0) {
+                            $badges .= '<span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-green-500/10 text-green-600 dark:text-green-400">'
+                                . '<svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>'
+                                . $replyCount . '</span>';
+                        }
+
                         return new HtmlString(
-                            '<div class="min-w-0">'
-                            . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->title) . $replyBadge . '</div>'
-                            . '<div class="text-xs text-gray-500 dark:text-gray-400 truncate">' . e(Str::limit(strip_tags($record->content), 80)) . '</div>'
+                            '<div class="flex items-start gap-2.5">'
+                            . '<img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5" loading="lazy" />'
+                            . '<div class="min-w-0">'
+                            . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->title) . '</div>'
+                            . '<div class="flex items-center gap-1.5 mt-0.5">'
+                            . '<span class="text-xs text-gray-500">' . e($user->name) . '</span>'
+                            . '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span>'
+                            . '<span class="text-xs text-gray-400">' . $record->created_at->diffForHumans() . '</span>'
+                            . ($badges ? '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span>' . $badges : '')
+                            . '</div>'
+                            . '</div>'
                             . '</div>'
                         );
                     })
                     ->searchable(),
-
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label(__('Author'))
-                    ->formatStateUsing(function ($record) {
-                        $user = $record->user;
-                        $avatar = $user->getAttributes()['avatar_url']
-                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
-                        return new HtmlString(
-                            '<div class="flex items-center gap-2">'
-                            . '<img src="' . e($avatar) . '" class="w-6 h-6 rounded-full object-cover" loading="lazy" />'
-                            . '<span class="text-sm">' . e($user->name) . '</span>'
-                            . '</div>'
-                        );
-                    }),
 
                 Tables\Columns\TextColumn::make('project.name')
                     ->label(__('Project'))
@@ -164,11 +169,6 @@ class DiscussionResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
                     ->formatStateUsing(fn ($record) => new HtmlString($record->status_badge)),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label(__('Created'))
-                    ->since()
-                    ->sortable(),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
