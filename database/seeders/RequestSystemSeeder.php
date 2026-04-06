@@ -15,7 +15,7 @@ class RequestSystemSeeder extends Seeder
             ['name' => 'Request'],
             [
                 'color' => '#8b5cf6',
-                'icon' => 'heroicon-o-hand-raised',
+                'icon' => 'heroicon-o-clipboard-list',
                 'is_default' => false,
                 'description' => 'Internal request from any department — requires PM approval before execution',
             ]
