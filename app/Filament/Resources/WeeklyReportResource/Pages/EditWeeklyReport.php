@@ -48,7 +48,7 @@ class EditWeeklyReport extends EditRecord
                         'submitted_at' => now(),
                     ]);
 
-                    $notifyUsers = User::role(['Super Admin', 'Project Manager'])->get();
+                    $notifyUsers = User::role(['Super Admin', 'Project Manager', 'Stakeholder'])->get();
                     foreach ($notifyUsers as $user) {
                         $user->notify(new WeeklyReportSubmitted($this->record));
                     }

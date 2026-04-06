@@ -6,6 +6,7 @@ use App\Filament\Resources\DailyReportResource\Pages;
 use App\Models\DailyReport;
 use App\Models\Project;
 use App\Models\User;
+use App\Notifications\DailyReportSubmitted;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -203,6 +204,11 @@ class DailyReportResource extends Resource
                             'status' => 'submitted',
                             'submitted_at' => now(),
                         ]);
+
+                        $notifyUsers = User::role(['Super Admin', 'Project Manager', 'Stakeholder'])->get();
+                        foreach ($notifyUsers as $user) {
+                            $user->notify(new DailyReportSubmitted($record));
+                        }
                     }),
 
                 Tables\Actions\Action::make('acknowledge')

@@ -212,7 +212,7 @@ Count ALL tickets mentioned in the document. If tickets have codes like QOS-xx, 
                         'submitted_at' => now(),
                     ]);
 
-                    $notifyUsers = User::role(['Super Admin', 'Project Manager'])->get();
+                    $notifyUsers = User::role(['Super Admin', 'Project Manager', 'Stakeholder'])->get();
                     foreach ($notifyUsers as $user) {
                         $user->notify(new WeeklyReportSubmitted($report));
                     }

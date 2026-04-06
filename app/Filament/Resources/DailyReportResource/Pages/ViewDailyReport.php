@@ -4,6 +4,8 @@ namespace App\Filament\Resources\DailyReportResource\Pages;
 
 use App\Filament\Resources\DailyReportResource;
 use App\Models\DailyReport;
+use App\Models\User;
+use App\Notifications\DailyReportSubmitted;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -30,6 +32,12 @@ class ViewDailyReport extends ViewRecord
                         'status' => 'submitted',
                         'submitted_at' => now(),
                     ]);
+
+                    $notifyUsers = User::role(['Super Admin', 'Project Manager', 'Stakeholder'])->get();
+                    foreach ($notifyUsers as $user) {
+                        $user->notify(new DailyReportSubmitted($this->record));
+                    }
+
                     $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
                 });
         }
