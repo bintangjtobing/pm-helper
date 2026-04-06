@@ -379,6 +379,9 @@ class ViewTicket extends ViewRecord implements HasForms
 
         $this->record->refresh();
         $this->cancelEditComment();
+
+        // Force page refresh to clear Trix editor content
+        $this->redirect(request()->header('Referer', $this->getResource()::getUrl('view', ['record' => $this->record])));
     }
 
     public function isAdministrator(): bool
