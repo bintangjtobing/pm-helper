@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\DiscussionsOverview;
 use App\Filament\Widgets\EnhancedActivityFeed;
+use App\Filament\Widgets\GreetingWidget;
 use App\Filament\Widgets\FavoriteProjects;
 use App\Filament\Widgets\LatestProjects;
 use App\Filament\Widgets\LatestTickets;
@@ -25,6 +26,7 @@ class Dashboard extends BasePage
     protected function getWidgets(): array
     {
         return [
+            GreetingWidget::class,
             ProjectAuditOverview::class,
             FavoriteProjects::class,
             ReportsOverview::class,
