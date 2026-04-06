@@ -4,6 +4,8 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
 use App\Filament\Resources\UserResource\RelationManagers;
+use App\Models\Department;
+use App\Models\Position;
 use App\Models\User;
 use App\Models\Role;
 use Filament\Forms;
@@ -73,6 +75,45 @@ class UserResource extends Resource
                                     ->required()
                                     ->columns(3)
                                     ->relationship('roles', 'name'),
+                            ]),
+
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Select::make('gender')
+                                    ->label(__('Gender'))
+                                    ->options([
+                                        'male' => __('Male'),
+                                        'female' => __('Female'),
+                                        'other' => __('Other'),
+                                    ]),
+
+                                Forms\Components\DatePicker::make('birthday')
+                                    ->label(__('Birthday'))
+                                    ->maxDate(now()->subYears(16)),
+
+                                Forms\Components\Select::make('supervisor_id')
+                                    ->label(__('Direct Supervisor'))
+                                    ->options(fn ($record) => User::where('id', '!=', $record?->id ?? 0)->orderBy('name')->pluck('name', 'id'))
+                                    ->searchable(),
+                            ]),
+
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                Forms\Components\Select::make('department_id')
+                                    ->label(__('Department'))
+                                    ->options(Department::orderBy('sort_order')->pluck('name', 'id'))
+                                    ->searchable()
+                                    ->reactive()
+                                    ->afterStateUpdated(fn (callable $set) => $set('position_id', null)),
+
+                                Forms\Components\Select::make('position_id')
+                                    ->label(__('Position'))
+                                    ->options(function (callable $get) {
+                                        $deptId = $get('department_id');
+                                        if (!$deptId) return [];
+                                        return Position::where('department_id', $deptId)->orderBy('sort_order')->pluck('name', 'id');
+                                    })
+                                    ->searchable(),
                             ]),
                     ])
             ]);
