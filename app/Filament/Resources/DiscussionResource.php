@@ -138,7 +138,7 @@ class DiscussionResource extends Resource
                         }
 
                         return new HtmlString(
-                            '<div class="flex items-start gap-2.5">'
+                            '<div class="flex items-start gap-2.5 pl-2">'
                             . '<img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5" loading="lazy" />'
                             . '<div class="min-w-0">'
                             . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->title) . '</div>'
