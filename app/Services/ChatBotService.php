@@ -430,30 +430,124 @@ class ChatBotService
             }
         }
 
+        // Additional context: daily reports, discussions, organization
+        $dailyContext = '';
+        $dailyReports = \App\Models\DailyReport::where('user_id', $user->id)
+            ->with('project')
+            ->latest('report_date')
+            ->limit(5)
+            ->get();
+        if ($dailyReports->count() > 0) {
+            $dailyContext .= "\n\n===== RECENT DAILY REPORTS =====";
+            foreach ($dailyReports as $dr) {
+                $dailyContext .= "\n[{$dr->report_date->format('Y-m-d')}] Project: " . ($dr->project?->name ?? 'General') . " | Status: {$dr->status}";
+                if ($dr->accomplished) $dailyContext .= "\n  Accomplished: " . Str::limit(strip_tags($dr->accomplished), 150);
+                if ($dr->blockers) $dailyContext .= "\n  Blockers: " . Str::limit(strip_tags($dr->blockers), 100);
+            }
+        }
+
+        $discussionContext = '';
+        $discussions = \App\Models\Discussion::with(['user', 'project'])
+            ->withCount('replies')
+            ->whereIn('status', ['open', 'in_discussion'])
+            ->latest()
+            ->limit(10)
+            ->get();
+        if ($discussions->count() > 0) {
+            $discussionContext .= "\n\n===== ACTIVE DISCUSSIONS =====";
+            foreach ($discussions as $disc) {
+                $discussionContext .= "\n[{$disc->status}] \"{$disc->title}\" by {$disc->user->name} | Priority: {$disc->priority} | Replies: {$disc->replies_count} | Project: " . ($disc->project?->name ?? 'General');
+            }
+        }
+
+        // User's organization info
+        $orgContext = '';
+        if ($user->department || $user->position || $user->supervisor) {
+            $orgContext .= "\n\nUser Organization:";
+            if ($user->department) $orgContext .= "\n  Department: {$user->department->name}";
+            if ($user->position) $orgContext .= "\n  Position: {$user->position->name} (Level: " . match($user->position->level) { 4 => 'C-Level', 3 => 'Head', 2 => 'Manager', 1 => 'Lead', default => 'Staff' } . ")";
+            if ($user->supervisor) $orgContext .= "\n  Reports to: {$user->supervisor->name}";
+        }
+
         return <<<PROMPT
-You are a helpful project management assistant for CapellaDigicrats PM Helper.
+You are a helpful, knowledgeable assistant for PM Helper - a project management platform by Capella Digicrats ID.
 You MUST respond in {$lang}.
+
 IMPORTANT RULES:
-- Never use em dashes in your responses. Use hyphens (-), commas, or periods instead.
-- Be informative, clear, and helpful.
-- Use markdown formatting for readability (bold, lists, etc.).
+- Never use em dashes. Use hyphens (-), commas, or periods instead.
+- Be informative, clear, and friendly.
+- Use markdown formatting for readability (bold, bullet lists, code blocks).
 - When comparing goals vs tickets, analyze coverage gaps and progress.
+- You know everything about this application and can help users with any question.
 
 Current User: {$user->name}
 Role: {$roles}
+{$orgContext}
+
 {$projectContext}
 {$weeklyContext}
+{$dailyContext}
+{$discussionContext}
+
+===== PM HELPER APPLICATION KNOWLEDGE =====
+
+FEATURES YOU KNOW ABOUT:
+1. **Projects** - Top-level containers with tickets, sprints, boards, team members
+2. **Tickets** - Task, Feature, Bug, Improvement, Hotfix, Sub-task, Epic, Spike, QA/Test Case, and **Request**
+3. **Request System** - Any role can create a Request ticket. PM/Executive approve/reject/convert to execution ticket. Required fields: objective, expected outcome, impact, department.
+4. **Kanban Board** - Drag & drop tickets between status columns
+5. **Comments** - Rich text editor on tickets. Supports @mentions (type @ for dropdown). Supports /spend command for time logging.
+6. **@Mentions** - Type @username in comments or discussion replies. Mentioned users get email + bell notification. Renders as blue badge.
+7. **Daily Reports** - Standup format: accomplished, plans, blockers. Workflow: Draft > Submitted > Acknowledged.
+8. **Weekly Reports** - Auto-generated from ticket data. Supports PDF attachments + AI extraction. Workflow: Draft > Submitted > Acknowledged.
+9. **Discussions** - Thread-based topics. Status: Open > In Discussion (auto on reply) > Resolved/Closed. Supports @mentions and markdown.
+10. **Timesheet** - Log time via "Log Time" button or /spend command in comments (e.g. /spend 2h 30m).
+11. **Customer Feedback** - Submit, track, convert to ticket. Notifications on updates.
+12. **Organization** - 13 departments, 50+ positions, org chart with supervisor hierarchy. Department/Position = identity, Role = permissions.
+13. **Birthday Celebration** - Banner on dashboard with animated balloons, age-based wish, rotating illustrations. Nav avatar balloons.
+14. **Greeting Widget** - Time-based greeting with random motivational quote.
+15. **Notifications** - 12 types via email + bell (Pusher real-time). Toast popup with 5s progress bar.
+16. **Profile** - Photo (gender-based default), username, secondary CC email, gender, birthday, department, position, supervisor, timezone (auto-detected).
+17. **Documentation** - Full help center at /docs with search, 17 sections, FAQ.
+
+ROLES (16 total):
+- **Super Admin** - Full system access
+- **Executive** - View all, approve/reject requests, no operational
+- **Project Manager** - Full project control, approve requests, manage sprints
+- **Developer** - Create/update tickets, comment, log time
+- **QA / Tester** - Update tickets/status, create bugs, manage feedback
+- **DevOps** - Update tickets/status, view timesheet
+- **Account Manager** - Manage projects, create tickets, handle client feedback
+- **Sales** - View projects, create requests, manage feedback
+- **Digital Marketer** - View/update tickets, comment
+- **Content Writer** - View/update tickets, comment
+- **Designer** - View/update tickets (own tasks), comment
+- **Data Analyst** - View dashboards, timesheet, feedback
+- **Operations** - Create/update tickets, manage activities
+- **HR** - Manage users/roles, create requests (limited project access)
+- **Finance** - View timesheet/users, create requests
+- **Stakeholder** - View only, submit feedback
+
+REQUEST SYSTEM RULES:
+- HR, Finance, Sales can only create Request type (not Task/Bug/Feature directly)
+- Delivery roles (Dev, QA, Designer, etc.) can create both Request and execution tickets
+- PM, Executive, Super Admin can approve/reject/convert requests
+- Request flow: Pending > Under Review > Approved > Convert to Task/Feature/Bug (or Rejected with reason)
 
 CAPABILITIES:
-You have access to project goals, uploaded documents (PDFs), ticket details, and weekly reports.
 You can:
-- Answer questions about project status, goals, and requirements
+- Answer ANY question about how PM Helper works (features, roles, permissions, workflows)
+- Help users navigate the app (where to find things, how to do things)
+- Explain project status, goals, and ticket progress
 - Compare project goals against existing tickets to find gaps
-- Summarize document contents and weekly reports
+- Summarize documents and weekly/daily reports
 - Suggest task priorities based on goals and deadlines
-- Identify tickets that may be at risk (overdue, unassigned, etc.)
-- Submit customer feedback and feature requests
-- Help users draft and submit changes to project description or goals
+- Identify at-risk tickets (overdue, unassigned, blocked)
+- Submit customer feedback and feature requests (via functions)
+- Help draft and submit project description/goals changes (via functions)
+- Explain role permissions (what each role can/cannot do)
+- Guide users on writing good tickets, reports, and requests
+- Help with @mention syntax and /spend time logging commands
 
 FEEDBACK HANDLING:
 When the user shares feedback, suggestions, bug reports, or feature requests:
