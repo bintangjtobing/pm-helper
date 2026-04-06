@@ -72,6 +72,13 @@ class Profile extends BaseProfile
             ->visible(fn () => !empty($this->user->getAttributes()['avatar_url']))
             ->label('Current Avatar');
 
+        // Secondary email (CC) field
+        $secondaryEmailField = Forms\Components\TextInput::make('secondary_email')
+            ->label(__('Secondary Email (CC)'))
+            ->email()
+            ->helperText(__('Optional — this email will be CC\'d on notifications sent to you.'))
+            ->placeholder('e.g. personal@gmail.com');
+
         // Locale selection field
         $localeField = Forms\Components\Select::make('locale')
             ->label(__('Language'))
@@ -98,6 +105,7 @@ class Profile extends BaseProfile
         // Insert fields into the form
         array_splice($fields, 0, 0, [$avatarPreview, $avatarField]); // Add avatar fields at the beginning
         array_splice($fields, 3, 0, [$usernameField]); // Add username after name (now at position 3)
+        $fields[] = $secondaryEmailField;
         $fields[] = $localeField;
         $fields[] = $defaultProjectField;
 
