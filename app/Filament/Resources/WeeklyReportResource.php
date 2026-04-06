@@ -47,7 +47,7 @@ class WeeklyReportResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
-        $query = parent::getEloquentQuery()->with(['user', 'project']);
+        $query = parent::getEloquentQuery()->with(['user', 'project'])->withCount('feedbacks');
 
         if ($user->hasRole(['Super Admin', 'Stakeholder'])) {
             return $query;
@@ -147,45 +147,35 @@ class WeeklyReportResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label(__('Author'))
+                Tables\Columns\TextColumn::make('week_start')
+                    ->label(__('Report'))
                     ->formatStateUsing(function ($record) {
                         $user = $record->user;
                         $avatar = $user->getAttributes()['avatar_url']
                             ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
-                        return new HtmlString('
-                            <div class="flex items-center gap-2.5">
-                                <img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover" loading="lazy" />
-                                <div class="min-w-0">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($user->name) . '</div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">' . e($record->week_label) . '</div>
-                                </div>
-                            </div>
-                        ');
+                        $feedbackCount = $record->feedbacks_count ?? 0;
+                        $feedbackBadge = $feedbackCount > 0
+                            ? '<span class="px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-blue-500/10 text-blue-500">' . $feedbackCount . ' feedback</span>'
+                            : '';
+
+                        return new HtmlString(
+                            '<div class="min-w-0 pl-2">'
+                            . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->week_label) . '</div>'
+                            . '<div class="flex items-center gap-1.5 mt-0.5">'
+                            . '<img src="' . e($avatar) . '" class="w-4 h-4 rounded-full object-cover shrink-0" loading="lazy" />'
+                            . '<span class="text-xs text-gray-500">' . e($user->name) . '</span>'
+                            . ($record->project ? '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span><span class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary-500/10 text-primary-500">' . e($record->project->name) . '</span>' : '')
+                            . ($feedbackBadge ? '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span>' . $feedbackBadge : '')
+                            . '</div>'
+                            . '</div>'
+                        );
                     })
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('project.name')
-                    ->label(__('Project'))
-                    ->formatStateUsing(fn ($record) => new HtmlString(
-                        '<span class="px-2 py-0.5 text-xs font-medium rounded bg-primary-500/10 text-primary-500">'
-                        . e($record->project?->name ?? __('General'))
-                        . '</span>'
-                    ))
-                    ->sortable(),
-
                 Tables\Columns\TextColumn::make('status')
                     ->label(__('Status'))
                     ->formatStateUsing(fn ($record) => new HtmlString($record->status_badge))
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('feedbacks_count')
-                    ->counts('feedbacks')
-                    ->label(__('Feedback'))
-                    ->formatStateUsing(fn ($state) => $state > 0
-                        ? new HtmlString('<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-500">' . $state . '</span>')
-                        : new HtmlString('<span class="text-xs text-gray-400">0</span>'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('submitted_at')

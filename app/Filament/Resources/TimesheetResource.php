@@ -79,12 +79,12 @@ class TimesheetResource extends Resource
                         if (!$user) return '-';
                         $avatar = $user->getAttributes()['avatar_url']
                             ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
-                        return new HtmlString('
-                            <div class="flex items-center gap-2">
-                                <img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover" loading="lazy" />
-                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($user->name) . '</span>
-                            </div>
-                        ');
+                        return new HtmlString(
+                            '<div class="flex items-center gap-1.5 pl-2">'
+                            . '<img src="' . e($avatar) . '" class="w-4 h-4 rounded-full object-cover shrink-0" loading="lazy" />'
+                            . '<span class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($user->name) . '</span>'
+                            . '</div>'
+                        );
                     })
                     ->sortable()
                     ->searchable(),
