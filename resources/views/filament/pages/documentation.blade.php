@@ -492,7 +492,7 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
             <div style="border:1px solid #374151;border-radius:6px;overflow:hidden;">
                 <button @click="openFaq = openFaq === {{ $i }} ? null : {{ $i }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:transparent;border:none;cursor:pointer;text-align:left;">
                     <span style="font-size:13px;font-weight:500;color:#e5e7eb;">{{ $faq[0] }}</span>
-                    <svg :style="openFaq === {{ $i }} ? 'transform:rotate(180deg)' : ''" style="width:14px;height:14px;color:#6b7280;transition:transform 0.2s;flex-shrink:0;margin-left:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <svg :style="openFaq === {{ $i }} ? 'transform:rotate(180deg)' : ''" width="14" height="14" style="min-width:14px;min-height:14px;max-width:14px;max-height:14px;color:#6b7280;transition:transform 0.2s;flex-shrink:0;margin-left:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 <div x-show="openFaq === {{ $i }}" x-collapse style="padding:0 16px 14px 16px;">
                     <p style="font-size:13px;line-height:1.7;color:#9ca3af;margin:0;">{{ $faq[1] }}</p>
