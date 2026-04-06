@@ -27,7 +27,7 @@
             <div class="space-y-3 overflow-y-auto max-h-96">
                 @forelse($feed as $item)
                 <div
-                    class="flex items-start gap-3 p-3 transition-colors rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    class="flex items-start gap-3 px-4 py-3 transition-colors rounded-lg bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
                     <!-- Avatar -->
                     <div class="flex-shrink-0">
                         <img src="{{ $item['user']->avatar_url ?: 'https://ui-avatars.com/api/?name=' . urlencode($item['user']->name) }}"
@@ -118,7 +118,7 @@
                         @if($item['type'] === 'comment')
                         <div class="p-2 mt-2 bg-white border-green-500 rounded dark:bg-gray-900 border-l-3">
                             <div class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">
-                                {{ Str::limit(strip_tags(Str::markdown($item['data']['content'])), 120) }}
+                                {{ Str::limit(trim(preg_replace('/\s+/', ' ', preg_replace(['/#{1,6}\s?/', '/\*{1,2}/', '/~~/', '/`{1,3}/'], '', strip_tags($item['data']['content'])))), 120) }}
                             </div>
                         </div>
                         @endif
