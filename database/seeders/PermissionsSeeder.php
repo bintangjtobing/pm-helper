@@ -15,7 +15,8 @@ class PermissionsSeeder extends Seeder
     private array $modules = [
         'permission', 'project', 'project status', 'role', 'ticket',
         'ticket priority', 'ticket status', 'ticket type', 'user',
-        'activity', 'sprint', 'comment', 'customer feedback', 'weekly report'
+        'activity', 'sprint', 'comment', 'customer feedback', 'weekly report',
+        'daily report', 'discussion'
     ];
 
     private array $pluralActions = [
@@ -109,6 +110,12 @@ class PermissionsSeeder extends Seeder
             // Weekly Report
             'List weekly reports', 'View weekly report', 'Create weekly report',
             'Update weekly report', 'Delete weekly report',
+            // Daily Report
+            'List daily reports', 'View daily report', 'Create daily report',
+            'Update daily report', 'Delete daily report',
+            // Discussion
+            'List discussions', 'View discussion', 'Create discussion',
+            'Update discussion', 'Delete discussion',
             // User — view only
             'List users', 'View user',
         ];
@@ -141,6 +148,10 @@ class PermissionsSeeder extends Seeder
             'List activities', 'View activity',
             // Weekly Report
             'List weekly reports', 'View weekly report', 'Create weekly report', 'Update weekly report',
+            // Daily Report
+            'List daily reports', 'View daily report', 'Create daily report', 'Update daily report',
+            // Discussion
+            'List discussions', 'View discussion', 'Create discussion', 'Update discussion',
             // Timesheet — own data
             'List timesheet data',
         ];
@@ -176,6 +187,10 @@ class PermissionsSeeder extends Seeder
             'Create customer feedback', 'Update customer feedback',
             // Weekly Report
             'List weekly reports', 'View weekly report', 'Create weekly report', 'Update weekly report',
+            // Daily Report
+            'List daily reports', 'View daily report', 'Create daily report', 'Update daily report',
+            // Discussion
+            'List discussions', 'View discussion', 'Create discussion', 'Update discussion',
             // Timesheet
             'List timesheet data',
         ];
@@ -208,6 +223,10 @@ class PermissionsSeeder extends Seeder
             'List activities', 'View activity',
             // Weekly Report
             'List weekly reports', 'View weekly report', 'Create weekly report', 'Update weekly report',
+            // Daily Report
+            'List daily reports', 'View daily report', 'Create daily report', 'Update daily report',
+            // Discussion
+            'List discussions', 'View discussion', 'Create discussion', 'Update discussion',
             // Timesheet
             'List timesheet data', 'View timesheet dashboard',
         ];
@@ -235,6 +254,10 @@ class PermissionsSeeder extends Seeder
             'Create customer feedback',
             // Weekly Report — view only + give feedback via UI
             'List weekly reports', 'View weekly report',
+            // Daily Report — view only
+            'List daily reports', 'View daily report',
+            // Discussion — view + participate
+            'List discussions', 'View discussion', 'Create discussion',
         ];
 
         $existing = Permission::whereIn('name', $permissions)->pluck('name')->toArray();

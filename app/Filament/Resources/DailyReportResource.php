@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\WeeklyReportResource\Pages;
+use App\Filament\Resources\DailyReportResource\Pages;
+use App\Models\DailyReport;
 use App\Models\Project;
 use App\Models\User;
-use App\Models\WeeklyReport;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -14,19 +14,19 @@ use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
-class WeeklyReportResource extends Resource
+class DailyReportResource extends Resource
 {
-    protected static ?string $model = WeeklyReport::class;
+    protected static ?string $model = DailyReport::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationIcon = 'heroicon-o-calendar';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 1;
 
-    protected static ?string $slug = 'weekly-reports';
+    protected static ?string $slug = 'daily-reports';
 
     protected static function getNavigationLabel(): string
     {
-        return __('Weekly Reports');
+        return __('Daily Reports');
     }
 
     public static function getPluralLabel(): ?string
@@ -41,7 +41,7 @@ class WeeklyReportResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->can('List weekly reports') ?? false;
+        return auth()->user()?->can('List daily reports') ?? false;
     }
 
     public static function getEloquentQuery(): Builder
@@ -54,7 +54,6 @@ class WeeklyReportResource extends Resource
         }
 
         if ($user->hasRole('Project Manager')) {
-            // PM sees own reports + team reports from shared projects
             $pmProjectIds = Project::where('owner_id', $user->id)->pluck('id')
                 ->merge($user->projects()->pluck('projects.id'))
                 ->unique();
@@ -66,7 +65,6 @@ class WeeklyReportResource extends Resource
             return $query->whereIn('user_id', $teamUserIds);
         }
 
-        // Developer, QA, DevOps — own reports only
         return $query->where('user_id', $user->id);
     }
 
@@ -78,27 +76,11 @@ class WeeklyReportResource extends Resource
                     ->schema([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Select::make('week_start')
-                                    ->label(__('Report Week'))
-                                    ->helperText(__('Select which week to report on'))
+                                Forms\Components\DatePicker::make('report_date')
+                                    ->label(__('Report Date'))
                                     ->required()
-                                    ->default(now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y-m-d'))
-                                    ->options(function () {
-                                        $options = [];
-                                        $current = now()->startOfWeek(\Carbon\Carbon::MONDAY);
-                                        // Show last 8 weeks + current week
-                                        for ($i = 0; $i < 9; $i++) {
-                                            $monday = $current->copy()->subWeeks($i);
-                                            $friday = $monday->copy()->addDays(4);
-                                            $sunday = $monday->copy()->addDays(6);
-                                            $label = $monday->format('M d') . ' – ' . $friday->format('M d, Y');
-                                            if ($i === 0) $label .= ' (this week)';
-                                            if ($i === 1) $label .= ' (last week)';
-                                            $options[$monday->format('Y-m-d')] = $label;
-                                        }
-                                        return $options;
-                                    })
-                                    ->reactive(),
+                                    ->default(now()->format('Y-m-d'))
+                                    ->maxDate(now()),
 
                                 Forms\Components\Select::make('project_id')
                                     ->label(__('Project'))
@@ -118,26 +100,34 @@ class WeeklyReportResource extends Resource
                                     ->default(auth()->id()),
                             ]),
 
-                        Forms\Components\RichEditor::make('content')
-                            ->label(__('Report Content'))
-                            ->helperText(__('Write your weekly report. Auto-generated summary is pre-filled below.'))
+                        Forms\Components\RichEditor::make('accomplished')
+                            ->label(__('What was accomplished today?'))
+                            ->helperText(__('Describe what you worked on and completed today'))
                             ->toolbarButtons([
                                 'bold', 'italic', 'strike', 'link',
                                 'orderedList', 'bulletList', 'blockquote',
-                                'codeBlock', 'h2', 'h3', 'redo', 'undo',
+                                'h2', 'h3', 'redo', 'undo',
                             ])
                             ->columnSpan('full'),
 
-                        Forms\Components\SpatieMediaLibraryFileUpload::make('attachments')
-                            ->label(__('Attachments'))
-                            ->helperText(__('Upload PDF or DOCX files'))
-                            ->collection('attachments')
-                            ->multiple()
-                            ->acceptedFileTypes([
-                                'application/pdf',
-                                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        Forms\Components\RichEditor::make('plans')
+                            ->label(__('Plans for tomorrow'))
+                            ->helperText(__('What do you plan to work on next?'))
+                            ->toolbarButtons([
+                                'bold', 'italic', 'strike', 'link',
+                                'orderedList', 'bulletList',
+                                'redo', 'undo',
                             ])
-                            ->maxSize(config('system.max_file_size'))
+                            ->columnSpan('full'),
+
+                        Forms\Components\RichEditor::make('blockers')
+                            ->label(__('Blockers / Issues'))
+                            ->helperText(__('Any blockers, impediments, or issues? Leave empty if none'))
+                            ->toolbarButtons([
+                                'bold', 'italic', 'strike', 'link',
+                                'orderedList', 'bulletList',
+                                'redo', 'undo',
+                            ])
                             ->columnSpan('full'),
                     ]),
             ]);
@@ -158,7 +148,7 @@ class WeeklyReportResource extends Resource
                                 <img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover" loading="lazy" />
                                 <div class="min-w-0">
                                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($user->name) . '</div>
-                                    <div class="text-xs text-gray-500 dark:text-gray-400">' . e($record->week_label) . '</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">' . e($record->date_label) . '</div>
                                 </div>
                             </div>
                         ');
@@ -180,20 +170,12 @@ class WeeklyReportResource extends Resource
                     ->formatStateUsing(fn ($record) => new HtmlString($record->status_badge))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('feedbacks_count')
-                    ->counts('feedbacks')
-                    ->label(__('Feedback'))
-                    ->formatStateUsing(fn ($state) => $state > 0
-                        ? new HtmlString('<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-500">' . $state . '</span>')
-                        : new HtmlString('<span class="text-xs text-gray-400">0</span>'))
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('submitted_at')
-                    ->label(__('Submitted'))
-                    ->since()
+                Tables\Columns\TextColumn::make('report_date')
+                    ->label(__('Date'))
+                    ->date('D, d M Y')
                     ->sortable(),
             ])
-            ->defaultSort('created_at', 'desc')
+            ->defaultSort('report_date', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
@@ -215,6 +197,21 @@ class WeeklyReportResource extends Resource
                         $record->user_id === auth()->id() && $record->status === 'draft'
                     ),
 
+                Tables\Actions\Action::make('submit')
+                    ->label(__('Submit'))
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color('primary')
+                    ->visible(fn ($record) =>
+                        $record->user_id === auth()->id() && $record->status === 'draft'
+                    )
+                    ->requiresConfirmation()
+                    ->action(function (DailyReport $record) {
+                        $record->update([
+                            'status' => 'submitted',
+                            'submitted_at' => now(),
+                        ]);
+                    }),
+
                 Tables\Actions\Action::make('acknowledge')
                     ->label(__('Acknowledge'))
                     ->icon('heroicon-o-check-circle')
@@ -224,7 +221,7 @@ class WeeklyReportResource extends Resource
                         auth()->user()->hasRole(['Super Admin', 'Project Manager'])
                     )
                     ->requiresConfirmation()
-                    ->action(function (WeeklyReport $record) {
+                    ->action(function (DailyReport $record) {
                         $record->update([
                             'status' => 'acknowledged',
                             'acknowledged_by' => auth()->id(),
@@ -246,10 +243,10 @@ class WeeklyReportResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListWeeklyReports::route('/'),
-            'create' => Pages\CreateWeeklyReport::route('/create'),
-            'view' => Pages\ViewWeeklyReport::route('/{record}'),
-            'edit' => Pages\EditWeeklyReport::route('/{record}/edit'),
+            'index' => Pages\ListDailyReports::route('/'),
+            'create' => Pages\CreateDailyReport::route('/create'),
+            'view' => Pages\ViewDailyReport::route('/{record}'),
+            'edit' => Pages\EditDailyReport::route('/{record}/edit'),
         ];
     }
 }
