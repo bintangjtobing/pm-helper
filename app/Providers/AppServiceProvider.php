@@ -268,11 +268,13 @@ class AppServiceProvider extends ServiceProvider
         Filament::pushMeta([
             new HtmlString('<link rel="icon" type="image/x-icon" href="' . $favicon . '">'),
             new HtmlString('<link rel="icon" type="image/x-icon" href="' . $favicon . '" media="(prefers-color-scheme: dark)">'),
+            new HtmlString('<meta name="user-id" content="' . (auth()->id() ?? '') . '">'),
         ]);
 
         // Register navigation groups
         Filament::registerNavigationGroups([
             __('Management'),
+            __('Reports'),
             __('Referential'),
             __('Security'),
             __('Settings'),

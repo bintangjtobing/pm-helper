@@ -410,7 +410,7 @@
                     @endif
                 </div>
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    {!! Str::markdown($comment->content) !!}
+                    {!! \App\Helpers\MentionHelper::renderMentions(Str::markdown($comment->content)) !!}
                 </div>
             </div>
             @endforeach

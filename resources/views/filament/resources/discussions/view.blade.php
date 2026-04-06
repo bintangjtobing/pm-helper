@@ -30,7 +30,7 @@
 
                     {{-- Content --}}
                     <div class="prose prose-sm dark:prose-invert max-w-none">
-                        {!! Str::markdown($record->content) !!}
+                        {!! \App\Helpers\MentionHelper::renderMentions(Str::markdown($record->content)) !!}
                     </div>
 
                     {{-- Linked ticket / project --}}
@@ -74,7 +74,7 @@
                             </div>
                         </div>
                         <div class="prose prose-sm dark:prose-invert max-w-none">
-                            {!! Str::markdown($reply->content) !!}
+                            {!! \App\Helpers\MentionHelper::renderMentions(Str::markdown($reply->content)) !!}
                         </div>
                     </div>
                 </x-filament::card>
@@ -200,143 +200,7 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const textarea = document.getElementById('discussion-reply-textarea');
-        if (!textarea) return;
-
-        const users = {!! $this->getMentionUsersJson() !!};
-
-        const isDark = document.documentElement.classList.contains('dark');
-        let dropdown = document.createElement('div');
-        dropdown.id = 'mention-dropdown';
-        dropdown.style.cssText = `position:fixed;background:${isDark?'#1f2937':'#fff'};border:1px solid ${isDark?'#374151':'#e5e7eb'};border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,${isDark?'0.5':'0.15'});max-height:200px;overflow-y:auto;z-index:99999;display:none;min-width:220px;`;
-        document.body.appendChild(dropdown);
-
-        let mentionStart = -1;
-        let selectedIndex = 0;
-
-        function getFiltered(query) {
-            const q = query.toLowerCase();
-            return users.filter(u => u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q)).slice(0, 5);
-        }
-
-        function renderDropdown(filtered) {
-            const hoverBg = isDark ? '#374151' : '#f3f4f6';
-            const textC = isDark ? '#f3f4f6' : '#111827';
-            const subC = isDark ? '#9ca3af' : '#6b7280';
-
-            dropdown.innerHTML = filtered.map((u, i) => `
-                <div class="m-item" data-index="${i}" data-username="${u.username}" style="padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;background:${i===selectedIndex?hoverBg:'transparent'};">
-                    <img src="${u.avatar}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}&size=32'">
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-weight:500;font-size:13px;color:${textC};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${u.name}</div>
-                        <div style="font-size:11px;color:${subC};">@${u.username}</div>
-                    </div>
-                </div>
-            `).join('');
-
-            dropdown.querySelectorAll('.m-item').forEach(item => {
-                item.addEventListener('mousedown', function(e) {
-                    e.preventDefault();
-                    insertMention(this.dataset.username);
-                });
-                item.addEventListener('mouseenter', function() {
-                    selectedIndex = parseInt(this.dataset.index);
-                    highlightItem();
-                });
-            });
-        }
-
-        function highlightItem() {
-            dropdown.querySelectorAll('.m-item').forEach((item, i) => {
-                item.style.background = i === selectedIndex ? (isDark ? '#374151' : '#f3f4f6') : 'transparent';
-            });
-        }
-
-        function showDropdown() {
-            const rect = textarea.getBoundingClientRect();
-            dropdown.style.left = rect.left + 'px';
-            dropdown.style.top = (rect.top - dropdown.offsetHeight - 5) + 'px';
-            dropdown.style.display = 'block';
-            // Reposition after render
-            requestAnimationFrame(() => {
-                const dRect = dropdown.getBoundingClientRect();
-                if (dRect.top < 0) {
-                    dropdown.style.top = (rect.bottom + 5) + 'px';
-                }
-            });
-        }
-
-        function hideDropdown() {
-            dropdown.style.display = 'none';
-            mentionStart = -1;
-            selectedIndex = 0;
-        }
-
-        function insertMention(username) {
-            const val = textarea.value;
-            const before = val.substring(0, mentionStart);
-            const after = val.substring(textarea.selectionStart);
-            textarea.value = before + '@' + username + ' ' + after;
-            const newPos = mentionStart + username.length + 2;
-            textarea.setSelectionRange(newPos, newPos);
-            textarea.dispatchEvent(new Event('input', {bubbles: true}));
-            textarea.focus();
-            hideDropdown();
-        }
-
-        textarea.addEventListener('keyup', function(e) {
-            const pos = this.selectionStart;
-            const val = this.value;
-
-            // Find @ before cursor
-            let atIdx = -1;
-            for (let i = pos - 1; i >= 0; i--) {
-                if (val[i] === '@') { atIdx = i; break; }
-                if (val[i] === ' ' || val[i] === '\n') break;
-            }
-
-            if (atIdx !== -1) {
-                mentionStart = atIdx;
-                const query = val.substring(atIdx + 1, pos);
-                const filtered = getFiltered(query);
-                if (filtered.length > 0) {
-                    selectedIndex = Math.min(selectedIndex, filtered.length - 1);
-                    renderDropdown(filtered);
-                    showDropdown();
-                } else {
-                    hideDropdown();
-                }
-            } else {
-                hideDropdown();
-            }
-        });
-
-        textarea.addEventListener('keydown', function(e) {
-            if (dropdown.style.display !== 'block') return;
-            const items = dropdown.querySelectorAll('.m-item');
-            if (!items.length) return;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                selectedIndex = (selectedIndex + 1) % items.length;
-                highlightItem();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                selectedIndex = selectedIndex === 0 ? items.length - 1 : selectedIndex - 1;
-                highlightItem();
-            } else if (e.key === 'Enter' || e.key === 'Tab') {
-                e.preventDefault();
-                const selected = items[selectedIndex];
-                if (selected) insertMention(selected.dataset.username);
-            } else if (e.key === 'Escape') {
-                hideDropdown();
-            }
-        });
-
-        document.addEventListener('click', function(e) {
-            if (!textarea.contains(e.target) && !dropdown.contains(e.target)) hideDropdown();
-        });
-    });
+        window.mentionUsers = {!! $this->getMentionUsersJson() !!};
     </script>
+    <script src="{{ asset('js/mentions.js') }}"></script>
 </x-filament::page>
