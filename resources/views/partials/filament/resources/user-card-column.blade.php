@@ -49,9 +49,9 @@
     <div class="mt-1.5 text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{{ $record->email }}</div>
 
     {{-- Roles --}}
-    <div class="flex flex-wrap justify-center gap-1.5 mt-2.5">
+    <div class="flex flex-wrap justify-center gap-2 mt-3 mb-1">
         @foreach($roles as $role)
-        <span class="px-2.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase rounded-full ring-1 {{ $roleColors[$role] ?? 'bg-gray-500/10 text-gray-500 ring-gray-500/20' }}">
+        <span class="px-3 py-1 text-[10px] font-semibold tracking-wide uppercase rounded-full ring-1 {{ $roleColors[$role] ?? 'bg-gray-500/10 text-gray-500 ring-gray-500/20' }}">
             {{ $role }}
         </span>
         @endforeach
