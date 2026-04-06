@@ -26,7 +26,7 @@
                     {{ __('What was accomplished today') }}
                 </h3>
                 <div class="prose prose-sm dark:prose-invert max-w-none">
-                    {!! $record->accomplished ?? '<span class="text-gray-400 italic">' . __('No content') . '</span>' !!}
+                    {!! $record->accomplished ? Str::markdown($record->accomplished) : '<span class="text-gray-400 italic">' . __('No content') . '</span>' !!}
                 </div>
             </x-filament::card>
 
@@ -39,7 +39,7 @@
                     {{ __('Plans for tomorrow') }}
                 </h3>
                 <div class="prose prose-sm dark:prose-invert max-w-none">
-                    {!! $record->plans ?? '<span class="text-gray-400 italic">' . __('No content') . '</span>' !!}
+                    {!! $record->plans ? Str::markdown($record->plans) : '<span class="text-gray-400 italic">' . __('No content') . '</span>' !!}
                 </div>
             </x-filament::card>
 
@@ -53,7 +53,7 @@
                     {{ __('Blockers / Issues') }}
                 </h3>
                 <div class="prose prose-sm dark:prose-invert max-w-none">
-                    {!! $record->blockers !!}
+                    {!! Str::markdown($record->blockers) !!}
                 </div>
             </x-filament::card>
             @endif
