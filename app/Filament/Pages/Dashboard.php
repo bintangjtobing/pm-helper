@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\BirthdayCelebration;
 use App\Filament\Widgets\DiscussionsOverview;
 use App\Filament\Widgets\EnhancedActivityFeed;
 use App\Filament\Widgets\GreetingWidget;
@@ -31,6 +32,7 @@ class Dashboard extends BasePage
             FavoriteProjects::class,
             ReportsOverview::class,
             DiscussionsOverview::class,
+            BirthdayCelebration::class,
             EnhancedActivityFeed::class,
             LatestProjects::class,
             LatestTickets::class,

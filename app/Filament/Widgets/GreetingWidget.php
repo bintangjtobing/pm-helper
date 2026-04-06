@@ -22,23 +22,18 @@ class GreetingWidget extends Widget
 
         if ($hour >= 5 && $hour < 12) {
             $greeting = 'Good Morning';
-            $emoji = '☀️';
         } elseif ($hour >= 12 && $hour < 15) {
             $greeting = 'Good Afternoon';
-            $emoji = '🌤️';
         } elseif ($hour >= 15 && $hour < 18) {
             $greeting = 'Good Evening';
-            $emoji = '🌅';
         } else {
             $greeting = 'Good Night';
-            $emoji = '🌙';
         }
 
         $quote = MotivationalQuote::random();
 
         return [
             'greeting' => $greeting,
-            'emoji' => $emoji,
             'userName' => auth()->user()->name,
             'quote' => $quote,
         ];
