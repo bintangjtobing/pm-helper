@@ -29,7 +29,7 @@
         </div>
 
         {{-- Illustration pinned to right --}}
-        <img src="{{ $illustration }}" alt="" class="absolute right-4 bottom-0 h-[90px] object-contain opacity-80 pointer-events-none" />
+        <img src="{{ $illustration }}" alt="" style="position:absolute;right:16px;bottom:4px;height:70px;width:auto;object-fit:contain;opacity:0.6;pointer-events:none;" />
 
         {{-- Subtle glow --}}
         <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%);"></div>
