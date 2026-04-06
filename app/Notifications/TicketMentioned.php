@@ -40,14 +40,18 @@ class TicketMentioned extends Notification
      */
     public function toMail($notifiable)
     {
+        $ticket = $this->comment->ticket;
+        $mentionedBy = $this->comment->user;
+        $preview = \Illuminate\Support\Str::limit(strip_tags($this->comment->content), 200);
+
         return (new MailMessage)
-                    ->subject('You were mentioned in ticket ' . $this->comment->ticket->code)
-                    ->greeting('Hello ' . $notifiable->name . '!')
-                    ->line('You were mentioned in a comment on ticket: ' . $this->comment->ticket->name)
-                    ->line('Comment by: ' . $this->comment->user->name)
-                    ->line('Comment: ' . strip_tags($this->comment->content))
-                    ->action('View Ticket', route('filament.resources.tickets.view', $this->comment->ticket->id))
-                    ->line('Thank you for your attention!');
+            ->subject('[' . $ticket->code . '] ' . $mentionedBy->name . ' mentioned you')
+            ->greeting('Hi ' . $notifiable->name . ',')
+            ->line('**' . $mentionedBy->name . '** mentioned you in a comment on **' . $ticket->code . '** — ' . $ticket->name . ':')
+            ->line('> ' . $preview)
+            ->line('**Project:** ' . $ticket->project->name)
+            ->action('View Ticket', route('filament.resources.tickets.view', $ticket->id))
+            ->salutation('— ' . config('app.name'));
     }
 
     /**

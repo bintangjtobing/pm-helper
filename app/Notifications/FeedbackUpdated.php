@@ -32,11 +32,13 @@ class FeedbackUpdated extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->line(__('Your feedback has been updated.'))
-            ->line('- ' . __('Feedback:') . ' ' . $this->feedback->title)
-            ->line('- ' . __('Project:') . ' ' . $this->feedback->project->name)
-            ->line('- ' . __('Update:') . ' ' . $this->updateMessage)
-            ->action(__('View Feedback'), route('filament.resources.customer-feedbacks.view', $this->feedback->id));
+            ->subject('Feedback Updated: ' . $this->feedback->title)
+            ->greeting('Hi ' . $notifiable->name . ',')
+            ->line('Your feedback **"' . $this->feedback->title . '"** has been updated.')
+            ->line('> ' . $this->updateMessage)
+            ->line('**Project:** ' . $this->feedback->project->name)
+            ->action('View Feedback', route('filament.resources.customer-feedbacks.view', $this->feedback->id))
+            ->salutation('— ' . config('app.name'));
     }
 
     public function toDatabase(User $notifiable): array

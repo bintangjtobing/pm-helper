@@ -29,16 +29,18 @@ class WeeklyReportSubmitted extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
+        $weekLabel = $this->report->week_start->format('M d') . ' – ' . $this->report->week_end->format('M d, Y');
+        $project = $this->report->project?->name ?? 'General';
+
         return (new MailMessage)
-            ->subject('Weekly Report Submitted by ' . $this->report->user->name)
-            ->greeting('Hello!')
-            ->line('A weekly report has been submitted.')
-            ->line('**Author:** ' . $this->report->user->name)
-            ->line('**Week:** ' . $this->report->week_start->format('M d') . ' - ' . $this->report->week_end->format('M d, Y'))
-            ->line('**Project:** ' . ($this->report->project?->name ?? 'General'))
+            ->subject('Weekly Report: ' . $project . ' (' . $weekLabel . ') — ' . $this->report->user->name)
+            ->greeting('Hi ' . $notifiable->name . ',')
+            ->line('**' . $this->report->user->name . '** submitted a weekly report.')
+            ->line('**Week:** ' . $weekLabel . '  ')
+            ->line('**Project:** ' . $project)
+            ->line('Please review and acknowledge the report.')
             ->action('View Report', route('filament.resources.weekly-reports.view', $this->report->id))
-            ->line('Please review the report.')
-            ->salutation('Regards, ' . config('app.name'));
+            ->salutation('— ' . config('app.name'));
     }
 
     public function toDatabase(User $notifiable): array

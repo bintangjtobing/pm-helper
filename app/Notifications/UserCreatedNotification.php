@@ -51,10 +51,13 @@ class UserCreatedNotification extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject(__('Validate your account'))
-            ->line(__('Welcome to :app platform.', ['app' => config('app.name')]))
-            ->line(__('To complete the creation of your account, please use the below button to choose a password and verify your user account.'))
-            ->action(__('Verify my account'), route('validate-account', $this->user->creation_token));
+            ->subject('Welcome to ' . config('app.name') . ' — Verify Your Account')
+            ->greeting('Welcome, ' . $notifiable->name . '!')
+            ->line('Your account on **' . config('app.name') . '** has been created.')
+            ->line('To get started, please verify your account and set your password by clicking the button below.')
+            ->action('Verify My Account', route('validate-account', $this->user->creation_token))
+            ->line('If you did not expect this invitation, you can safely ignore this email.')
+            ->salutation('— ' . config('app.name'));
     }
 
     /**

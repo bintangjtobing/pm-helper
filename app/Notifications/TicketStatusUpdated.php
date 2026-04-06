@@ -50,18 +50,19 @@ class TicketStatusUpdated extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
+        $oldStatus = $this->activity?->oldStatus->name ?? '—';
+        $newStatus = $this->activity?->newStatus->name ?? $this->ticket->status->name;
+        $updatedBy = $this->activity?->user->name ?? 'System';
+
         return (new MailMessage)
-            ->subject('Status updated on ticket ' . $this->ticket->code)
-            ->line(__('The status of ticket :code - :title has been updated.', [
-                'code' => $this->ticket->code,
-                'title' => $this->ticket->name
-            ]))
-            ->line('- ' . __('Updated by:') . ' ' . ($this->activity?->user->name ?? 'System'))
-            ->line('- ' . __('Old status:') . ' ' . ($this->activity?->oldStatus->name ?? '-'))
-            ->line('- ' . __('New status:') . ' ' . ($this->activity?->newStatus->name ?? $this->ticket->status->name))
-            ->line('- ' . __('Project:') . ' ' . $this->ticket->project->name)
-            ->line(__('See more details of this ticket by clicking on the button below:'))
-            ->action(__('View details'), route('filament.resources.tickets.share', $this->ticket->code));
+            ->subject('[' . $this->ticket->code . '] Status: ' . $oldStatus . ' → ' . $newStatus)
+            ->greeting('Hi ' . $notifiable->name . ',')
+            ->line('The status of **' . $this->ticket->code . '** — ' . $this->ticket->name . ' has been updated.')
+            ->line('**' . $oldStatus . '** → **' . $newStatus . '**')
+            ->line('**Updated by:** ' . $updatedBy . '  ')
+            ->line('**Project:** ' . $this->ticket->project->name)
+            ->action('View Ticket', route('filament.resources.tickets.share', $this->ticket->code))
+            ->salutation('— ' . config('app.name'));
     }
 
     public function toDatabase(User $notifiable): array

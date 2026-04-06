@@ -29,13 +29,17 @@ class FeedbackConverted extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
+        $ticket = $this->feedback->convertedTicket;
+
         return (new MailMessage)
-            ->line(__('Your feedback has been converted to a ticket.'))
-            ->line('- ' . __('Feedback:') . ' ' . $this->feedback->title)
-            ->line('- ' . __('Project:') . ' ' . $this->feedback->project->name)
-            ->line('- ' . __('Ticket Code:') . ' ' . $this->feedback->convertedTicket->code)
-            ->line(__('You will receive updates as the ticket progresses.'))
-            ->action(__('View Ticket'), route('filament.resources.tickets.share', $this->feedback->convertedTicket->code));
+            ->subject('Feedback Converted → [' . $ticket->code . '] ' . $this->feedback->title)
+            ->greeting('Hi ' . $notifiable->name . ',')
+            ->line('Your feedback **"' . $this->feedback->title . '"** has been converted into a ticket.')
+            ->line('**Ticket:** ' . $ticket->code . '  ')
+            ->line('**Project:** ' . $this->feedback->project->name)
+            ->line('You will receive updates as the ticket progresses.')
+            ->action('View Ticket', route('filament.resources.tickets.share', $ticket->code))
+            ->salutation('— ' . config('app.name'));
     }
 
     public function toDatabase(User $notifiable): array

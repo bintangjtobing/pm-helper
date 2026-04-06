@@ -48,16 +48,15 @@ class TicketCreated extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->line(__('A new ticket has just been created.'))
-            ->line('- ' . __('Ticket name:') . ' ' . $this->ticket->name)
-            ->line('- ' . __('Project:') . ' ' . $this->ticket->project->name)
-            ->line('- ' . __('Owner:') . ' ' . $this->ticket->owner->name)
-            ->line('- ' . __('Responsible:') . ' ' . $this->ticket->responsible?->name ?? '-')
-            ->line('- ' . __('Status:') . ' ' . $this->ticket->status->name)
-            ->line('- ' . __('Type:') . ' ' . $this->ticket->type->name)
-            ->line('- ' . __('Priority:') . ' ' . $this->ticket->priority->name)
-            ->line(__('See more details of this ticket by clicking on the button below:'))
-            ->action(__('View details'), route('filament.resources.tickets.share', $this->ticket->code));
+            ->subject('[' . $this->ticket->code . '] New Ticket: ' . $this->ticket->name)
+            ->greeting('Hi ' . $notifiable->name . ',')
+            ->line('A new ticket has been created in **' . $this->ticket->project->name . '**.')
+            ->line('**' . $this->ticket->code . '** — ' . $this->ticket->name)
+            ->line('**Owner:** ' . $this->ticket->owner->name . '  ')
+            ->line('**Responsible:** ' . ($this->ticket->responsible?->name ?? '—') . '  ')
+            ->line('**Status:** ' . $this->ticket->status->name . ' · **Type:** ' . $this->ticket->type->name . ' · **Priority:** ' . $this->ticket->priority->name)
+            ->action('View Ticket', route('filament.resources.tickets.share', $this->ticket->code))
+            ->salutation('— ' . config('app.name'));
     }
 
     public function toDatabase(User $notifiable): array
