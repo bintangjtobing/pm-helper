@@ -89,7 +89,7 @@
             {{-- Comment preview --}}
             @if($record->type === 'comment' && $record->content)
             <div class="mt-1.5 px-3 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-2 border-green-500/50">
-                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{{ Str::limit(trim(preg_replace('/\s+/', ' ', preg_replace(['/#{1,6}\s?/', '/\*{1,2}/', '/~~/', '/`{1,3}/'], '', strip_tags($record->content)))), 150) }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">{{ Str::limit(trim(preg_replace('/\s+/', ' ', preg_replace(['/#{1,6}\s?/', '/\*{1,2}/', '/~~/', '/`{1,3}/', '/\\\\n/'], '', strip_tags($record->content)))), 150) }}</p>
             </div>
             @endif
         </div>
