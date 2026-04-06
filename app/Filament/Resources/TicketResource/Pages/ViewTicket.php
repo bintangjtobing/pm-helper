@@ -271,6 +271,95 @@ class ViewTicket extends ViewRecord implements HasForms
                         && $this->record->hours()->count()
                     ))
                 ->color('secondary'),
+
+            // === REQUEST WORKFLOW ACTIONS ===
+            Actions\Action::make('approveRequest')
+                ->label(__('Approve Request'))
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->button()
+                ->visible(fn () => $this->record->isRequest()
+                    && in_array($this->record->request_status, ['pending', 'under_review'])
+                    && auth()->user()->can('Approve request'))
+                ->requiresConfirmation()
+                ->modalHeading(__('Approve this request?'))
+                ->modalSubheading(__('This request will be marked as approved and can be converted to a task.'))
+                ->action(function () {
+                    $this->record->update([
+                        'request_status' => 'approved',
+                        'reviewed_by' => auth()->id(),
+                        'reviewed_at' => now(),
+                    ]);
+                    $this->record->refresh();
+                    $this->notify('success', __('Request approved'));
+                }),
+
+            Actions\Action::make('rejectRequest')
+                ->label(__('Reject Request'))
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->button()
+                ->visible(fn () => $this->record->isRequest()
+                    && in_array($this->record->request_status, ['pending', 'under_review'])
+                    && auth()->user()->can('Reject request'))
+                ->form([
+                    Textarea::make('rejection_reason')
+                        ->label(__('Reason for rejection'))
+                        ->required()
+                        ->rows(3),
+                ])
+                ->action(function (array $data) {
+                    $this->record->update([
+                        'request_status' => 'rejected',
+                        'rejection_reason' => $data['rejection_reason'],
+                        'reviewed_by' => auth()->id(),
+                        'reviewed_at' => now(),
+                    ]);
+                    $this->record->refresh();
+                    $this->notify('success', __('Request rejected'));
+                }),
+
+            Actions\Action::make('convertRequest')
+                ->label(__('Convert to Task'))
+                ->icon('heroicon-o-switch-horizontal')
+                ->color('primary')
+                ->button()
+                ->visible(fn () => $this->record->isRequest()
+                    && $this->record->request_status === 'approved'
+                    && auth()->user()->can('Convert request'))
+                ->form([
+                    Select::make('type_id')
+                        ->label(__('Convert to'))
+                        ->options(\App\Models\TicketType::where('name', '!=', 'Request')->pluck('name', 'id'))
+                        ->required(),
+                    Select::make('status_id')
+                        ->label(__('Set status'))
+                        ->options(\App\Models\TicketStatus::whereNotIn('name', ['Request', 'Under Review', 'Approved', 'Rejected'])->pluck('name', 'id'))
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    $this->record->update([
+                        'type_id' => $data['type_id'],
+                        'status_id' => $data['status_id'],
+                        'request_status' => null, // Clear request status
+                    ]);
+                    $this->record->refresh();
+                    $this->notify('success', __('Request converted successfully'));
+                }),
+
+            Actions\Action::make('startReview')
+                ->label(__('Start Review'))
+                ->icon('heroicon-o-eye')
+                ->color('warning')
+                ->button()
+                ->visible(fn () => $this->record->isRequest()
+                    && $this->record->request_status === 'pending'
+                    && auth()->user()->can('Approve request'))
+                ->action(function () {
+                    $this->record->update(['request_status' => 'under_review']);
+                    $this->record->refresh();
+                    $this->notify('success', __('Request is now under review'));
+                }),
         ];
     }
 

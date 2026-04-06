@@ -15,9 +15,18 @@ class CreateTicket extends CreateRecord
         if (isset($data['cc_users'])) {
             $ccUsers = $data['cc_users'];
             unset($data['cc_users']);
-
-            // We'll attach CC users after the ticket is saved
             $this->ccUsers = $ccUsers;
+        }
+
+        // Auto-set request_status for Request type tickets
+        $requestTypeId = \App\Models\TicketType::where('name', 'Request')->first()?->id;
+        if (isset($data['type_id']) && $data['type_id'] == $requestTypeId) {
+            $data['request_status'] = 'pending';
+            // Set status to "Request" status
+            $requestStatus = \App\Models\TicketStatus::where('name', 'Request')->first();
+            if ($requestStatus) {
+                $data['status_id'] = $requestStatus->id;
+            }
         }
 
         return $data;

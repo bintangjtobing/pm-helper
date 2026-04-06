@@ -27,11 +27,24 @@ class Ticket extends Model implements HasMedia
         'status_id', 'project_id', 'code', 'order', 'type_id',
         'priority_id', 'estimation', 'epic_id', 'sprint_id', 'due_date',
         'steps_to_reproduce', 'expected_behavior', 'actual_behavior', 'environment',
+        'objective', 'expected_outcome', 'impact', 'request_department',
+        'request_status', 'rejection_reason', 'reviewed_by', 'reviewed_at',
     ];
 
     protected $casts = [
         'due_date' => 'date',
+        'reviewed_at' => 'datetime',
     ];
+
+    public function isRequest(): bool
+    {
+        return $this->type?->name === 'Request';
+    }
+
+    public function reviewedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
+    }
 
     public static function boot()
     {

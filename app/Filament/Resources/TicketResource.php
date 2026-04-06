@@ -245,6 +245,46 @@ class TicketResource extends Resource
                                     ->helperText(__('Browser, OS, device, or any relevant environment info')),
                             ]),
 
+                        // Request Fields — shown only when type is Request
+                        Forms\Components\Section::make(__('Request Details'))
+                            ->description(__('Provide details about your request so it can be properly reviewed'))
+                            ->collapsible()
+                            ->collapsed(fn ($get) => !in_array($get('type_id'), self::getRequestTypeIds()))
+                            ->visible(fn ($get) => in_array($get('type_id'), self::getRequestTypeIds()))
+                            ->columnSpan(2)
+                            ->schema([
+                                Forms\Components\Textarea::make('objective')
+                                    ->label(__('Objective'))
+                                    ->helperText(__('What do you want to achieve?'))
+                                    ->required()
+                                    ->rows(3),
+
+                                Forms\Components\Textarea::make('expected_outcome')
+                                    ->label(__('Expected Outcome'))
+                                    ->helperText(__('What is the expected result if this request is fulfilled?'))
+                                    ->required()
+                                    ->rows(3),
+
+                                Forms\Components\Grid::make()
+                                    ->schema([
+                                        Forms\Components\Select::make('impact')
+                                            ->label(__('Impact'))
+                                            ->options([
+                                                'low' => __('Low'),
+                                                'medium' => __('Medium'),
+                                                'high' => __('High'),
+                                                'critical' => __('Critical'),
+                                            ])
+                                            ->required(),
+
+                                        Forms\Components\Select::make('request_department')
+                                            ->label(__('Requesting Department'))
+                                            ->options(\App\Models\Department::orderBy('sort_order')->pluck('name', 'name'))
+                                            ->searchable()
+                                            ->default(fn () => auth()->user()->department?->name),
+                                    ]),
+                            ]),
+
                         Forms\Components\Grid::make()
                             ->columnSpan(2)
                             ->columns(12)
@@ -431,6 +471,13 @@ class TicketResource extends Resource
     private static function getBugTypeIds(): array
     {
         return TicketType::whereIn('name', ['Bug', 'Hotfix'])
+            ->pluck('id')
+            ->toArray();
+    }
+
+    private static function getRequestTypeIds(): array
+    {
+        return TicketType::where('name', 'Request')
             ->pluck('id')
             ->toArray();
     }
