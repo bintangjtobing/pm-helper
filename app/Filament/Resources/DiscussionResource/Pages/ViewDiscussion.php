@@ -5,6 +5,8 @@ namespace App\Filament\Resources\DiscussionResource\Pages;
 use App\Filament\Resources\DiscussionResource;
 use App\Models\Discussion;
 use App\Models\DiscussionReply;
+use App\Models\User;
+use App\Notifications\DiscussionReplied;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -80,7 +82,7 @@ class ViewDiscussion extends ViewRecord
             return;
         }
 
-        DiscussionReply::create([
+        $reply = DiscussionReply::create([
             'discussion_id' => $this->record->id,
             'user_id' => auth()->id(),
             'content' => $this->replyContent,
@@ -89,6 +91,18 @@ class ViewDiscussion extends ViewRecord
         // Auto-update status to in_discussion if still open
         if ($this->record->status === 'open') {
             $this->record->update(['status' => 'in_discussion']);
+        }
+
+        // Notify discussion author + all previous participants (except replier)
+        $participantIds = DiscussionReply::where('discussion_id', $this->record->id)
+            ->pluck('user_id')
+            ->push($this->record->user_id)
+            ->unique()
+            ->reject(fn ($id) => $id === auth()->id());
+
+        $notifyUsers = User::whereIn('id', $participantIds)->get();
+        foreach ($notifyUsers as $user) {
+            $user->notify(new DiscussionReplied($this->record, $reply));
         }
 
         $this->replyContent = '';

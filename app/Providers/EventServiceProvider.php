@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Events\DatabaseNotificationsSent;
 use App\Listeners\SocialRegistration;
 use DutchCodingCompany\FilamentSocialite\Events\Registered as SocialRegistered;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Illuminate\Notifications\Events\NotificationSent;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -31,7 +33,12 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        // Broadcast when a database notification is sent
+        \Illuminate\Support\Facades\Event::listen(NotificationSent::class, function (NotificationSent $event) {
+            if ($event->channel === 'database') {
+                broadcast(new DatabaseNotificationsSent($event->notifiable->id));
+            }
+        });
     }
 
     /**
