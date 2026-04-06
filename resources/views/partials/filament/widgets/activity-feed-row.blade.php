@@ -13,7 +13,7 @@
 @if($record->type === 'weekly_report')
     {{-- Weekly Report --}}
     @php $viewUrl = route('filament.resources.weekly-reports.view', $record->id); @endphp
-    <div class="flex items-start gap-3 py-1">
+    <div class="flex items-start gap-3 py-1 pl-2">
         <img src="{{ $avatarUrl }}" class="object-cover rounded-full w-9 h-9 shrink-0 ring-2 ring-purple-500/20" loading="lazy" />
         <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-3">
@@ -44,7 +44,7 @@
         $descriptionText = $record->type === 'comment' ? __('added a comment') : ($record->getAttributes()['description'] ?? __('updated ticket'));
         $ringColor = $record->type === 'activity' ? 'ring-blue-500/20' : 'ring-green-500/20';
     @endphp
-    <div class="flex items-start gap-3 py-1">
+    <div class="flex items-start gap-3 py-1 pl-2">
         <img src="{{ $avatarUrl }}" class="object-cover rounded-full w-9 h-9 shrink-0 ring-2 {{ $ringColor }}" loading="lazy" />
         <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-3">
