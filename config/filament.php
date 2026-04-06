@@ -334,7 +334,8 @@ return [
             SubstituteBindings::class,
             DispatchServingFilamentEvent::class,
             MirrorConfigToSubpackages::class,
-            LocaleMiddleware::class
+            LocaleMiddleware::class,
+            \App\Http\Middleware\ApplyUserTimezone::class,
         ],
     ],
 

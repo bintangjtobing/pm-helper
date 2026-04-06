@@ -32,7 +32,7 @@
         </div>
 
         {{-- Illustration --}}
-        <img src="{{ $illustration }}" alt="" style="position:absolute;right:16px;bottom:0;height:90px;width:auto;object-fit:contain;opacity:1;pointer-events:none;" />
+        <img src="{{ $illustration }}" alt="" style="position:absolute;right:16px;bottom:0;height:135px;width:auto;object-fit:contain;opacity:1;pointer-events:none;" />
 
         {{-- Subtle glow --}}
         <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%);"></div>

@@ -51,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'avatar_url',
         'avatar_cloudinary_public_id',
         'locale',
+        'timezone',
         'default_project_id',
     ];
 

@@ -35,9 +35,10 @@ class FilamentServiceProvider extends ServiceProvider
                 asset('css/filament-avatar.css'),
             ]);
 
-            // Register toast notification script
+            // Register global scripts
             Filament::registerScripts([
                 asset('js/toast-notifications.js'),
+                asset('js/timezone-detect.js'),
             ], true);
             // Register ProjectAuditResource
             Filament::registerResources([

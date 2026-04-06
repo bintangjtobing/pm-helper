@@ -119,6 +119,11 @@ class UserResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return parent::getEloquentQuery()->with(['department', 'position', 'supervisor', 'roles']);
+    }
+
     public static function table(Table $table): Table
     {
         return $table

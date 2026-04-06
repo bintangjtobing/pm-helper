@@ -24,8 +24,11 @@ class BirthdayCelebration extends Widget
 
     public static function getTodayBirthdays()
     {
-        return User::whereMonth('birthday', now()->month)
-            ->whereDay('birthday', now()->day)
+        $tz = auth()->user()?->timezone ?? config('app.timezone');
+        $today = now()->setTimezone($tz);
+
+        return User::whereMonth('birthday', $today->month)
+            ->whereDay('birthday', $today->day)
             ->get();
     }
 

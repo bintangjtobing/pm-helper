@@ -127,6 +127,14 @@ class Profile extends BaseProfile
             ->searchable()
             ->placeholder(__('Select supervisor'));
 
+        // Timezone field
+        $timezoneField = Forms\Components\Select::make('timezone')
+            ->label(__('Timezone'))
+            ->options(collect(timezone_identifiers_list())->mapWithKeys(fn ($tz) => [$tz => $tz . ' (UTC' . now()->setTimezone($tz)->format('P') . ')']))
+            ->searchable()
+            ->placeholder(__('Auto-detected from browser'))
+            ->helperText(__('Your current timezone. Auto-detected on login, or set manually.'));
+
         // Locale selection field
         $localeField = Forms\Components\Select::make('locale')
             ->label(__('Language'))
@@ -159,6 +167,7 @@ class Profile extends BaseProfile
         $fields[] = $departmentField;
         $fields[] = $positionField;
         $fields[] = $supervisorField;
+        $fields[] = $timezoneField;
         $fields[] = $localeField;
         $fields[] = $defaultProjectField;
 

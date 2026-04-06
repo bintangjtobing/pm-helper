@@ -36,3 +36,16 @@ Route::name('oidc.')
         Route::get('redirect', [OidcAuthController::class, 'redirect'])->name('redirect');
         Route::get('callback', [OidcAuthController::class, 'callback'])->name('callback');
     });
+
+// Auto-detect timezone from browser
+Route::post('/user/timezone', function (\Illuminate\Http\Request $request) {
+    if (auth()->check() && $request->has('timezone')) {
+        $tz = $request->input('timezone');
+        // Validate timezone
+        if (in_array($tz, timezone_identifiers_list())) {
+            auth()->user()->update(['timezone' => $tz]);
+            return response()->json(['ok' => true]);
+        }
+    }
+    return response()->json(['ok' => false], 400);
+})->middleware('auth')->name('user.timezone');
