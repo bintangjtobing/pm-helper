@@ -30,7 +30,7 @@
 
                     {{-- Content --}}
                     <div class="prose prose-sm dark:prose-invert max-w-none">
-                        {!! $record->content !!}
+                        {!! Str::markdown($record->content) !!}
                     </div>
 
                     {{-- Linked ticket / project --}}
@@ -74,7 +74,7 @@
                             </div>
                         </div>
                         <div class="prose prose-sm dark:prose-invert max-w-none">
-                            {!! $reply->content !!}
+                            {!! Str::markdown($reply->content) !!}
                         </div>
                     </div>
                 </x-filament::card>
