@@ -17,46 +17,56 @@
 }" class="max-w-5xl mx-auto">
 
     {{-- Search --}}
-    <div class="sticky top-0 z-30 pb-4 bg-gray-900/95 backdrop-blur-sm -mx-4 px-4 pt-2">
-        <div class="relative">
-            <input type="text" x-model="search" placeholder="{{ __('Search documentation...') }}"
-                class="w-full px-4 py-3 pl-10 text-sm rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500" />
-            <svg class="absolute left-3 top-3.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <div style="position:sticky;top:0;z-index:30;padding:12px 0 16px 0;background:rgba(17,24,39,0.97);backdrop-filter:blur(8px);">
+        <div style="position:relative;">
+            <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" x-model="search" placeholder="{{ __('Search documentation... (e.g. mentions, roles, request)') }}"
+                style="width:100%;padding:10px 16px 10px 40px;font-size:14px;border-radius:8px;background:#1f2937;border:1px solid #374151;color:#f3f4f6;outline:none;" />
         </div>
 
         {{-- Search Results --}}
         <template x-if="search.length > 1 && filteredSections.length > 0">
-            <div class="mt-2 p-3 rounded-lg bg-gray-800 border border-gray-700 max-h-48 overflow-y-auto">
+            <div style="margin-top:8px;padding:8px;border-radius:8px;background:#1f2937;border:1px solid #374151;max-height:200px;overflow-y:auto;">
                 <template x-for="result in filteredSections" :key="result.id">
-                    <a :href="'#' + result.id" @click="search = ''" class="block px-3 py-2 text-sm text-gray-300 rounded hover:bg-gray-700 hover:text-white" x-text="result.title"></a>
+                    <a :href="'#' + result.id" @click="search = ''" style="display:block;padding:8px 12px;font-size:13px;color:#d1d5db;border-radius:6px;text-decoration:none;" onmouseover="this.style.background='#374151';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#d1d5db'" x-text="result.title"></a>
                 </template>
             </div>
         </template>
     </div>
 
     {{-- Table of Contents --}}
-    <x-filament::card>
-        <h2 class="text-lg font-bold text-white mb-4">Table of Contents</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-1 text-sm">
-            <a href="#getting-started" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">1. Getting Started</a>
-            <a href="#dashboard" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">2. Dashboard</a>
-            <a href="#projects" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">3. Projects</a>
-            <a href="#tickets" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">4. Tickets & Request System</a>
-            <a href="#kanban" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">5. Kanban Board</a>
-            <a href="#comments" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">6. Comments & Mentions</a>
-            <a href="#reports" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">7. Daily & Weekly Reports</a>
-            <a href="#discussions" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">8. Discussions</a>
-            <a href="#timesheet" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">9. Timesheet & Time Logging</a>
-            <a href="#notifications" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">10. Notifications</a>
-            <a href="#roles" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">11. Roles & Permissions</a>
-            <a href="#organization" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">12. Organization & Departments</a>
-            <a href="#profile" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">13. Profile Settings</a>
-            <a href="#feedback" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">14. Customer Feedback</a>
-            <a href="#writing-rules" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">15. Writing Guidelines</a>
-            <a href="#dos-donts" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">16. Do's & Don'ts</a>
-            <a href="#faq" class="px-3 py-1.5 rounded hover:bg-gray-800 text-gray-300 hover:text-white">17. FAQ</a>
+    <div style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+        <h2 style="font-size:15px;font-weight:700;color:#f3f4f6;margin-bottom:16px;">Table of Contents</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;">
+            @php
+            $toc = [
+                ['getting-started', 'Getting Started'],
+                ['dashboard', 'Dashboard'],
+                ['projects', 'Projects'],
+                ['tickets', 'Tickets & Request System'],
+                ['kanban', 'Kanban Board'],
+                ['comments', 'Comments & Mentions'],
+                ['reports', 'Daily & Weekly Reports'],
+                ['discussions', 'Discussions'],
+                ['timesheet', 'Timesheet & Time Logging'],
+                ['notifications', 'Notifications'],
+                ['roles', 'Roles & Permissions'],
+                ['organization', 'Organization & Departments'],
+                ['profile', 'Profile Settings'],
+                ['feedback', 'Customer Feedback'],
+                ['writing-rules', 'Writing Guidelines'],
+                ['dos-donts', "Do's & Don'ts"],
+                ['faq', 'FAQ'],
+            ];
+            @endphp
+            @foreach($toc as $i => $item)
+            <a href="#{{ $item[0] }}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:13px;color:#9ca3af;transition:all 0.15s;" onmouseover="this.style.background='#374151';this.style.color='#f3f4f6'" onmouseout="this.style.background='transparent';this.style.color='#9ca3af'">
+                <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#374151;color:#9ca3af;font-size:10px;font-weight:600;flex-shrink:0;">{{ $i + 1 }}</span>
+                {{ $item[1] }}
+            </a>
+            @endforeach
         </div>
-    </x-filament::card>
+    </div>
 
     <div class="mt-6 space-y-6">
 
