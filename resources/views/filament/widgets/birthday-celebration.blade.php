@@ -2,6 +2,7 @@
     $illustrationIndex = (now()->dayOfYear % 4) + 1;
     $illustration = asset("images/birthday/{$illustrationIndex}.png");
     $wish = \App\Models\BirthdayWish::random();
+    $balloonColors = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#60a5fa', '#a78bfa', '#f472b6'];
 @endphp
 
 <x-filament::widget>
@@ -19,13 +20,35 @@
                 @if($wish)
                 <p class="mt-1.5 text-xs italic text-gray-500 leading-relaxed">"{{ Str::limit($wish->wish, 100) }}"</p>
                 @endif
-                <div class="flex items-center -space-x-2 mt-2">
+
+                {{-- Avatars with balloon animation --}}
+                <div class="flex items-center mt-2" style="gap: 16px;">
                     @foreach($birthdayUsers as $bUser)
                     @php
                         $av = $bUser->getAttributes()['avatar_url']
                             ?? ('https://ui-avatars.com/api/?name=' . urlencode($bUser->name) . '&size=128&background=' . substr(md5($bUser->id), 0, 6) . '&color=ffffff');
                     @endphp
-                    <img src="{{ $av }}" alt="{{ $bUser->name }}" class="w-7 h-7 rounded-full object-cover border-2 border-[#1e1b2e]" title="{{ $bUser->name }}" />
+                    <div class="relative" style="width:36px;height:48px;">
+                        {{-- Balloons floating up around avatar --}}
+                        @for($i = 0; $i < 5; $i++)
+                        @php
+                            $color = $balloonColors[($loop->parent->index * 5 + $i) % count($balloonColors)];
+                            $left = rand(-4, 28);
+                            $delay = $i * 0.7 + ($loop->parent->index * 0.3);
+                            $duration = rand(25, 40) / 10;
+                            $size = rand(5, 8);
+                        @endphp
+                        <div style="position:absolute;left:{{ $left }}px;bottom:0;width:{{ $size }}px;height:{{ $size * 1.2 }}px;background:{{ $color }};border-radius:50% 50% 50% 50% / 40% 40% 60% 60%;opacity:0;animation:balloonFloat {{ $duration }}s {{ $delay }}s ease-in-out infinite;pointer-events:none;z-index:1;">
+                            <div style="position:absolute;bottom:-{{ $size * 0.5 }}px;left:50%;width:1px;height:{{ $size * 0.5 }}px;background:{{ $color }}80;transform:translateX(-50%);"></div>
+                        </div>
+                        @endfor
+
+                        {{-- Avatar --}}
+                        <img src="{{ $av }}" alt="{{ $bUser->name }}"
+                             class="rounded-full object-cover border-2 border-[#1e1b2e]"
+                             style="width:32px;height:32px;position:absolute;bottom:0;left:2px;z-index:2;"
+                             title="{{ $bUser->name }}" />
+                    </div>
                     @endforeach
                 </div>
             </div>
@@ -37,4 +60,14 @@
         {{-- Subtle glow --}}
         <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full pointer-events-none" style="background: radial-gradient(circle, rgba(124, 58, 237, 0.1) 0%, transparent 70%);"></div>
     </div>
+
+    <style>
+        @keyframes balloonFloat {
+            0% { transform: translateY(0) scale(0.3); opacity: 0; }
+            10% { opacity: 0.9; transform: translateY(-5px) scale(1); }
+            50% { opacity: 0.7; }
+            90% { opacity: 0; }
+            100% { transform: translateY(-70px) translateX({{ rand(-8, 8) }}px) scale(0.6); opacity: 0; }
+        }
+    </style>
 </x-filament::widget>
