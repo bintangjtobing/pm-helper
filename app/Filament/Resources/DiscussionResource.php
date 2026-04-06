@@ -138,16 +138,14 @@ class DiscussionResource extends Resource
                         }
 
                         return new HtmlString(
-                            '<div class="flex items-start gap-2.5 pl-2">'
-                            . '<img src="' . e($avatar) . '" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5" loading="lazy" />'
-                            . '<div class="min-w-0">'
+                            '<div class="min-w-0 pl-2">'
                             . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->title) . '</div>'
                             . '<div class="flex items-center gap-1.5 mt-0.5">'
+                            . '<img src="' . e($avatar) . '" class="w-4 h-4 rounded-full object-cover shrink-0" loading="lazy" />'
                             . '<span class="text-xs text-gray-500">' . e($user->name) . '</span>'
                             . '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span>'
                             . '<span class="text-xs text-gray-400">' . $record->created_at->diffForHumans() . '</span>'
                             . ($badges ? '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span>' . $badges : '')
-                            . '</div>'
                             . '</div>'
                             . '</div>'
                         );
