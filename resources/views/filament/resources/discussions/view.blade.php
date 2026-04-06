@@ -204,12 +204,7 @@
         const textarea = document.getElementById('discussion-reply-textarea');
         if (!textarea) return;
 
-        const users = @json(\App\Models\User::whereNotNull('username')->where('username', '!=', '')->get()->map(fn($u) => [
-            'id' => $u->id,
-            'username' => $u->username,
-            'name' => $u->name,
-            'avatar' => $u->getAttributes()['avatar_url'] ?? ('https://ui-avatars.com/api/?name=' . urlencode($u->name) . '&size=64&background=' . substr(md5($u->id), 0, 6) . '&color=ffffff'),
-        ])->values());
+        const users = {!! $this->getMentionUsersJson() !!};
 
         const isDark = document.documentElement.classList.contains('dark');
         let dropdown = document.createElement('div');
