@@ -592,15 +592,16 @@ class ViewTicket extends ViewRecord implements HasForms
     // Simple avatar method that doesn't rely on external methods
     private function getDefaultAvatar($user): string
     {
-        // Create a simple gravatar URL or use default
-        if (!empty($user->email)) {
-            $hash = md5(strtolower(trim($user->email)));
-            return "https://www.gravatar.com/avatar/{$hash}?d=identicon&s=40";
+        // Use local avatar if available
+        $localAvatar = $user->getAttributes()['avatar_url'] ?? null;
+        if ($localAvatar) {
+            return $localAvatar;
         }
 
-        // Use UI Avatars as fallback
+        // Fallback to UI Avatars with consistent color
         $name = urlencode($user->name ?? 'User');
-        return "https://ui-avatars.com/api/?name={$name}&size=40&background=random";
+        $bg = substr(md5($user->id ?? '0'), 0, 6);
+        return "https://ui-avatars.com/api/?name={$name}&size=64&background={$bg}&color=ffffff";
     }
 
     // Method untuk mendapatkan comments dengan formatted content
