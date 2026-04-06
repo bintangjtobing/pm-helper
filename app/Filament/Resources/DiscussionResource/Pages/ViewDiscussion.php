@@ -7,6 +7,7 @@ use App\Models\Discussion;
 use App\Models\DiscussionReply;
 use App\Models\User;
 use App\Notifications\DiscussionReplied;
+use App\Notifications\TicketMentioned;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -105,7 +106,42 @@ class ViewDiscussion extends ViewRecord
             $user->notify(new DiscussionReplied($this->record, $reply));
         }
 
+        // Parse @mentions and notify mentioned users
+        preg_match_all('/@(\w+)/', $this->replyContent, $matches);
+        if (!empty($matches[1])) {
+            $mentionedUsers = User::whereIn('username', $matches[1])
+                ->where('id', '!=', auth()->id())
+                ->get();
+
+            foreach ($mentionedUsers as $mentionedUser) {
+                // Create a simple mention notification (reuse discussion reply notification with mention context)
+                $mentionedUser->notify(new DiscussionReplied($this->record, $reply));
+            }
+        }
+
         $this->replyContent = '';
         $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
+    }
+
+    public function getMentionUsersJson(): string
+    {
+        $users = User::whereNotNull('username')
+            ->where('username', '!=', '')
+            ->get()
+            ->map(function ($user) {
+                $avatar = $user->getAttributes()['avatar_url']
+                    ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
+
+                return [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'name' => $user->name,
+                    'avatar' => $avatar,
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        return json_encode($users, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_APOS | JSON_HEX_QUOT);
     }
 }

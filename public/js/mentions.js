@@ -153,20 +153,21 @@ class MentionsAutocomplete {
     createMentionsDropdown() {
         if (document.getElementById("mentions-dropdown")) return;
 
+        const isDark = document.documentElement.classList.contains("dark");
         const dropdown = document.createElement("div");
         dropdown.id = "mentions-dropdown";
         dropdown.className = "mentions-dropdown";
         dropdown.style.cssText = `
             position: absolute;
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: ${isDark ? "#1f2937" : "white"};
+            border: 1px solid ${isDark ? "#374151" : "#e5e7eb"};
             border-radius: 8px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            max-height: 200px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, ${isDark ? "0.4" : "0.1"});
+            max-height: 220px;
             overflow-y: auto;
-            z-index: 1000;
+            z-index: 9999;
             display: none;
-            min-width: 200px;
+            min-width: 220px;
         `;
         document.body.appendChild(dropdown);
     }
@@ -291,6 +292,15 @@ class MentionsAutocomplete {
             return;
         }
 
+        const isDark = document.documentElement.classList.contains("dark");
+        const hoverBg = isDark ? "#374151" : "#f3f4f6";
+        const textColor = isDark ? "#f3f4f6" : "#111827";
+        const subTextColor = isDark ? "#9ca3af" : "#6b7280";
+        const borderColor = isDark ? "#374151" : "#f3f4f6";
+
+        dropdown.style.background = isDark ? "#1f2937" : "white";
+        dropdown.style.borderColor = isDark ? "#374151" : "#e5e7eb";
+
         dropdown.innerHTML = filteredUsers
             .map(
                 (user, index) => `
@@ -304,29 +314,29 @@ class MentionsAutocomplete {
                      display: flex;
                      align-items: center;
                      gap: 8px;
-                     background: ${index === 0 ? "#f3f4f6" : "transparent"};
-                     border-bottom: 1px solid #f3f4f6;
+                     background: ${index === 0 ? hoverBg : "transparent"};
+                     border-bottom: 1px solid ${borderColor};
                  "
-                 onmouseenter="this.style.background='#f3f4f6'"
+                 onmouseenter="this.style.background='${hoverBg}'"
                  onmouseleave="this.style.background='${
-                     index === 0 ? "#f3f4f6" : "transparent"
+                     index === 0 ? hoverBg : "transparent"
                  }'">
                 <img src="${user.avatar}" alt="${this.escapeHtml(
                     user.name
                 )}" style="
-                    width: 32px;
-                    height: 32px;
+                    width: 28px;
+                    height: 28px;
                     border-radius: 50%;
                     object-fit: cover;
-                    background: #f3f4f6;
+                    background: ${borderColor};
                 " onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(
                     user.name
                 )}&size=32&background=random'">
                 <div style="flex: 1; min-width: 0;">
-                    <div style="font-weight: 500; font-size: 14px; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.escapeHtml(
+                    <div style="font-weight: 500; font-size: 13px; color: ${textColor}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${this.escapeHtml(
                         user.name
                     )}</div>
-                    <div style="color: #6b7280; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${this.escapeHtml(
+                    <div style="color: ${subTextColor}; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@${this.escapeHtml(
                         user.username
                     )}</div>
                 </div>

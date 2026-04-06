@@ -95,14 +95,17 @@
                     <form wire:submit.prevent="submitReply">
                         <div class="space-y-3">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {{ __('Write a reply') }}
+                                {{ __('Write a reply') }} <span class="text-xs text-gray-400">— {{ __('Type @ to mention someone') }}</span>
                             </label>
-                            <textarea
-                                wire:model.defer="replyContent"
-                                rows="4"
-                                class="block w-full rounded-lg border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                                placeholder="{{ __('Type your reply here...') }}"
-                            ></textarea>
+                            <div data-enable-mentions="true" data-users="{{ $this->getMentionUsersJson() }}">
+                                <textarea
+                                    id="discussion-reply-textarea"
+                                    wire:model.defer="replyContent"
+                                    rows="4"
+                                    class="block w-full rounded-lg border-gray-300 shadow-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                                    placeholder="{{ __('Type your reply here... Use @ to mention someone') }}"
+                                ></textarea>
+                            </div>
                             <div class="flex justify-end">
                                 <button type="submit"
                                     class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg bg-primary-600 hover:bg-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
@@ -195,4 +198,34 @@
             </x-filament::card>
         </div>
     </div>
+
+    <script src="{{ asset('js/mentions.js') }}"></script>
+    <style>
+        .mentions-dropdown { font-family: inherit; }
+        /* Dark theme support for mentions dropdown */
+        @media (prefers-color-scheme: dark) {
+            .mentions-dropdown {
+                background: #1f2937 !important;
+                border-color: #374151 !important;
+            }
+            .mentions-dropdown .mention-item {
+                color: #f3f4f6 !important;
+            }
+            .mentions-dropdown .mention-item:hover,
+            .mentions-dropdown .mention-item.selected {
+                background: #374151 !important;
+            }
+        }
+        .dark .mentions-dropdown {
+            background: #1f2937 !important;
+            border-color: #374151 !important;
+        }
+        .dark .mentions-dropdown .mention-item {
+            color: #f3f4f6 !important;
+        }
+        .dark .mentions-dropdown .mention-item:hover,
+        .dark .mentions-dropdown .mention-item.selected {
+            background: #374151 !important;
+        }
+    </style>
 </x-filament::page>
