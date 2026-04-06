@@ -121,7 +121,13 @@
         if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
             return { text: el.value, cursor: el.selectionStart };
         }
-        // Contenteditable
+        // Trix editor
+        if (el.tagName === 'TRIX-EDITOR' && el.editor) {
+            const doc = el.editor.getDocument().toString();
+            const pos = el.editor.getPosition();
+            return { text: doc, cursor: pos };
+        }
+        // Generic contenteditable
         const text = el.innerText || el.textContent || '';
         const sel = window.getSelection();
         if (!sel.rangeCount) return { text, cursor: text.length };
@@ -136,6 +142,7 @@
         if (!activeElement || mentionStart === -1) return;
         const el = activeElement;
         const isTextarea = el.tagName === 'TEXTAREA' || el.tagName === 'INPUT';
+        const isTrix = el.tagName === 'TRIX-EDITOR' && el.editor;
 
         if (isTextarea) {
             const val = el.value;
@@ -145,14 +152,20 @@
             const newPos = mentionStart + username.length + 2;
             el.setSelectionRange(newPos, newPos);
             el.dispatchEvent(new Event('input', { bubbles: true }));
+        } else if (isTrix) {
+            // Trix editor — use its API
+            const { cursor } = getTextAndCursor(el);
+            const deleteCount = cursor - mentionStart;
+            el.editor.setSelectedRange([mentionStart, cursor]);
+            el.editor.deleteInDirection('forward');
+            el.editor.insertString('@' + username + ' ');
         } else {
-            // Contenteditable - insert as text
+            // Generic contenteditable
             const text = el.innerText || '';
             const { cursor } = getTextAndCursor(el);
             const before = text.substring(0, mentionStart);
             const after = text.substring(cursor);
             el.innerText = before + '@' + username + ' ' + after;
-            // Set cursor
             try {
                 const range = document.createRange();
                 const sel = window.getSelection();
@@ -237,19 +250,26 @@
 
         createDropdown();
 
-        // 1. Find all RichEditor contenteditable elements
+        // 1. Find ALL trix-editor elements (Filament RichEditor)
+        document.querySelectorAll('trix-editor').forEach(el => attachToElement(el));
+
+        // 2. Find all contenteditable elements
+        document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+            if (el.tagName !== 'TRIX-EDITOR') attachToElement(el);
+        });
+
+        // 3. Find specific discussion textarea
+        const discussionTa = document.getElementById('discussion-reply-textarea');
+        if (discussionTa) attachToElement(discussionTa);
+
+        // 4. Also try inside data-enable-mentions wrappers
         document.querySelectorAll('[data-enable-mentions="true"]').forEach(wrapper => {
-            // Try to find the actual editable element inside
-            const selectors = ['.trix-content', '[contenteditable="true"]', '.ProseMirror', '.ql-editor', 'textarea'];
+            const selectors = ['trix-editor', '[contenteditable="true"]', '.ProseMirror', '.ql-editor', 'textarea'];
             for (const sel of selectors) {
                 const el = wrapper.querySelector(sel);
                 if (el) { attachToElement(el); break; }
             }
         });
-
-        // 2. Find specific discussion textarea
-        const discussionTa = document.getElementById('discussion-reply-textarea');
-        if (discussionTa) attachToElement(discussionTa);
     }
 
     // Close dropdown on outside click
