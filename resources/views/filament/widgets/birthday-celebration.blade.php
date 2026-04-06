@@ -1,49 +1,47 @@
-<x-filament::widget>
-    <div class="relative overflow-hidden rounded-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%); padding: 24px 28px;">
-        <div class="flex items-center gap-6">
-            {{-- Illustration placeholder --}}
-            <div class="shrink-0 hidden sm:block">
-                @if(file_exists(public_path('images/birthday-illustration.png')))
-                    <img src="{{ asset('images/birthday-illustration.png') }}" alt="Birthday" class="w-24 h-24 object-contain" />
-                @else
-                    <div class="flex items-center justify-center w-20 h-20 text-4xl bg-white/10 rounded-2xl backdrop-blur-sm">
-                        🎂
-                    </div>
-                @endif
-            </div>
+@php
+    // Rotate illustrations based on day
+    $illustrationIndex = (now()->dayOfYear % 4) + 1;
+    $illustration = asset("images/birthday/{$illustrationIndex}.png");
+@endphp
 
-            {{-- Content --}}
-            <div class="flex-1 min-w-0">
-                <h3 class="text-lg font-bold text-white">
-                    Happy Birthday! 🎉
+<x-filament::widget>
+    <div class="relative overflow-hidden rounded-lg" style="background: #1e1b2e; border: 1px solid rgba(124, 58, 237, 0.15);">
+        <div class="flex items-center" style="padding: 20px 24px;">
+            {{-- Text content --}}
+            <div class="flex-1 min-w-0 z-10">
+                <h3 class="text-base font-bold text-white">
+                    Happy Birthday!
                 </h3>
-                <p class="mt-1 text-sm text-white/85">
+                <p class="mt-1 text-sm text-gray-300">
                     Let's celebrate
                     @foreach($birthdayUsers as $index => $bUser)
-                        <strong>{{ $bUser->name }}</strong>@if($index < $birthdayUsers->count() - 2), @elseif($index === $birthdayUsers->count() - 2) & @endif
+                        <strong class="text-white">{{ $bUser->name }}</strong>@if($index < $birthdayUsers->count() - 2), @elseif($index === $birthdayUsers->count() - 2) & @endif
                     @endforeach
                     today!
                 </p>
+
+                {{-- Birthday avatars --}}
+                <div class="flex items-center -space-x-2 mt-3">
+                    @foreach($birthdayUsers as $bUser)
+                    @php
+                        $av = $bUser->getAttributes()['avatar_url']
+                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($bUser->name) . '&size=128&background=' . substr(md5($bUser->id), 0, 6) . '&color=ffffff');
+                    @endphp
+                    <img src="{{ $av }}" alt="{{ $bUser->name }}"
+                         class="w-10 h-10 rounded-full object-cover border-2 border-[#1e1b2e] shadow-lg"
+                         title="{{ $bUser->name }}" />
+                    @endforeach
+                </div>
             </div>
 
-            {{-- Birthday avatars --}}
-            <div class="flex items-center -space-x-3 shrink-0">
-                @foreach($birthdayUsers as $bUser)
-                @php
-                    $av = $bUser->getAttributes()['avatar_url']
-                        ?? ('https://ui-avatars.com/api/?name=' . urlencode($bUser->name) . '&size=128&background=' . substr(md5($bUser->id), 0, 6) . '&color=ffffff');
-                @endphp
-                <img src="{{ $av }}" alt="{{ $bUser->name }}"
-                     class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
-                     title="{{ $bUser->name }}" />
-                @endforeach
+            {{-- Illustration --}}
+            <div class="shrink-0 hidden sm:block z-10">
+                <img src="{{ $illustration }}" alt="Birthday celebration" class="h-28 object-contain opacity-90" />
             </div>
         </div>
 
-        {{-- Decorative dots --}}
-        <div class="absolute top-2 right-8 w-2 h-2 rounded-full bg-yellow-300/40"></div>
-        <div class="absolute top-6 right-16 w-1.5 h-1.5 rounded-full bg-pink-300/50"></div>
-        <div class="absolute bottom-3 right-24 w-2.5 h-2.5 rounded-full bg-white/20"></div>
-        <div class="absolute top-4 left-2 w-1.5 h-1.5 rounded-full bg-yellow-200/30"></div>
+        {{-- Subtle glow effect --}}
+        <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full" style="background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);"></div>
+        <div class="absolute -bottom-8 -left-8 w-32 h-32 rounded-full" style="background: radial-gradient(circle, rgba(20, 184, 166, 0.08) 0%, transparent 70%);"></div>
     </div>
 </x-filament::widget>
