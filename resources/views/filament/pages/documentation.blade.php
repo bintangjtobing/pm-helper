@@ -1,593 +1,511 @@
 <x-filament::page>
+@php
+// Reusable styles
+$h2 = 'font-size:20px;font-weight:700;color:#f3f4f6;margin:0 0 20px 0;padding-bottom:12px;border-bottom:1px solid #374151;';
+$h3 = 'font-size:15px;font-weight:600;color:#e5e7eb;margin:24px 0 10px 0;';
+$p = 'font-size:14px;line-height:1.75;color:#9ca3af;margin:0 0 12px 0;';
+$li = 'font-size:13px;line-height:1.7;color:#9ca3af;margin:0 0 6px 0;padding-left:6px;';
+$card = 'background:#1f2937;border:1px solid #374151;border-radius:8px;padding:24px 28px;margin-bottom:16px;';
+$badge = 'display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;';
+$code = 'padding:2px 6px;border-radius:4px;background:#374151;color:#60a5fa;font-size:12px;font-family:monospace;';
+$flow = 'padding:14px 20px;border-radius:6px;background:#111827;border:1px solid #1f2937;font-size:13px;color:#d1d5db;margin:10px 0 14px 0;';
+$tbl = 'width:100%;border-collapse:collapse;font-size:13px;margin:10px 0 14px 0;';
+$th = 'text-align:left;padding:8px 12px;border-bottom:2px solid #374151;color:#e5e7eb;font-weight:600;';
+$td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
+@endphp
+
 <div x-data="{
     search: '',
+    openFaq: null,
     get filteredSections() {
-        if (!this.search) return [];
+        if (!this.search || this.search.length < 2) return [];
         const q = this.search.toLowerCase();
         const results = [];
         document.querySelectorAll('[data-doc-section]').forEach(el => {
             const text = el.textContent.toLowerCase();
             const title = el.dataset.docSection;
-            if (text.includes(q) || title.toLowerCase().includes(q)) {
-                results.push({ title, id: el.id });
-            }
+            if (text.includes(q) || title.toLowerCase().includes(q)) results.push({ title, id: el.id });
         });
         return results;
     }
-}" class="max-w-5xl mx-auto">
+}" style="max-width:900px;margin:0 auto;">
 
     {{-- Search --}}
-    <div style="position:sticky;top:0;z-index:30;padding:12px 0 16px 0;background:rgba(17,24,39,0.97);backdrop-filter:blur(8px);">
+    <div style="position:sticky;top:0;z-index:30;padding:8px 0 16px 0;background:rgba(17,24,39,0.97);backdrop-filter:blur(8px);">
         <div style="position:relative;">
-            <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input type="text" x-model="search" placeholder="{{ __('Search documentation... (e.g. mentions, roles, request)') }}"
-                style="width:100%;padding:10px 16px 10px 40px;font-size:14px;border-radius:8px;background:#1f2937;border:1px solid #374151;color:#f3f4f6;outline:none;" />
+            <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6b7280;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" x-model="search" placeholder="Search documentation..."
+                style="width:100%;padding:10px 16px 10px 40px;font-size:14px;border-radius:8px;background:#1f2937;border:1px solid #374151;color:#f3f4f6;outline:none;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#374151'" />
         </div>
-
-        {{-- Search Results --}}
         <template x-if="search.length > 1 && filteredSections.length > 0">
-            <div style="margin-top:8px;padding:8px;border-radius:8px;background:#1f2937;border:1px solid #374151;max-height:200px;overflow-y:auto;">
+            <div style="margin-top:8px;padding:6px;border-radius:8px;background:#1f2937;border:1px solid #374151;max-height:200px;overflow-y:auto;">
                 <template x-for="result in filteredSections" :key="result.id">
-                    <a :href="'#' + result.id" @click="search = ''" style="display:block;padding:8px 12px;font-size:13px;color:#d1d5db;border-radius:6px;text-decoration:none;" onmouseover="this.style.background='#374151';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#d1d5db'" x-text="result.title"></a>
+                    <a :href="'#' + result.id" @click="search = ''" style="display:block;padding:7px 12px;font-size:13px;color:#d1d5db;border-radius:6px;text-decoration:none;" onmouseover="this.style.background='#374151';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='#d1d5db'" x-text="result.title"></a>
                 </template>
             </div>
         </template>
     </div>
 
-    {{-- Table of Contents --}}
-    <div style="background:#1f2937;border:1px solid #374151;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
-        <h2 style="font-size:15px;font-weight:700;color:#f3f4f6;margin-bottom:16px;">Table of Contents</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;">
-            @php
-            $toc = [
-                ['getting-started', 'Getting Started'],
-                ['dashboard', 'Dashboard'],
-                ['projects', 'Projects'],
-                ['tickets', 'Tickets & Request System'],
-                ['kanban', 'Kanban Board'],
-                ['comments', 'Comments & Mentions'],
-                ['reports', 'Daily & Weekly Reports'],
-                ['discussions', 'Discussions'],
-                ['timesheet', 'Timesheet & Time Logging'],
-                ['notifications', 'Notifications'],
-                ['roles', 'Roles & Permissions'],
-                ['organization', 'Organization & Departments'],
-                ['profile', 'Profile Settings'],
-                ['feedback', 'Customer Feedback'],
-                ['writing-rules', 'Writing Guidelines'],
-                ['dos-donts', "Do's & Don'ts"],
-                ['faq', 'FAQ'],
-            ];
-            @endphp
+    {{-- TOC --}}
+    <div style="{{ $card }}">
+        <h2 style="font-size:15px;font-weight:700;color:#f3f4f6;margin:0 0 14px 0;">Table of Contents</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;">
+            @php $toc = [['getting-started','Getting Started'],['dashboard','Dashboard'],['projects','Projects'],['tickets','Tickets & Request System'],['kanban','Kanban Board'],['comments','Comments & Mentions'],['reports','Daily & Weekly Reports'],['discussions','Discussions'],['timesheet','Timesheet & Time Logging'],['notifications','Notifications'],['roles','Roles & Permissions'],['organization','Organization & Departments'],['profile','Profile Settings'],['feedback','Customer Feedback'],['writing-rules','Writing Guidelines'],['dos-donts',"Do's & Don'ts"],['faq','FAQ']]; @endphp
             @foreach($toc as $i => $item)
-            <a href="#{{ $item[0] }}" style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:6px;text-decoration:none;font-size:13px;color:#9ca3af;transition:all 0.15s;" onmouseover="this.style.background='#374151';this.style.color='#f3f4f6'" onmouseout="this.style.background='transparent';this.style.color='#9ca3af'">
-                <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#374151;color:#9ca3af;font-size:10px;font-weight:600;flex-shrink:0;">{{ $i + 1 }}</span>
+            <a href="#{{ $item[0] }}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;text-decoration:none;font-size:13px;color:#9ca3af;" onmouseover="this.style.background='#374151';this.style.color='#f3f4f6'" onmouseout="this.style.background='transparent';this.style.color='#9ca3af'">
+                <span style="min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#374151;color:#6b7280;font-size:10px;font-weight:700;">{{ $i + 1 }}</span>
                 {{ $item[1] }}
             </a>
             @endforeach
         </div>
     </div>
 
-    <div class="mt-6 space-y-6">
+    {{-- ===== SECTIONS ===== --}}
 
-        {{-- 1. GETTING STARTED --}}
-        <x-filament::card>
-            <div id="getting-started" data-doc-section="Getting Started">
-                <h2 class="text-xl font-bold text-white mb-4">1. Getting Started</h2>
+    {{-- 1. GETTING STARTED --}}
+    <div style="{{ $card }}" id="getting-started" data-doc-section="Getting Started">
+        <h2 style="{{ $h2 }}">1. Getting Started</h2>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">What is PM Helper?</h3>
-                <p class="text-sm text-gray-400 leading-relaxed">PM Helper is a comprehensive project management platform built for digital marketing companies. It provides tools for task tracking, team reporting, client feedback, internal discussions, time logging, and organization management — all in one place.</p>
+        <h3 style="{{ $h3 }}">What is PM Helper?</h3>
+        <p style="{{ $p }}">PM Helper is a comprehensive project management platform built for digital marketing companies. It combines task tracking, team reporting, client feedback, internal discussions, time logging, organization management, and real-time notifications in one unified system.</p>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">First Time Login</h3>
-                <ol class="text-sm text-gray-400 list-decimal pl-5 space-y-1">
-                    <li>You will receive an email invitation with a verification link</li>
-                    <li>Click "Verify My Account" to set your password</li>
-                    <li>Login at <strong class="text-white">pm.digicrats.com</strong></li>
-                    <li>Complete your profile: upload photo, set gender, department, position</li>
-                    <li>Your timezone will be auto-detected from your browser</li>
-                </ol>
+        <h3 style="{{ $h3 }}">First Time Login</h3>
+        <ol style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">You will receive an email invitation with a <strong style="color:#e5e7eb;">verification link</strong></li>
+            <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">"Verify My Account"</strong> to set your password</li>
+            <li style="{{ $li }}">Login at <strong style="color:#f3f4f6;">pm.digicrats.com</strong></li>
+            <li style="{{ $li }}">Complete your profile: upload photo, set gender, department, position, timezone</li>
+            <li style="{{ $li }}">Your timezone is auto-detected from your browser on first login</li>
+        </ol>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Navigation</h3>
-                <p class="text-sm text-gray-400">The sidebar on the left contains all menu items grouped by category: Management, Reports, Organization, Referential, and Settings. Your visible menus depend on your assigned role.</p>
-            </div>
-        </x-filament::card>
+        <h3 style="{{ $h3 }}">Navigation</h3>
+        <p style="{{ $p }}">The left sidebar contains menu items grouped by category. Your visible menus depend on your assigned role:</p>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Group</th><th style="{{ $th }}">Contains</th></tr>
+            <tr><td style="{{ $td }}">Management</td><td style="{{ $td }}">Projects, Tickets, Project Audit, Customer Feedback</td></tr>
+            <tr><td style="{{ $td }}">Reports</td><td style="{{ $td }}">Daily Reports, Weekly Reports, Discussions</td></tr>
+            <tr><td style="{{ $td }}">Organization</td><td style="{{ $td }}">Departments, Positions, Org Chart</td></tr>
+            <tr><td style="{{ $td }}">Referential</td><td style="{{ $td }}">Statuses, Types, Priorities, Activities</td></tr>
+            <tr><td style="{{ $td }}">Settings</td><td style="{{ $td }}">Motivational Quotes, Birthday Wishes (Super Admin)</td></tr>
+        </table>
+    </div>
 
-        {{-- 2. DASHBOARD --}}
-        <x-filament::card>
-            <div id="dashboard" data-doc-section="Dashboard">
-                <h2 class="text-xl font-bold text-white mb-4">2. Dashboard</h2>
-                <p class="text-sm text-gray-400 mb-3">The dashboard is your home screen with real-time widgets:</p>
+    {{-- 2. DASHBOARD --}}
+    <div style="{{ $card }}" id="dashboard" data-doc-section="Dashboard">
+        <h2 style="{{ $h2 }}">2. Dashboard</h2>
+        <p style="{{ $p }}">The dashboard is your home screen showing real-time data through multiple widgets:</p>
 
-                <div class="space-y-3 text-sm">
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Greeting Widget</strong>
-                        <p class="text-gray-400 mt-1">Personalized greeting based on time of day (Good Morning/Afternoon/Evening/Night) with a random motivational quote.</p>
-                    </div>
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Project Audit Overview</strong>
-                        <p class="text-gray-400 mt-1">Total projects, health score, overdue count, and completion rate across all your projects.</p>
-                    </div>
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Birthday Celebration</strong>
-                        <p class="text-gray-400 mt-1">Appears when a team member has a birthday today. Shows animated balloons, personalized wish, and illustration. If YOU are the birthday person, you'll see "Happy Birthday to You!"</p>
-                    </div>
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Reports Overview</strong>
-                        <p class="text-gray-400 mt-1">Daily reports submitted today, weekly reports this week, pending reviews, and weekly activity streak.</p>
-                    </div>
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Discussions</strong>
-                        <p class="text-gray-400 mt-1">Active discussions with status counters (Open, In Discussion, Resolved) and high priority alerts.</p>
-                    </div>
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Recent Activity Feed</strong>
-                        <p class="text-gray-400 mt-1">Live feed of status changes, comments, and weekly reports from your projects.</p>
-                    </div>
-                </div>
-            </div>
-        </x-filament::card>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Widget</th><th style="{{ $th }}">Description</th></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Greeting</strong></td><td style="{{ $td }}">Personalized greeting (Good Morning/Afternoon/Evening/Night) with random motivational quote and current date.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Project Audit</strong></td><td style="{{ $td }}">Total projects, health score (0-100), overdue count, and completion rate.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Birthday Banner</strong></td><td style="{{ $td }}">Appears when a team member has a birthday. Shows animated balloons, personalized age-based wish, and illustration. Different message for the birthday person vs. teammates.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Reports Overview</strong></td><td style="{{ $td }}">Daily reports today (X/total), weekly reports this week, pending reviews, and activity streak percentage.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Discussions</strong></td><td style="{{ $td }}">Status counters (Open, In Discussion, Resolved), high priority alerts, and latest active topics.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Activity Feed</strong></td><td style="{{ $td }}">Live feed of status changes, comments, and report submissions from your projects.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Favorite Projects</strong></td><td style="{{ $td }}">Quick access cards for your starred projects with ticket count and progress.</td></tr>
+        </table>
+    </div>
 
-        {{-- 3. PROJECTS --}}
-        <x-filament::card>
-            <div id="projects" data-doc-section="Projects">
-                <h2 class="text-xl font-bold text-white mb-4">3. Projects</h2>
-                <p class="text-sm text-gray-400 mb-3">Projects are the top-level container for all work. Each project has tickets, sprints, and team members.</p>
+    {{-- 3. PROJECTS --}}
+    <div style="{{ $card }}" id="projects" data-doc-section="Projects">
+        <h2 style="{{ $h2 }}">3. Projects</h2>
+        <p style="{{ $p }}">Projects are the top-level container for all work. Each project has its own tickets, sprints, board, and team members.</p>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Creating a Project</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Name, description, and ticket prefix (e.g., "QOS" generates QOS-1, QOS-2...)</li>
-                    <li>Assign team members who can view and work on the project</li>
-                    <li>Set project status and type (Kanban, Scrum, etc.)</li>
-                </ul>
+        <h3 style="{{ $h3 }}">Creating a Project</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Name & Description</strong> - Project title and summary</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Ticket Prefix</strong> - e.g. "QOS" generates ticket codes QOS-1, QOS-2, etc.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Team Members</strong> - Assign who can view and work on the project</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Project Type</strong> - Kanban, Scrum, or custom workflow</li>
+        </ul>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Project Views</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-gray-200">Details</strong> — Project info, members, settings</li>
-                    <li><strong class="text-gray-200">Board</strong> — Kanban board view</li>
-                    <li><strong class="text-gray-200">Tickets</strong> — List of all tickets</li>
-                </ul>
-            </div>
-        </x-filament::card>
+        <h3 style="{{ $h3 }}">Project Views</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Details</strong> - Project info, members, goals, settings</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Board</strong> - Kanban board with drag & drop</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Tickets</strong> - Full list view with filters and search</li>
+        </ul>
+    </div>
 
-        {{-- 4. TICKETS & REQUEST SYSTEM --}}
-        <x-filament::card>
-            <div id="tickets" data-doc-section="Tickets and Request System">
-                <h2 class="text-xl font-bold text-white mb-4">4. Tickets & Request System</h2>
+    {{-- 4. TICKETS & REQUEST --}}
+    <div style="{{ $card }}" id="tickets" data-doc-section="Tickets and Request System">
+        <h2 style="{{ $h2 }}">4. Tickets & Request System</h2>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Ticket Types</h3>
-                <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm mb-4">
-                    <div class="p-2 rounded bg-gray-800"><span class="text-purple-400 font-semibold">Request</span> — Internal request from any department</div>
-                    <div class="p-2 rounded bg-gray-800"><span class="text-blue-400 font-semibold">Feature</span> — New functionality</div>
-                    <div class="p-2 rounded bg-gray-800"><span class="text-green-400 font-semibold">Task</span> — General work item</div>
-                    <div class="p-2 rounded bg-gray-800"><span class="text-red-400 font-semibold">Bug</span> — Something broken</div>
-                    <div class="p-2 rounded bg-gray-800"><span class="text-yellow-400 font-semibold">Improvement</span> — Enhancement</div>
-                    <div class="p-2 rounded bg-gray-800"><span class="text-orange-400 font-semibold">Hotfix</span> — Urgent fix</div>
-                </div>
+        <h3 style="{{ $h3 }}">Ticket Types</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Type</th><th style="{{ $th }}">Purpose</th><th style="{{ $th }}">Who Creates</th></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $badge }}background:#8b5cf620;color:#8b5cf6;">Request</span></td><td style="{{ $td }}">Internal request from any department. Requires PM approval.</td><td style="{{ $td }}">All roles</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $badge }}background:#3b82f620;color:#3b82f6;">Feature</span></td><td style="{{ $td }}">New functionality to build</td><td style="{{ $td }}">Delivery roles</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $badge }}background:#22c55e20;color:#22c55e;">Task</span></td><td style="{{ $td }}">General work item</td><td style="{{ $td }}">Delivery roles</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $badge }}background:#ef444420;color:#ef4444;">Bug</span></td><td style="{{ $td }}">Something broken that needs fixing</td><td style="{{ $td }}">Delivery + QA</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $badge }}background:#f59e0b20;color:#f59e0b;">Improvement</span></td><td style="{{ $td }}">Enhancement to existing feature</td><td style="{{ $td }}">Delivery roles</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $badge }}background:#f9731620;color:#f97316;">Hotfix</span></td><td style="{{ $td }}">Urgent production fix</td><td style="{{ $td }}">Delivery roles</td></tr>
+        </table>
 
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Request System (New)</h3>
-                <p class="text-sm text-gray-400 mb-2">All roles can create a <strong class="text-purple-400">Request</strong> ticket. This goes through an approval workflow before becoming an execution ticket.</p>
-
-                <div class="p-4 rounded bg-gray-800 text-sm text-gray-300 font-mono mb-3">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="px-2 py-1 rounded bg-purple-500/20 text-purple-400">Request</span>
-                        <span class="text-gray-500">→</span>
-                        <span class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400">Under Review</span>
-                        <span class="text-gray-500">→</span>
-                        <span class="px-2 py-1 rounded bg-green-500/20 text-green-400">Approved</span>
-                        <span class="text-gray-500">→</span>
-                        <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-400">Convert to Task/Feature/Bug</span>
-                    </div>
-                    <div class="flex items-center gap-2 mt-2">
-                        <span class="ml-[200px] text-gray-500">↘</span>
-                        <span class="px-2 py-1 rounded bg-red-500/20 text-red-400">Rejected</span>
-                        <span class="text-gray-500 text-xs">(with reason)</span>
-                    </div>
-                </div>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Request Required Fields</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-gray-200">Objective</strong> — What do you want to achieve?</li>
-                    <li><strong class="text-gray-200">Expected Outcome</strong> — What is the expected result?</li>
-                    <li><strong class="text-gray-200">Impact</strong> — Low / Medium / High / Critical</li>
-                    <li><strong class="text-gray-200">Department</strong> — Which department is requesting</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">PM/Executive Actions on Requests</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-yellow-300">Start Review</strong> — Mark request as being reviewed</li>
-                    <li><strong class="text-green-300">Approve</strong> — Approve the request</li>
-                    <li><strong class="text-red-300">Reject</strong> — Reject with mandatory reason</li>
-                    <li><strong class="text-blue-300">Convert to Task</strong> — Change type to Task/Feature/Bug and assign to delivery</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Bug Report Fields</h3>
-                <p class="text-sm text-gray-400">When creating a Bug or Hotfix ticket, additional fields appear: Steps to Reproduce, Expected Behavior, Actual Behavior, and Environment.</p>
-            </div>
-        </x-filament::card>
-
-        {{-- 5. KANBAN --}}
-        <x-filament::card>
-            <div id="kanban" data-doc-section="Kanban Board">
-                <h2 class="text-xl font-bold text-white mb-4">5. Kanban Board</h2>
-                <p class="text-sm text-gray-400 mb-3">Visual board where tickets are organized by status columns. Drag and drop tickets between columns to change their status.</p>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Each column represents a ticket status</li>
-                    <li>Drag a ticket card to another column to update its status</li>
-                    <li>Click on a ticket card to view its details</li>
-                    <li>Ticket cards show: code, name, assignee avatar, priority color</li>
-                </ul>
-            </div>
-        </x-filament::card>
-
-        {{-- 6. COMMENTS & MENTIONS --}}
-        <x-filament::card>
-            <div id="comments" data-doc-section="Comments and Mentions">
-                <h2 class="text-xl font-bold text-white mb-4">6. Comments & Mentions</h2>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Adding Comments</h3>
-                <p class="text-sm text-gray-400 mb-2">Use the rich text editor at the bottom of any ticket to add comments. Supports bold, italic, lists, links, code blocks, and images.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">@Mentions</h3>
-                <p class="text-sm text-gray-400 mb-2">Type <code class="px-1.5 py-0.5 rounded bg-gray-700 text-blue-400">@</code> followed by a username to mention someone. A dropdown will appear with matching users.</p>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Works in ticket comments and discussion replies</li>
-                    <li>Mentioned users receive an email + bell notification</li>
-                    <li>Mentions render as <span class="px-1 rounded bg-blue-500/15 text-blue-400">@username</span> blue badges</li>
-                    <li>Navigate with Arrow keys, select with Enter/Tab</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Time Logging via Comments</h3>
-                <p class="text-sm text-gray-400">You can log time directly in comments using the <code class="px-1.5 py-0.5 rounded bg-gray-700 text-green-400">/spend</code> command:</p>
-                <div class="mt-2 p-3 rounded bg-gray-800 text-sm font-mono text-gray-300">
-                    /spend 2h 30m — Worked on API integration<br>
-                    /spend 45m — Quick bug fix
-                </div>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Deleting Comments</h3>
-                <p class="text-sm text-gray-400">You can always delete your own comments. Super Admins can delete any comment.</p>
-            </div>
-        </x-filament::card>
-
-        {{-- 7. REPORTS --}}
-        <x-filament::card>
-            <div id="reports" data-doc-section="Daily and Weekly Reports">
-                <h2 class="text-xl font-bold text-white mb-4">7. Daily & Weekly Reports</h2>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Daily Reports</h3>
-                <p class="text-sm text-gray-400 mb-2">Standup-style daily reporting with three sections:</p>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-green-300">What was accomplished today</strong> — What you worked on</li>
-                    <li><strong class="text-blue-300">Plans for tomorrow</strong> — What's next</li>
-                    <li><strong class="text-red-300">Blockers / Issues</strong> — Any impediments (optional)</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Weekly Reports</h3>
-                <p class="text-sm text-gray-400 mb-2">Comprehensive weekly summary with auto-generated progress data from tickets. Can attach PDF/DOCX files and extract metrics via AI.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Report Workflow</h3>
-                <div class="p-3 rounded bg-gray-800 text-sm text-gray-300 font-mono">
-                    Draft → Submitted → Acknowledged (by PM/Executive)
-                </div>
-                <p class="text-sm text-gray-400 mt-2">When you submit a report, PM, Executive, and Stakeholder roles receive an email notification.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Markdown Support</h3>
-                <p class="text-sm text-gray-400">Report content supports Markdown: <code class="px-1 rounded bg-gray-700">## Heading</code>, <code class="px-1 rounded bg-gray-700">**bold**</code>, <code class="px-1 rounded bg-gray-700">- bullet list</code>, tables, code blocks.</p>
-            </div>
-        </x-filament::card>
-
-        {{-- 8. DISCUSSIONS --}}
-        <x-filament::card>
-            <div id="discussions" data-doc-section="Discussions">
-                <h2 class="text-xl font-bold text-white mb-4">8. Discussions</h2>
-                <p class="text-sm text-gray-400 mb-3">Discussion board for topics that need to be recorded but aren't tickets. Think of it as a structured chat for decisions.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Creating a Discussion</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Title, description (supports Markdown), priority, project (optional), linked ticket (optional)</li>
-                    <li>Everyone in the project gets notified</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Status Flow</h3>
-                <div class="p-3 rounded bg-gray-800 text-sm text-gray-300 font-mono">
-                    Open → In Discussion (auto when first reply) → Resolved / Closed
-                </div>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Replying</h3>
-                <p class="text-sm text-gray-400">Use the reply box at the bottom. Supports @mentions. All participants get notified on new replies.</p>
-            </div>
-        </x-filament::card>
-
-        {{-- 9. TIMESHEET --}}
-        <x-filament::card>
-            <div id="timesheet" data-doc-section="Timesheet and Time Logging">
-                <h2 class="text-xl font-bold text-white mb-4">9. Timesheet & Time Logging</h2>
-                <p class="text-sm text-gray-400 mb-3">Track time spent on tickets. Two ways to log time:</p>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-gray-200">Log Time button</strong> — On any ticket detail page, click "Log time" and enter hours + minutes + activity type</li>
-                    <li><strong class="text-gray-200">/spend command</strong> — In a comment, type <code class="px-1 rounded bg-gray-700">/spend 2h 30m</code></li>
-                </ul>
-                <p class="text-sm text-gray-400 mt-2">PM and Executive roles can view the Timesheet dashboard with aggregated data per user, project, and time period.</p>
-            </div>
-        </x-filament::card>
-
-        {{-- 10. NOTIFICATIONS --}}
-        <x-filament::card>
-            <div id="notifications" data-doc-section="Notifications">
-                <h2 class="text-xl font-bold text-white mb-4">10. Notifications</h2>
-                <p class="text-sm text-gray-400 mb-3">You receive notifications via two channels:</p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-3">
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Bell Icon (In-App)</strong>
-                        <p class="text-gray-400 mt-1">Real-time via Pusher WebSocket. Click the bell in the top-right to see unread notifications.</p>
-                    </div>
-                    <div class="p-3 rounded bg-gray-800">
-                        <strong class="text-white">Email</strong>
-                        <p class="text-gray-400 mt-1">Sent to your email (and secondary CC email if set). Clean template with action buttons.</p>
-                    </div>
-                </div>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">What Triggers Notifications</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>New ticket created (to project members)</li>
-                    <li>Ticket status changed (to owner + responsible)</li>
-                    <li>New comment on ticket (to subscribers)</li>
-                    <li>@Mentioned in comment (to mentioned user)</li>
-                    <li>Daily/Weekly report submitted (to PM + Executive + Stakeholder)</li>
-                    <li>New discussion created (to project members)</li>
-                    <li>Discussion reply (to author + participants)</li>
-                    <li>Customer feedback submitted/updated/converted</li>
-                    <li>Account created (verification email)</li>
-                </ul>
-            </div>
-        </x-filament::card>
-
-        {{-- 11. ROLES & PERMISSIONS --}}
-        <x-filament::card>
-            <div id="roles" data-doc-section="Roles and Permissions">
-                <h2 class="text-xl font-bold text-white mb-4">11. Roles & Permissions</h2>
-                <p class="text-sm text-gray-400 mb-3">Each user is assigned one role that determines what they can see and do. Roles are independent of department/position.</p>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead>
-                            <tr class="border-b border-gray-700">
-                                <th class="py-2 px-3 text-gray-300 font-semibold">Role</th>
-                                <th class="py-2 px-3 text-gray-300 font-semibold">Layer</th>
-                                <th class="py-2 px-3 text-gray-300 font-semibold">Key Capabilities</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-400">
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-red-400 font-medium">Super Admin</td><td class="py-2 px-3">System</td><td class="py-2 px-3">Full access to everything</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-red-300 font-medium">Executive</td><td class="py-2 px-3">Strategic</td><td class="py-2 px-3">View all, approve/reject requests, no operational</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-blue-400 font-medium">Project Manager</td><td class="py-2 px-3">Delivery</td><td class="py-2 px-3">Full project/ticket control, approve requests, manage sprints</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-green-400 font-medium">Developer</td><td class="py-2 px-3">Execution</td><td class="py-2 px-3">Create/update tickets, comment, log time</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-amber-400 font-medium">QA / Tester</td><td class="py-2 px-3">Quality</td><td class="py-2 px-3">Update tickets, update status, create feedback</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-violet-400 font-medium">DevOps</td><td class="py-2 px-3">Deployment</td><td class="py-2 px-3">Update tickets/status, view timesheet</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-blue-300 font-medium">Account Manager</td><td class="py-2 px-3">Client</td><td class="py-2 px-3">Manage projects, create tickets, handle feedback</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-orange-400 font-medium">Sales</td><td class="py-2 px-3">Revenue</td><td class="py-2 px-3">View projects, create requests, manage feedback</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-purple-400 font-medium">Digital Marketer</td><td class="py-2 px-3">Delivery Support</td><td class="py-2 px-3">View/update tickets, comment</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-purple-300 font-medium">Content Writer</td><td class="py-2 px-3">Delivery Support</td><td class="py-2 px-3">View/update tickets, comment</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-green-300 font-medium">Designer</td><td class="py-2 px-3">Creative</td><td class="py-2 px-3">View/update tickets, comment</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-cyan-400 font-medium">Data Analyst</td><td class="py-2 px-3">Data</td><td class="py-2 px-3">View dashboards, timesheet, feedback</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-gray-300 font-medium">Operations</td><td class="py-2 px-3">Ops</td><td class="py-2 px-3">Create/update tickets, manage activities</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-emerald-400 font-medium">HR</td><td class="py-2 px-3">Internal</td><td class="py-2 px-3">Manage users, create requests (no project access)</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-gray-400 font-medium">Finance</td><td class="py-2 px-3">Internal</td><td class="py-2 px-3">View timesheet/users, create requests</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-2 px-3 text-orange-300 font-medium">Stakeholder</td><td class="py-2 px-3">View Only</td><td class="py-2 px-3">View projects/tickets, submit feedback</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Request Permissions</h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left">
-                        <thead>
-                            <tr class="border-b border-gray-700">
-                                <th class="py-2 px-3 text-gray-300">Role</th>
-                                <th class="py-2 px-3 text-gray-300">Create Request</th>
-                                <th class="py-2 px-3 text-gray-300">Create Task/Bug</th>
-                                <th class="py-2 px-3 text-gray-300">Approve/Reject</th>
-                                <th class="py-2 px-3 text-gray-300">Convert</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-gray-400">
-                            <tr class="border-b border-gray-800"><td class="py-1 px-3">HR, Finance, Sales</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-red-400">No</td><td class="py-1 px-3 text-red-400">No</td><td class="py-1 px-3 text-red-400">No</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-1 px-3">Marketer, Writer, Designer</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-red-400">No</td><td class="py-1 px-3 text-red-400">No</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-1 px-3">Dev, QA, DevOps, Ops</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-red-400">No</td><td class="py-1 px-3 text-red-400">No</td></tr>
-                            <tr class="border-b border-gray-800"><td class="py-1 px-3">PM, Executive, Super Admin</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-green-400">Yes</td><td class="py-1 px-3 text-green-400">Yes</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </x-filament::card>
-
-        {{-- 12. ORGANIZATION --}}
-        <x-filament::card>
-            <div id="organization" data-doc-section="Organization and Departments">
-                <h2 class="text-xl font-bold text-white mb-4">12. Organization & Departments</h2>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Departments (13 total)</h3>
-                <p class="text-sm text-gray-400 mb-2">10 Core + 3 Advanced departments. Managed by Super Admin under Organization > Departments.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Positions</h3>
-                <p class="text-sm text-gray-400 mb-2">50+ positions linked to departments. Each position has a level: Staff, Lead, Manager, Head, C-Level. Managed under Organization > Positions.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Organization Chart</h3>
-                <p class="text-sm text-gray-400 mb-2">Visual hierarchy tree based on supervisor relationships. Two views:</p>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-gray-200">Chart View</strong> — Visual tree with photos, colored position badges, connecting lines</li>
-                    <li><strong class="text-gray-200">Data View</strong> — Department cards with positions and member avatars</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Important</h3>
-                <p class="text-sm text-gray-400">Department and Position are for <strong class="text-white">organizational identity</strong> (org chart, profile display). They do NOT affect permissions — only your <strong class="text-white">Role</strong> determines what you can access.</p>
-            </div>
-        </x-filament::card>
-
-        {{-- 13. PROFILE --}}
-        <x-filament::card>
-            <div id="profile" data-doc-section="Profile Settings">
-                <h2 class="text-xl font-bold text-white mb-4">13. Profile Settings</h2>
-                <p class="text-sm text-gray-400 mb-3">Access via your avatar (top-right) > click your name.</p>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Available Fields</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li><strong class="text-gray-200">Profile Picture</strong> — Upload JPG/PNG/WebP (auto-cropped to 200x200). If not uploaded, a gender-based avatar is assigned automatically.</li>
-                    <li><strong class="text-gray-200">Name</strong> — Your display name</li>
-                    <li><strong class="text-gray-200">Username</strong> — For @mentions (letters, numbers, underscores)</li>
-                    <li><strong class="text-gray-200">Email</strong> — Primary email (requires verification if changed)</li>
-                    <li><strong class="text-gray-200">Secondary Email (CC)</strong> — Optional CC email for notifications</li>
-                    <li><strong class="text-gray-200">Gender</strong> — Male/Female/Other (assigns default avatar if no upload)</li>
-                    <li><strong class="text-gray-200">Birthday</strong> — For birthday celebration feature</li>
-                    <li><strong class="text-gray-200">Department & Position</strong> — For org chart</li>
-                    <li><strong class="text-gray-200">Direct Supervisor</strong> — Creates hierarchy in org chart</li>
-                    <li><strong class="text-gray-200">Timezone</strong> — Auto-detected, manually overridable</li>
-                    <li><strong class="text-gray-200">Language</strong> — UI language preference</li>
-                    <li><strong class="text-gray-200">Default Project</strong> — Quick access project</li>
-                </ul>
-            </div>
-        </x-filament::card>
-
-        {{-- 14. CUSTOMER FEEDBACK --}}
-        <x-filament::card>
-            <div id="feedback" data-doc-section="Customer Feedback">
-                <h2 class="text-xl font-bold text-white mb-4">14. Customer Feedback</h2>
-                <p class="text-sm text-gray-400 mb-3">Collect and track client feedback. Feedback can be converted into tickets for action.</p>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Stakeholders and QA can submit feedback</li>
-                    <li>PM and Account Managers can update and convert to ticket</li>
-                    <li>Converted feedback links to the ticket for traceability</li>
-                    <li>All updates trigger email notifications to the submitter</li>
-                </ul>
-            </div>
-        </x-filament::card>
-
-        {{-- 15. WRITING GUIDELINES --}}
-        <x-filament::card>
-            <div id="writing-rules" data-doc-section="Writing Guidelines">
-                <h2 class="text-xl font-bold text-white mb-4">15. Writing Guidelines</h2>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Ticket Naming</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Be specific: <span class="text-green-400">"Fix login redirect loop on mobile Safari"</span> not <span class="text-red-400">"Fix login"</span></li>
-                    <li>Start with a verb: Fix, Add, Update, Remove, Implement</li>
-                    <li>Include context: which page, which feature, which user type</li>
-                    <li>Keep under 80 characters</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Ticket Description</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Explain the <strong class="text-gray-200">why</strong>, not just the what</li>
-                    <li>Include acceptance criteria when possible</li>
-                    <li>Attach screenshots or references</li>
-                    <li>For bugs: always fill Steps to Reproduce, Expected vs Actual</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Comment Etiquette</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Keep comments relevant to the ticket</li>
-                    <li>Use @mention to notify specific people</li>
-                    <li>Log time with <code class="px-1 rounded bg-gray-700">/spend</code> when applicable</li>
-                    <li>Update status when you start/finish work</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Request Writing</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Be clear about the <strong class="text-gray-200">objective</strong> — what problem are you solving?</li>
-                    <li>Define <strong class="text-gray-200">expected outcome</strong> — how do you measure success?</li>
-                    <li>Set realistic <strong class="text-gray-200">impact</strong> — don't mark everything as Critical</li>
-                    <li>Include relevant links, mockups, or references in the description</li>
-                </ul>
-
-                <h3 class="text-sm font-semibold text-gray-300 mt-4 mb-2">Daily Report Tips</h3>
-                <ul class="text-sm text-gray-400 list-disc pl-5 space-y-1">
-                    <li>Be concise — bullet points, not essays</li>
-                    <li>Reference ticket codes (e.g., QOS-75)</li>
-                    <li>Mention blockers early — don't wait until they're critical</li>
-                    <li>Plans should be actionable, not vague</li>
-                </ul>
-            </div>
-        </x-filament::card>
-
-        {{-- 16. DO'S AND DON'TS --}}
-        <x-filament::card>
-            <div id="dos-donts" data-doc-section="Do's and Don'ts">
-                <h2 class="text-xl font-bold text-white mb-4">16. Do's & Don'ts</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="text-sm font-semibold text-green-400 mb-3">DO's</h3>
-                        <ul class="text-sm text-gray-400 space-y-2">
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Update ticket status when you start/finish work</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Log your time regularly</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Submit daily reports every working day</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Use @mentions to notify relevant people</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Write clear ticket names and descriptions</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Use Request type for cross-department asks</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Keep discussions focused and productive</li>
-                            <li class="flex items-start gap-2"><span class="text-green-400 mt-0.5">&#10003;</span> Complete your profile (photo, department, position)</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-red-400 mb-3">DON'Ts</h3>
-                        <ul class="text-sm text-gray-400 space-y-2">
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't create execution tickets (Task/Bug) without proper requirement</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't change another person's ticket status without communication</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't mark all requests as "Critical" impact</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't leave tickets in "In Progress" indefinitely</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't skip daily reports — it affects team visibility</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't create duplicate tickets — search first</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't use comments for off-topic chat</li>
-                            <li class="flex items-start gap-2"><span class="text-red-400 mt-0.5">&#10007;</span> Don't ignore notifications — they're there for a reason</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </x-filament::card>
-
-        {{-- 17. FAQ --}}
-        <x-filament::card>
-            <div id="faq" data-doc-section="Frequently Asked Questions">
-                <h2 class="text-xl font-bold text-white mb-4">17. FAQ</h2>
-
-                <div class="space-y-4 text-sm" x-data="{ open: null }">
-                    @php
-                    $faqs = [
-                        ['q' => 'I forgot my password. How do I reset it?', 'a' => 'Click "Forgot Password" on the login page. A reset link will be sent to your email.'],
-                        ['q' => 'I can\'t see a project. Why?', 'a' => 'You need to be added as a member of the project by the project owner or PM.'],
-                        ['q' => 'How do I change my role?', 'a' => 'Only Super Admin can change roles. Contact your administrator.'],
-                        ['q' => 'Can I create tickets directly without a Request?', 'a' => 'Depends on your role. Delivery roles (Dev, QA, Designer, etc.) can create Task/Bug/Feature directly. Non-delivery roles (HR, Sales, Finance) should use the Request type.'],
-                        ['q' => 'How does the birthday feature work?', 'a' => 'Set your birthday in Profile Settings. On your birthday, a celebration banner appears on everyone\'s dashboard with your name, age, and animated balloons around your nav avatar.'],
-                        ['q' => 'Why am I not getting email notifications?', 'a' => 'Check if your email is verified. Also check spam/junk folder. If using secondary email, ensure it\'s set in Profile Settings.'],
-                        ['q' => 'How do I mention someone?', 'a' => 'Type @ followed by their username in any comment or discussion reply. A dropdown will appear — select the person.'],
-                        ['q' => 'Can I delete a ticket?', 'a' => 'Only Super Admin can delete tickets. Other users can close or mark as resolved.'],
-                        ['q' => 'What timezone does the app use?', 'a' => 'Default is Asia/Jakarta (GMT+7). Your timezone is auto-detected from your browser and can be changed in Profile Settings.'],
-                        ['q' => 'How do I export timesheet data?', 'a' => 'On any ticket with logged hours, click the "Export time logged" button to download a CSV.'],
-                        ['q' => 'What is the difference between Role and Position?', 'a' => 'Role = system permissions (what you can do). Position = organizational title (for org chart display). They are independent.'],
-                        ['q' => 'How do I subscribe to a ticket?', 'a' => 'Click the "Subscribe" button on the ticket detail page. You\'ll receive notifications for all updates.'],
-                    ];
-                    @endphp
-
-                    @foreach($faqs as $i => $faq)
-                    <div class="border border-gray-700 rounded-lg overflow-hidden">
-                        <button @click="open = open === {{ $i }} ? null : {{ $i }}" class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-800 transition-colors">
-                            <span class="font-medium text-gray-200">{{ $faq['q'] }}</span>
-                            <svg class="w-4 h-4 text-gray-400 transition-transform shrink-0 ml-2" :class="open === {{ $i }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                        </button>
-                        <div x-show="open === {{ $i }}" x-collapse class="px-4 pb-3">
-                            <p class="text-gray-400">{{ $faq['a'] }}</p>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-        </x-filament::card>
-
-        {{-- Footer --}}
-        <div class="text-center py-8 text-xs text-gray-500">
-            <p>PM Helper Documentation — Last updated {{ now()->format('d F Y') }}</p>
-            <p class="mt-1">Built for Capella Digicrats ID</p>
+        <h3 style="{{ $h3 }}">Request Workflow</h3>
+        <p style="{{ $p }}">All roles can create a <strong style="color:#8b5cf6;">Request</strong> ticket. This goes through an approval process:</p>
+        <div style="{{ $flow }}">
+            <span style="{{ $badge }}background:#8b5cf620;color:#8b5cf6;">Request</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#f59e0b20;color:#f59e0b;">Under Review</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#22c55e20;color:#22c55e;">Approved</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#3b82f620;color:#3b82f6;">Convert to Task/Feature/Bug</span>
+            <br><span style="display:inline-block;margin:8px 0 0 154px;color:#4b5563;">&#8600;</span>
+            <span style="{{ $badge }}background:#ef444420;color:#ef4444;">Rejected</span>
+            <span style="color:#6b7280;font-size:11px;margin-left:4px;">(with mandatory reason)</span>
         </div>
+
+        <h3 style="{{ $h3 }}">Required Fields for Request</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Field</th><th style="{{ $th }}">Description</th><th style="{{ $th }}">Required</th></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Objective</strong></td><td style="{{ $td }}">What do you want to achieve?</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Expected Outcome</strong></td><td style="{{ $td }}">What is the expected result if fulfilled?</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Impact</strong></td><td style="{{ $td }}">Low / Medium / High / Critical</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Department</strong></td><td style="{{ $td }}">Which department is requesting</td><td style="{{ $td }}">Optional</td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">PM/Executive Actions</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><span style="{{ $badge }}background:#f59e0b20;color:#f59e0b;">Start Review</span> - Mark request as being reviewed</li>
+            <li style="{{ $li }}"><span style="{{ $badge }}background:#22c55e20;color:#22c55e;">Approve</span> - Approve the request for execution</li>
+            <li style="{{ $li }}"><span style="{{ $badge }}background:#ef444420;color:#ef4444;">Reject</span> - Reject with mandatory reason</li>
+            <li style="{{ $li }}"><span style="{{ $badge }}background:#3b82f620;color:#3b82f6;">Convert</span> - Change type to Task/Feature/Bug and set delivery status</li>
+        </ul>
+    </div>
+
+    {{-- 5. KANBAN --}}
+    <div style="{{ $card }}" id="kanban" data-doc-section="Kanban Board">
+        <h2 style="{{ $h2 }}">5. Kanban Board</h2>
+        <p style="{{ $p }}">Visual board where tickets are organized by status columns.</p>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Each column represents a ticket status (e.g. To Do, In Progress, Done)</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Drag and drop</strong> ticket cards between columns to update status</li>
+            <li style="{{ $li }}">Click a ticket card to open its detail view</li>
+            <li style="{{ $li }}">Cards show: ticket code, name, assignee avatar, priority indicator</li>
+        </ul>
+    </div>
+
+    {{-- 6. COMMENTS --}}
+    <div style="{{ $card }}" id="comments" data-doc-section="Comments and Mentions">
+        <h2 style="{{ $h2 }}">6. Comments & Mentions</h2>
+
+        <h3 style="{{ $h3 }}">Rich Text Comments</h3>
+        <p style="{{ $p }}">The comment editor supports: <strong style="color:#e5e7eb;">bold</strong>, <em>italic</em>, lists, links, code blocks, and image uploads.</p>
+
+        <h3 style="{{ $h3 }}">@Mention System</h3>
+        <p style="{{ $p }}">Type <code style="{{ $code }}">@</code> followed by a name or username to mention someone:</p>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">A dropdown appears with matching users (avatar + name + username)</li>
+            <li style="{{ $li }}">Navigate with <code style="{{ $code }}">Arrow keys</code>, select with <code style="{{ $code }}">Enter</code> or <code style="{{ $code }}">Tab</code></li>
+            <li style="{{ $li }}">Mentioned users receive <strong style="color:#e5e7eb;">email + bell notification</strong></li>
+            <li style="{{ $li }}">Mentions render as <span style="background:rgba(59,130,246,0.15);color:#3b82f6;padding:1px 6px;border-radius:4px;font-size:12px;">@username</span> blue badges</li>
+            <li style="{{ $li }}">Works in both <strong style="color:#e5e7eb;">ticket comments</strong> and <strong style="color:#e5e7eb;">discussion replies</strong></li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Time Logging via /spend</h3>
+        <p style="{{ $p }}">Log time directly in comments using the <code style="{{ $code }}">/spend</code> command:</p>
+        <div style="{{ $flow }}font-family:monospace;">
+            /spend 2h 30m - Worked on API integration<br>
+            /spend 45m - Quick bug fix<br>
+            /spend 1h - Code review
+        </div>
+
+        <h3 style="{{ $h3 }}">Deleting Comments</h3>
+        <p style="{{ $p }}">You can <strong style="color:#e5e7eb;">always delete your own comments</strong>. Super Admins can delete any comment.</p>
+    </div>
+
+    {{-- 7. REPORTS --}}
+    <div style="{{ $card }}" id="reports" data-doc-section="Daily and Weekly Reports">
+        <h2 style="{{ $h2 }}">7. Daily & Weekly Reports</h2>
+
+        <h3 style="{{ $h3 }}">Daily Reports</h3>
+        <p style="{{ $p }}">Standup-style daily reporting with three sections:</p>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Section</th><th style="{{ $th }}">Purpose</th><th style="{{ $th }}">Required</th></tr>
+            <tr><td style="{{ $td }}"><span style="color:#22c55e;">What was accomplished</span></td><td style="{{ $td }}">What you worked on and completed today</td><td style="{{ $td }}">Yes</td></tr>
+            <tr><td style="{{ $td }}"><span style="color:#3b82f6;">Plans for tomorrow</span></td><td style="{{ $td }}">What you plan to work on next</td><td style="{{ $td }}">Yes</td></tr>
+            <tr><td style="{{ $td }}"><span style="color:#ef4444;">Blockers / Issues</span></td><td style="{{ $td }}">Any impediments or problems</td><td style="{{ $td }}">Optional</td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">Weekly Reports</h3>
+        <p style="{{ $p }}">Comprehensive weekly summary with auto-generated progress data from ticket activity. Supports file attachments (PDF/DOCX) and AI-powered metric extraction.</p>
+
+        <h3 style="{{ $h3 }}">Report Workflow</h3>
+        <div style="{{ $flow }}">
+            <span style="{{ $badge }}background:#6b728020;color:#9ca3af;">Draft</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#3b82f620;color:#3b82f6;">Submitted</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#22c55e20;color:#22c55e;">Acknowledged</span>
+            <span style="color:#6b7280;font-size:11px;margin-left:8px;">by PM / Executive</span>
+        </div>
+        <p style="{{ $p }}">When submitted, <strong style="color:#e5e7eb;">PM, Executive, and Stakeholder</strong> roles receive email notification. Markdown is fully supported in report content.</p>
+    </div>
+
+    {{-- 8. DISCUSSIONS --}}
+    <div style="{{ $card }}" id="discussions" data-doc-section="Discussions">
+        <h2 style="{{ $h2 }}">8. Discussions</h2>
+        <p style="{{ $p }}">Thread-based discussion board for topics that need to be recorded and decided on. Not a ticket, but a structured conversation.</p>
+
+        <h3 style="{{ $h3 }}">Creating a Discussion</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Title</strong> - Clear topic title</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Description</strong> - Supports Markdown (headings, tables, code blocks)</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Priority</strong> - Low / Medium / High</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Project</strong> - Optional, link to a specific project</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Linked Ticket</strong> - Optional, reference a related ticket</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Status Flow</h3>
+        <div style="{{ $flow }}">
+            <span style="{{ $badge }}background:#3b82f620;color:#3b82f6;">Open</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#f59e0b20;color:#f59e0b;">In Discussion</span>
+            <span style="color:#6b7280;font-size:11px;">(auto on first reply)</span>
+            <span style="color:#4b5563;margin:0 6px;">&#8594;</span>
+            <span style="{{ $badge }}background:#22c55e20;color:#22c55e;">Resolved</span>
+            <span style="color:#4b5563;margin:0 3px;">/</span>
+            <span style="{{ $badge }}background:#6b728020;color:#9ca3af;">Closed</span>
+        </div>
+    </div>
+
+    {{-- 9. TIMESHEET --}}
+    <div style="{{ $card }}" id="timesheet" data-doc-section="Timesheet and Time Logging">
+        <h2 style="{{ $h2 }}">9. Timesheet & Time Logging</h2>
+        <p style="{{ $p }}">Two ways to log time on tickets:</p>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Method</th><th style="{{ $th }}">How</th></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Log Time button</strong></td><td style="{{ $td }}">On ticket detail page, click "Log time" &#8594; enter hours, minutes, activity type, and optional description</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">/spend command</strong></td><td style="{{ $td }}">In a comment: <code style="{{ $code }}">/spend 2h 30m</code> - auto-logged and removed from comment text</td></tr>
+        </table>
+        <p style="{{ $p }}">PM and Executive can view the <strong style="color:#e5e7eb;">Timesheet Dashboard</strong> with aggregated data per user, project, and time period. CSV export is available per ticket.</p>
+    </div>
+
+    {{-- 10. NOTIFICATIONS --}}
+    <div style="{{ $card }}" id="notifications" data-doc-section="Notifications">
+        <h2 style="{{ $h2 }}">10. Notifications</h2>
+        <p style="{{ $p }}">Two notification channels:</p>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Bell Icon</strong> (top-right) - Real-time via Pusher WebSocket. Updated instantly.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Email</strong> - Sent to your primary email + secondary CC email (if configured in profile).</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Notification Triggers</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Event</th><th style="{{ $th }}">Who Gets Notified</th></tr>
+            <tr><td style="{{ $td }}">Ticket created</td><td style="{{ $td }}">Project members</td></tr>
+            <tr><td style="{{ $td }}">Ticket status changed</td><td style="{{ $td }}">Owner + responsible + subscribers</td></tr>
+            <tr><td style="{{ $td }}">New comment</td><td style="{{ $td }}">Ticket subscribers</td></tr>
+            <tr><td style="{{ $td }}">@Mentioned</td><td style="{{ $td }}">Mentioned user</td></tr>
+            <tr><td style="{{ $td }}">Daily/Weekly report submitted</td><td style="{{ $td }}">PM + Executive + Stakeholder</td></tr>
+            <tr><td style="{{ $td }}">Discussion created</td><td style="{{ $td }}">Project members + Super Admin</td></tr>
+            <tr><td style="{{ $td }}">Discussion reply</td><td style="{{ $td }}">Author + all participants</td></tr>
+            <tr><td style="{{ $td }}">Feedback submitted/updated</td><td style="{{ $td }}">PM + Super Admin</td></tr>
+            <tr><td style="{{ $td }}">Feedback converted to ticket</td><td style="{{ $td }}">Feedback submitter</td></tr>
+            <tr><td style="{{ $td }}">Account created</td><td style="{{ $td }}">New user (verification email)</td></tr>
+        </table>
+    </div>
+
+    {{-- 11. ROLES --}}
+    <div style="{{ $card }}" id="roles" data-doc-section="Roles and Permissions">
+        <h2 style="{{ $h2 }}">11. Roles & Permissions</h2>
+        <p style="{{ $p }}">Each user is assigned <strong style="color:#e5e7eb;">one role</strong> that determines system access. Roles are <strong style="color:#e5e7eb;">independent of department/position</strong>.</p>
+
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Role</th><th style="{{ $th }}">Layer</th><th style="{{ $th }}">Key Capabilities</th></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#ef4444;">Super Admin</strong></td><td style="{{ $td }}">System</td><td style="{{ $td }}">Full access to everything. Manages roles, settings, quotes.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#f87171;">Executive</strong></td><td style="{{ $td }}">Strategic</td><td style="{{ $td }}">View all data. Approve/reject/convert requests. No operational work.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#3b82f6;">Project Manager</strong></td><td style="{{ $td }}">Delivery</td><td style="{{ $td }}">Full project/ticket/sprint control. Approve requests. View timesheet.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#22c55e;">Developer</strong></td><td style="{{ $td }}">Execution</td><td style="{{ $td }}">Create/update tickets. Comment. Log time.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#f59e0b;">QA / Tester</strong></td><td style="{{ $td }}">Quality</td><td style="{{ $td }}">Update ticket status. Create bugs. Manage feedback.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#8b5cf6;">DevOps</strong></td><td style="{{ $td }}">Deployment</td><td style="{{ $td }}">Update tickets/status. View timesheet dashboard.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#06b6d4;">Account Manager</strong></td><td style="{{ $td }}">Client</td><td style="{{ $td }}">Manage projects. Create tickets. Handle client feedback.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#f97316;">Sales</strong></td><td style="{{ $td }}">Revenue</td><td style="{{ $td }}">View projects. Create requests. Manage feedback.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#a855f7;">Digital Marketer</strong></td><td style="{{ $td }}">Delivery Support</td><td style="{{ $td }}">View/update tickets. Comment on work.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#c084fc;">Content Writer</strong></td><td style="{{ $td }}">Delivery Support</td><td style="{{ $td }}">View/update tickets. Comment on content work.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#34d399;">Designer</strong></td><td style="{{ $td }}">Creative</td><td style="{{ $td }}">View/update tickets (own tasks). Comment.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#22d3ee;">Data Analyst</strong></td><td style="{{ $td }}">Data</td><td style="{{ $td }}">View dashboards, timesheet, feedback. Create requests.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#94a3b8;">Operations</strong></td><td style="{{ $td }}">Ops</td><td style="{{ $td }}">Create/update tickets. Manage sprints and activities.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#10b981;">HR</strong></td><td style="{{ $td }}">Internal</td><td style="{{ $td }}">Manage users/roles. Create requests. No project access.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#6b7280;">Finance</strong></td><td style="{{ $td }}">Internal</td><td style="{{ $td }}">View timesheet/users. Create requests.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#fb923c;">Stakeholder</strong></td><td style="{{ $td }}">View Only</td><td style="{{ $td }}">View projects/tickets. Submit feedback. View reports.</td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">Request Permissions Matrix</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Role Group</th><th style="{{ $th }}">Create Request</th><th style="{{ $th }}">Create Task/Bug</th><th style="{{ $th }}">Approve/Reject</th><th style="{{ $th }}">Convert</th></tr>
+            <tr><td style="{{ $td }}">HR, Finance, Sales</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td></tr>
+            <tr><td style="{{ $td }}">Marketer, Writer, Designer</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td></tr>
+            <tr><td style="{{ $td }}">Dev, QA, DevOps, Ops</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td><td style="{{ $td }}"><span style="color:#ef4444;">No</span></td></tr>
+            <tr><td style="{{ $td }}">PM, Executive, Super Admin</td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td><td style="{{ $td }}"><span style="color:#22c55e;">Yes</span></td></tr>
+        </table>
+    </div>
+
+    {{-- 12. ORGANIZATION --}}
+    <div style="{{ $card }}" id="organization" data-doc-section="Organization and Departments">
+        <h2 style="{{ $h2 }}">12. Organization & Departments</h2>
+
+        <h3 style="{{ $h3 }}">Structure</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">13 Departments</strong> - 10 Core + 3 Advanced (managed by Super Admin)</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">50+ Positions</strong> - Linked to departments with levels: Staff, Lead, Manager, Head, C-Level</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Supervisor Chain</strong> - Each user can have a direct supervisor, creating the org hierarchy</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Organization Chart (two views)</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Chart View</strong> - Visual tree with photos, colored position badges, connecting lines based on supervisor relationships</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Data View</strong> - Department cards showing all positions and assigned members</li>
+        </ul>
+
+        <div style="{{ $flow }}">
+            <strong style="color:#e5e7eb;">Important:</strong> Department and Position are for <span style="color:#f59e0b;">organizational identity</span> (org chart, profile). They do NOT affect permissions. Only your <span style="color:#3b82f6;">Role</span> determines system access.
+        </div>
+    </div>
+
+    {{-- 13. PROFILE --}}
+    <div style="{{ $card }}" id="profile" data-doc-section="Profile Settings">
+        <h2 style="{{ $h2 }}">13. Profile Settings</h2>
+        <p style="{{ $p }}">Access via your avatar (top-right corner) &#8594; click your name.</p>
+
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Field</th><th style="{{ $th }}">Description</th></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Profile Picture</strong></td><td style="{{ $td }}">Upload JPG/PNG/WebP (auto-cropped 200x200). If not uploaded, a gender-based cartoon avatar is assigned.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Name</strong></td><td style="{{ $td }}">Your full display name</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Username</strong></td><td style="{{ $td }}">For @mentions (letters, numbers, underscores only)</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Email</strong></td><td style="{{ $td }}">Primary email. Changing requires re-verification.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Secondary Email (CC)</strong></td><td style="{{ $td }}">Optional CC address for all email notifications</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Gender</strong></td><td style="{{ $td }}">Male / Female / Other. Triggers default avatar assignment.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Birthday</strong></td><td style="{{ $td }}">For birthday celebration banner on your special day</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Department & Position</strong></td><td style="{{ $td }}">For organization chart display</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Direct Supervisor</strong></td><td style="{{ $td }}">Creates hierarchy in org chart (supervisor &#8594; you)</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Timezone</strong></td><td style="{{ $td }}">Auto-detected from browser. Manually overridable. All times displayed in your timezone.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Language</strong></td><td style="{{ $td }}">UI language preference</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Default Project</strong></td><td style="{{ $td }}">Quick access project shortcut</td></tr>
+        </table>
+    </div>
+
+    {{-- 14. FEEDBACK --}}
+    <div style="{{ $card }}" id="feedback" data-doc-section="Customer Feedback">
+        <h2 style="{{ $h2 }}">14. Customer Feedback</h2>
+        <p style="{{ $p }}">Collect and track client feedback with full traceability to tickets:</p>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Stakeholders and QA can <strong style="color:#e5e7eb;">submit feedback</strong> linked to a project</li>
+            <li style="{{ $li }}">PM and Account Managers can <strong style="color:#e5e7eb;">update status</strong> and <strong style="color:#e5e7eb;">convert to ticket</strong></li>
+            <li style="{{ $li }}">Converted feedback auto-links to the created ticket for traceability</li>
+            <li style="{{ $li }}">All updates trigger email notifications to the original submitter</li>
+        </ul>
+    </div>
+
+    {{-- 15. WRITING GUIDELINES --}}
+    <div style="{{ $card }}" id="writing-rules" data-doc-section="Writing Guidelines">
+        <h2 style="{{ $h2 }}">15. Writing Guidelines</h2>
+
+        <h3 style="{{ $h3 }}">Ticket Names</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Rule</th><th style="{{ $th }}">Good Example</th><th style="{{ $th }}">Bad Example</th></tr>
+            <tr><td style="{{ $td }}">Be specific</td><td style="{{ $td }}"><span style="color:#22c55e;">Fix login redirect loop on mobile Safari</span></td><td style="{{ $td }}"><span style="color:#ef4444;">Fix login</span></td></tr>
+            <tr><td style="{{ $td }}">Start with verb</td><td style="{{ $td }}"><span style="color:#22c55e;">Add CSV export to user list</span></td><td style="{{ $td }}"><span style="color:#ef4444;">CSV export</span></td></tr>
+            <tr><td style="{{ $td }}">Include context</td><td style="{{ $td }}"><span style="color:#22c55e;">Update pricing page hero section copy</span></td><td style="{{ $td }}"><span style="color:#ef4444;">Update text</span></td></tr>
+            <tr><td style="{{ $td }}">Keep under 80 chars</td><td style="{{ $td }}"><span style="color:#22c55e;">Implement dark mode for email templates</span></td><td style="{{ $td }}"><span style="color:#ef4444;">We need to implement dark mode for all our email templates because they look bad</span></td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">Ticket Descriptions</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Explain the <strong style="color:#e5e7eb;">why</strong>, not just the what</li>
+            <li style="{{ $li }}">Include acceptance criteria when possible</li>
+            <li style="{{ $li }}">Attach screenshots, mockups, or reference links</li>
+            <li style="{{ $li }}">For bugs: always fill Steps to Reproduce, Expected vs Actual Behavior</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Request Writing</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Be clear about the <strong style="color:#e5e7eb;">objective</strong> - what problem are you solving?</li>
+            <li style="{{ $li }}">Define measurable <strong style="color:#e5e7eb;">expected outcome</strong></li>
+            <li style="{{ $li }}">Set realistic <strong style="color:#e5e7eb;">impact level</strong> - not everything is Critical</li>
+            <li style="{{ $li }}">Include relevant context in the description</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Daily Report Tips</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Use bullet points, not paragraphs</li>
+            <li style="{{ $li }}">Reference ticket codes (e.g. QOS-75)</li>
+            <li style="{{ $li }}">Mention blockers early - don't wait</li>
+            <li style="{{ $li }}">Plans should be actionable and specific</li>
+        </ul>
+    </div>
+
+    {{-- 16. DO'S AND DON'TS --}}
+    <div style="{{ $card }}" id="dos-donts" data-doc-section="Do's and Don'ts">
+        <h2 style="{{ $h2 }}">16. Do's & Don'ts</h2>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+                <h3 style="font-size:14px;font-weight:600;color:#22c55e;margin:0 0 12px 0;">DO's</h3>
+                <ul style="padding-left:0;list-style:none;margin:0;">
+                    @foreach(['Update ticket status when you start/finish work','Log your time regularly','Submit daily reports every working day','Use @mentions to notify relevant people','Write clear, specific ticket names','Use Request type for cross-department asks','Keep discussions focused and on-topic','Complete your profile (photo, department, position)'] as $item)
+                    <li style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px;color:#9ca3af;line-height:1.5;">
+                        <span style="color:#22c55e;font-size:14px;margin-top:1px;flex-shrink:0;">&#10003;</span> {{ $item }}
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+            <div>
+                <h3 style="font-size:14px;font-weight:600;color:#ef4444;margin:0 0 12px 0;">DON'Ts</h3>
+                <ul style="padding-left:0;list-style:none;margin:0;">
+                    @foreach(["Don't create execution tickets without proper requirement","Don't change someone else's ticket status without telling them","Don't mark all requests as Critical impact","Don't leave tickets stuck in In Progress forever","Don't skip daily reports - it hurts team visibility","Don't create duplicate tickets - search first","Don't use comments for off-topic conversations","Don't ignore notifications - they exist for a reason"] as $item)
+                    <li style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;font-size:13px;color:#9ca3af;line-height:1.5;">
+                        <span style="color:#ef4444;font-size:14px;margin-top:1px;flex-shrink:0;">&#10007;</span> {{ $item }}
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {{-- 17. FAQ --}}
+    <div style="{{ $card }}" id="faq" data-doc-section="Frequently Asked Questions">
+        <h2 style="{{ $h2 }}">17. FAQ</h2>
+
+        @php
+        $faqs = [
+            ['I forgot my password. How do I reset it?', 'Click "Forgot Password" on the login page. A password reset link will be sent to your registered email address.'],
+            ['I can\'t see a project. Why?', 'You need to be added as a team member of the project. Ask the project owner or a PM to add you.'],
+            ['How do I change my role?', 'Only Super Admin can assign roles. Contact your system administrator.'],
+            ['Can I create tickets directly without using Request?', 'Depends on your role. Delivery roles (Developer, QA, Designer, etc.) can create Task/Bug/Feature directly. Non-delivery roles (HR, Sales, Finance) should use the Request type which goes through PM approval.'],
+            ['How does the birthday feature work?', 'Set your birthday in Profile Settings. On your birthday, a celebration banner with your name, age, animated balloons, and a personalized wish appears on everyone\'s dashboard.'],
+            ['Why am I not receiving email notifications?', 'Check: (1) Is your email verified? (2) Check spam/junk folder. (3) If using secondary CC email, make sure it\'s set correctly in Profile Settings.'],
+            ['How do I mention someone in a comment?', 'Type @ followed by their username. A dropdown of matching users will appear. Select with Enter or Tab. The mentioned person receives a notification.'],
+            ['Can I delete a ticket?', 'Only Super Admin can delete tickets. Other users can change status to Closed or Rejected.'],
+            ['What timezone does the app use?', 'Default is Asia/Jakarta (GMT+7). Your timezone is auto-detected from your browser on first login. You can manually change it in Profile Settings under "Timezone".'],
+            ['How do I export my timesheet data?', 'On any ticket that has logged hours, click the three-dot menu and select "Export time logged" to download a CSV file.'],
+            ['What\'s the difference between Role and Position?', 'Role = system permissions (what you can do in the app). Position = organizational title (displayed in org chart and profile). They are completely independent.'],
+            ['How do I subscribe to a ticket for updates?', 'On any ticket detail page, click the "Subscribe" bell button. You\'ll receive notifications for all status changes and new comments on that ticket.'],
+        ];
+        @endphp
+
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            @foreach($faqs as $i => $faq)
+            <div style="border:1px solid #374151;border-radius:6px;overflow:hidden;">
+                <button @click="openFaq = openFaq === {{ $i }} ? null : {{ $i }}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:transparent;border:none;cursor:pointer;text-align:left;">
+                    <span style="font-size:13px;font-weight:500;color:#e5e7eb;">{{ $faq[0] }}</span>
+                    <svg :style="openFaq === {{ $i }} ? 'transform:rotate(180deg)' : ''" style="width:14px;height:14px;color:#6b7280;transition:transform 0.2s;flex-shrink:0;margin-left:12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+                <div x-show="openFaq === {{ $i }}" x-collapse style="padding:0 16px 14px 16px;">
+                    <p style="font-size:13px;line-height:1.7;color:#9ca3af;margin:0;">{{ $faq[1] }}</p>
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+
+    {{-- Footer --}}
+    <div style="text-align:center;padding:32px 0;font-size:11px;color:#4b5563;">
+        <p style="margin:0;">PM Helper Documentation - Last updated {{ now()->format('d F Y') }}</p>
+        <p style="margin:4px 0 0 0;">Built for Capella Digicrats ID</p>
     </div>
 </div>
 </x-filament::page>
