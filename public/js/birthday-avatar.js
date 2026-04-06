@@ -2,8 +2,10 @@
  * Add floating balloon animation around nav avatar if user has birthday today
  */
 (function() {
-    const meta = document.querySelector('meta[name="user-birthday-today"]');
-    if (!meta || meta.content !== '1') return;
+    // Trigger if logged-in user has birthday OR anyone has birthday today
+    const selfBday = document.querySelector('meta[name="user-birthday-today"]');
+    const anyBday = document.querySelector('meta[name="any-birthday-today"]');
+    if ((!selfBday || selfBday.content !== '1') && (!anyBday || anyBday.content !== '1')) return;
 
     const colors = ['#f87171','#fb923c','#facc15','#4ade80','#60a5fa','#a78bfa','#f472b6'];
 
