@@ -8,59 +8,68 @@
     <title>{{ config('app.name') }}</title>
     <style>
         @media only screen and (max-width: 600px) {
-            .inner-body { width: 100% !important; }
+            .inner-body { width: 100% !important; border-radius: 0 !important; }
             .footer { width: 100% !important; }
-            .content-cell { padding: 24px 16px !important; }
+            .content-cell { padding: 28px 20px !important; }
         }
         @media only screen and (max-width: 500px) {
             .button { width: 100% !important; }
         }
 
         body {
-            background-color: #f4f5f7;
+            background-color: #1a1a2e;
             margin: 0;
             padding: 0;
             width: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            color: #2d3748;
+            color: #e2e8f0;
             -webkit-text-size-adjust: none;
         }
 
-        h1 { font-size: 20px; font-weight: 700; color: #1a202c; margin: 0 0 16px 0; }
-        p { font-size: 15px; line-height: 1.7; color: #4a5568; margin: 0 0 16px 0; }
-        strong { color: #2d3748; }
+        h1 { font-size: 22px; font-weight: 700; color: #f7fafc; margin: 0 0 20px 0; line-height: 1.3; }
+        p { font-size: 15px; line-height: 1.75; color: #cbd5e0; margin: 0 0 16px 0; }
+        strong { color: #f7fafc; }
         blockquote {
             border-left: 3px solid #4299e1;
             margin: 16px 0;
-            padding: 8px 16px;
-            background-color: #ebf8ff;
+            padding: 10px 16px;
+            background-color: rgba(66, 153, 225, 0.1);
             border-radius: 0 6px 6px 0;
         }
-        blockquote p { color: #2c5282; margin: 0; font-size: 14px; }
+        blockquote p { color: #90cdf4; margin: 0; font-size: 14px; font-style: italic; }
 
-        a { color: #4299e1; text-decoration: none; }
+        a { color: #63b3ed; text-decoration: none; }
+        a:hover { text-decoration: underline; }
 
-        .wrapper { background-color: #f4f5f7; margin: 0; padding: 0; width: 100%; }
+        .wrapper { background-color: #1a1a2e; margin: 0; padding: 0; width: 100%; }
         .content { margin: 0; padding: 0; width: 100%; }
 
-        .header { padding: 32px 0 16px 0; text-align: center; }
+        .header { padding: 40px 0 24px 0; text-align: center; }
 
         .body { margin: 0; padding: 0; width: 100%; }
 
         .inner-body {
-            background-color: #ffffff;
+            background-color: #16213e;
             border-radius: 8px;
             margin: 0 auto;
             padding: 0;
             width: 600px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .content-cell { padding: 36px 40px; }
+        .accent-line {
+            height: 3px;
+            width: 40px;
+            background-color: #4299e1;
+            border-radius: 2px;
+            margin-bottom: 24px;
+        }
+
+        .content-cell { padding: 40px 44px; }
 
         .footer { margin: 0 auto; padding: 24px; text-align: center; width: 600px; }
-        .footer p { color: #a0aec0; font-size: 12px; text-align: center; margin: 0; }
+        .footer p { color: #4a5568; font-size: 12px; text-align: center; margin: 0; }
     </style>
 </head>
 <body>
@@ -75,6 +84,7 @@
                             <table class="inner-body" align="center" width="600" cellpadding="0" cellspacing="0" role="presentation">
                                 <tr>
                                     <td class="content-cell">
+                                        <div class="accent-line"></div>
                                         {{ Illuminate\Mail\Markdown::parse($slot) }}
 
                                         {{ $subcopy ?? '' }}
