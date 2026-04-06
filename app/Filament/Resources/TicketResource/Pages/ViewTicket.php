@@ -692,8 +692,8 @@ class ViewTicket extends ViewRecord implements HasForms
      */
     public function canDeleteComment(TicketComment $comment): bool
     {
-        // User must have Delete comment permission AND be the owner of the comment
-        return auth()->user()->can('Delete comment') && $comment->user_id === auth()->user()->id;
+        // Owner can always delete their own comment, OR user with Delete comment permission
+        return $comment->user_id === auth()->user()->id || auth()->user()->can('Delete comment');
     }
 
     /**
