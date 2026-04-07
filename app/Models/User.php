@@ -53,6 +53,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'locale',
         'timezone',
         'default_project_id',
+        'status',
+        'status_message',
+        'status_until',
+        'on_leave_from',
+        'on_leave_until',
     ];
 
     /**
@@ -73,7 +78,48 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     protected $casts = [
         'email_verified_at' => 'datetime',
         'birthday' => 'date',
+        'status_until' => 'datetime',
+        'on_leave_from' => 'date',
+        'on_leave_until' => 'date',
     ];
+
+    /**
+     * Allowed manual status values. Online/Away come from Pusher presence.
+     */
+    public const ALLOWED_STATUSES = ['busy', 'in_meeting', 'on_leave'];
+
+    /**
+     * Compute the effective status of this user, considering expiry rules.
+     * Returns one of: 'busy', 'in_meeting', 'on_leave', or null (= use presence).
+     */
+    public function effectiveStatus(): ?string
+    {
+        // On-leave overrides everything until end date passes.
+        if ($this->on_leave_until && $this->on_leave_until->endOfDay()->isFuture()) {
+            return 'on_leave';
+        }
+
+        if (! $this->status) {
+            return null;
+        }
+
+        // status_until is auto-clear time (e.g. for in_meeting after 2h).
+        if ($this->status_until && $this->status_until->isPast()) {
+            return null;
+        }
+
+        return in_array($this->status, self::ALLOWED_STATUSES, true) ? $this->status : null;
+    }
+
+    public function isOnLeave(): bool
+    {
+        return $this->effectiveStatus() === 'on_leave';
+    }
+
+    public function statusDoesNotDisturb(): bool
+    {
+        return in_array($this->effectiveStatus(), ['busy', 'in_meeting'], true);
+    }
 
     public function department(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {

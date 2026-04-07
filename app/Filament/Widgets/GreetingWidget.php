@@ -18,13 +18,15 @@ class GreetingWidget extends Widget
 
     public function getViewData(): array
     {
-        $hour = now()->hour;
+        $user = auth()->user();
+        $tz = $user->timezone ?: config('app.timezone', 'UTC');
+        $hour = now($tz)->hour;
 
         if ($hour >= 5 && $hour < 12) {
             $greeting = 'Good Morning';
-        } elseif ($hour >= 12 && $hour < 15) {
+        } elseif ($hour >= 12 && $hour < 17) {
             $greeting = 'Good Afternoon';
-        } elseif ($hour >= 15 && $hour < 18) {
+        } elseif ($hour >= 17 && $hour < 21) {
             $greeting = 'Good Evening';
         } else {
             $greeting = 'Good Night';
@@ -34,7 +36,7 @@ class GreetingWidget extends Widget
 
         return [
             'greeting' => $greeting,
-            'userName' => auth()->user()->name,
+            'userName' => $user->name,
             'quote' => $quote,
         ];
     }

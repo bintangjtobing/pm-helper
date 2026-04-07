@@ -9,6 +9,7 @@ class Kernel extends ConsoleKernel
 {
     protected $commands = [
         Commands\AutoCompleteTickets::class,
+        Commands\MessengerClearExpiredStatuses::class,
     ];
     /**
      * Define the application's command schedule.
@@ -24,6 +25,11 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground()
             ->appendOutputTo(storage_path('logs/auto-complete.log'));
+
+        // Sweep expired manual statuses (in_meeting auto-clear after 2h, on_leave end date passed)
+        $schedule->command('messenger:clear-expired-statuses')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
     }
 
     /**

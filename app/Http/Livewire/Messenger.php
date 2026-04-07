@@ -76,6 +76,7 @@ class Messenger extends Component
         'messenger:incoming-delete'     => 'handleIncomingDelete',
         'messenger:incoming-read'       => 'handleIncomingRead',
         'messenger:incoming-reaction'   => 'handleIncomingReaction',
+        'messenger:incoming-status'     => 'handleIncomingStatus',
         'messenger:open-conversation'   => 'openConversation',
     ];
 
@@ -169,8 +170,8 @@ class Messenger extends Component
                 $q->where('user_one_id', $userId)->orWhere('user_two_id', $userId);
             })
             ->with([
-                'userOne:id,name,username,avatar_url,last_seen_at',
-                'userTwo:id,name,username,avatar_url,last_seen_at',
+                'userOne:id,name,username,avatar_url,last_seen_at,status,status_message,status_until,on_leave_from,on_leave_until',
+                'userTwo:id,name,username,avatar_url,last_seen_at,status,status_message,status_until,on_leave_from,on_leave_until',
                 'latestMessage' => function ($q) {
                     // Cannot select() here — latestOfMany() adds a subquery JOIN that
                     // makes conversation_id ambiguous. Load all columns instead.
@@ -199,18 +200,21 @@ class Messenger extends Component
             $preview = $this->buildPreview($latest, $userId);
 
             $list[] = [
-                'id'                  => $c->id,
-                'other_id'            => $other->id,
-                'other_name'          => $other->name,
-                'other_username'      => $other->username,
-                'other_avatar'        => $other->avatar_url,
-                'other_last_seen_at'  => optional($other->last_seen_at)->toIso8601String(),
-                'unread'              => $unread,
-                'last_preview'        => $preview['text'],
-                'last_is_attachment'  => $preview['is_attachment'],
-                'last_is_self'        => $latest && (int) $latest->sender_id === $userId,
-                'last_at'             => optional($c->last_message_at)->diffForHumans(null, true),
-                'last_at_iso'         => optional($c->last_message_at)->toIso8601String(),
+                'id'                    => $c->id,
+                'other_id'              => $other->id,
+                'other_name'            => $other->name,
+                'other_username'        => $other->username,
+                'other_avatar'          => $other->avatar_url,
+                'other_last_seen_at'    => optional($other->last_seen_at)->toIso8601String(),
+                'other_status'          => $other->effectiveStatus(),
+                'other_status_message'  => $other->status_message,
+                'other_on_leave_until'  => optional($other->on_leave_until)->toDateString(),
+                'unread'                => $unread,
+                'last_preview'          => $preview['text'],
+                'last_is_attachment'    => $preview['is_attachment'],
+                'last_is_self'          => $latest && (int) $latest->sender_id === $userId,
+                'last_at'               => optional($c->last_message_at)->diffForHumans(null, true),
+                'last_at_iso'           => optional($c->last_message_at)->toIso8601String(),
             ];
         }
 
@@ -702,6 +706,66 @@ class Messenger extends Component
         }
     }
 
+    /**
+     * A user (could be self or other) updated their status.
+     * Refresh conversation list (so other-user status is up to date)
+     * and the active conversation header.
+     */
+    public function handleIncomingStatus(int $userId): void
+    {
+        $this->loadConversations();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Status management (current user)
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function setMyStatus(?string $status, ?string $message = null, ?string $onLeaveFrom = null, ?string $onLeaveUntil = null): void
+    {
+        try {
+            $this->service()->setStatus(auth()->user(), $status, $message, $onLeaveFrom, $onLeaveUntil);
+        } catch (\Throwable $e) {
+            $this->addError('status', $e->getMessage());
+            return;
+        }
+        $this->loadConversations();
+    }
+
+    public function clearMyStatus(): void
+    {
+        $this->service()->clearStatus(auth()->user());
+        $this->loadConversations();
+    }
+
+    public function updateMyStatusMessage(string $message): void
+    {
+        $user = auth()->user();
+        // Preserve current status, just update the message.
+        $current = $user->status;
+        try {
+            $this->service()->setStatus(
+                $user,
+                $current,
+                $message,
+                $user->on_leave_from?->toDateString(),
+                $user->on_leave_until?->toDateString()
+            );
+        } catch (\Throwable $e) {
+            $this->addError('statusMessage', $e->getMessage());
+        }
+    }
+
+    public function getMyStatusProperty(): array
+    {
+        $user = auth()->user();
+        return [
+            'status' => $user->effectiveStatus(),
+            'status_message' => $user->status_message,
+            'on_leave_from' => $user->on_leave_from?->toDateString(),
+            'on_leave_until' => $user->on_leave_until?->toDateString(),
+        ];
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // Helpers exposed to Blade
     // ──────────────────────────────────────────────────────────────────────
@@ -712,8 +776,8 @@ class Messenger extends Component
             return null;
         }
         $conversation = MessengerConversation::with([
-            'userOne:id,name,username,avatar_url,last_seen_at',
-            'userTwo:id,name,username,avatar_url,last_seen_at',
+            'userOne:id,name,username,avatar_url,last_seen_at,status,status_message,status_until,on_leave_from,on_leave_until',
+            'userTwo:id,name,username,avatar_url,last_seen_at,status,status_message,status_until,on_leave_from,on_leave_until',
         ])->find($this->activeConversationId);
         if (! $conversation) {
             return null;
@@ -724,12 +788,15 @@ class Messenger extends Component
             return null;
         }
         return [
-            'id'                 => $conversation->id,
-            'other_id'           => $other->id,
-            'other_name'         => $other->name,
-            'other_username'     => $other->username,
-            'other_avatar'       => $other->avatar_url,
-            'other_last_seen_at' => optional($other->last_seen_at)->toIso8601String(),
+            'id'                    => $conversation->id,
+            'other_id'              => $other->id,
+            'other_name'            => $other->name,
+            'other_username'        => $other->username,
+            'other_avatar'          => $other->avatar_url,
+            'other_last_seen_at'    => optional($other->last_seen_at)->toIso8601String(),
+            'other_status'          => $other->effectiveStatus(),
+            'other_status_message'  => $other->status_message,
+            'other_on_leave_until'  => optional($other->on_leave_until)->toDateString(),
         ];
     }
 

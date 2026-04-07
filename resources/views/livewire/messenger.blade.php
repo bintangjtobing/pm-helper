@@ -6,6 +6,8 @@
            so the two floating widgets do not collide.
            ───────────────────────────────────────────────────────────────── */
 
+        [x-cloak] { display: none !important; }
+
         @keyframes msgrPanelSlide {
             from { opacity: 0; transform: translateY(20px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -92,7 +94,7 @@
             position: relative;
             flex-shrink: 0;
         }
-        /* Status dot — single class, modifier toggles green */
+        /* Status dot — single class, modifier sets color */
         .msgr-status-dot {
             position: absolute;
             bottom: 0;
@@ -104,8 +106,119 @@
             border: 2px solid #0d1117;
             box-sizing: content-box;
         }
-        .msgr-status-dot.is-online {
-            background: #22c55e;
+        /* Inline (non-positioned) variant for menu items */
+        .msgr-status-dot-inline {
+            position: relative;
+            display: inline-block;
+            bottom: auto;
+            right: auto;
+            border-color: transparent;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .msgr-status-dot.is-online    { background: #22c55e; }
+        .msgr-status-dot.is-busy      { background: #ef4444; }
+        .msgr-status-dot.is-in-meeting { background: #a855f7; }
+        .msgr-status-dot.is-on-leave  { background: #6b7280; border-color: #fbbf24; }
+
+        /* ── Status menu (dropdown overlay) ── */
+        .msgr-status-menu {
+            position: absolute;
+            top: 56px;
+            left: 12px;
+            width: 280px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 6px 0;
+            z-index: 50;
+        }
+        .msgr-status-menu-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 14px 4px;
+        }
+        .msgr-status-option {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 8px 14px;
+            color: #e5e7eb;
+            font-size: 13px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .msgr-status-option:hover {
+            background: #374151;
+        }
+        .msgr-status-option-meta {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-left: 6px;
+        }
+        .msgr-status-leave-form {
+            padding: 8px 14px;
+            background: #111827;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .msgr-status-leave-form input[type="date"] {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            padding: 5px 8px;
+            color: #e5e7eb;
+            font-size: 12px;
+            color-scheme: dark;
+        }
+        .msgr-status-leave-form button {
+            background: #3b82f6;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 10px;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .msgr-status-divider {
+            border: none;
+            border-top: 1px solid #374151;
+            margin: 4px 0;
+        }
+        .msgr-status-message-input {
+            width: calc(100% - 20px);
+            margin: 6px 10px;
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #e5e7eb;
+            font-size: 12px;
+            outline: none;
+        }
+        .msgr-status-message-input:focus {
+            border-color: #3b82f6;
+        }
+
+        /* OOO warning banner in conversation header */
+        .msgr-leave-banner {
+            background: rgba(251, 191, 36, 0.1);
+            border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            padding: 8px 14px;
+            font-size: 12px;
+            text-align: center;
+        }
+        .msgr-leave-banner strong {
+            color: #fde68a;
         }
         .msgr-header-title {
             font-size: 14px;
@@ -725,7 +838,7 @@
                 <div class="msgr-header-left">
                     <div class="msgr-avatar-wrap">
                         <img src="{{ auth()->user()->avatar_url }}" alt="me" class="msgr-avatar">
-                        <span class="msgr-status-dot is-online"></span>
+                        <span class="msgr-status-dot" x-bind:class="statusClassFor({{ $this->currentUserId }})"></span>
                     </div>
                     <div>
                         <div class="msgr-header-title">
@@ -751,15 +864,54 @@
              EXPANDED STATE — full panel
              ──────────────────────────────────────────────────────────────── --}}
         @if($isOpen)
-            <div class="msgr-panel">
+            <div class="msgr-panel" style="position: fixed;">
+
+                {{-- Status menu dropdown overlay (only in list view header) --}}
+                <div x-show="showStatusMenu" x-cloak x-on:click.outside="showStatusMenu = false" class="msgr-status-menu">
+                    <div class="msgr-status-menu-header">Set your status</div>
+
+                    <button type="button" class="msgr-status-option" x-on:click="$wire.clearMyStatus(); showStatusMenu = false">
+                        <span class="msgr-status-dot msgr-status-dot-inline is-online"></span>
+                        <span>Online</span>
+                    </button>
+
+                    <button type="button" class="msgr-status-option" x-on:click="$wire.setMyStatus('busy', statusMessage || null); showStatusMenu = false">
+                        <span class="msgr-status-dot msgr-status-dot-inline is-busy"></span>
+                        <span>Do Not Disturb</span>
+                    </button>
+
+                    <button type="button" class="msgr-status-option" x-on:click="$wire.setMyStatus('in_meeting', statusMessage || null); showStatusMenu = false">
+                        <span class="msgr-status-dot msgr-status-dot-inline is-in-meeting"></span>
+                        <span>In a meeting</span><span class="msgr-status-option-meta">auto-clear 2h</span>
+                    </button>
+
+                    <button type="button" class="msgr-status-option" x-on:click="showLeaveForm = ! showLeaveForm">
+                        <span class="msgr-status-dot msgr-status-dot-inline is-on-leave"></span>
+                        <span>On leave…</span>
+                    </button>
+
+                    <div x-show="showLeaveForm" x-cloak class="msgr-status-leave-form">
+                        <label style="font-size:11px;color:#9ca3af;">From</label>
+                        <input type="date" x-model="leaveFrom">
+                        <label style="font-size:11px;color:#9ca3af;">Until</label>
+                        <input type="date" x-model="leaveUntil">
+                        <button type="button" x-on:click="$wire.setMyStatus('on_leave', statusMessage || null, leaveFrom, leaveUntil); showLeaveForm = false; showStatusMenu = false">Set on leave</button>
+                    </div>
+
+                    <hr class="msgr-status-divider">
+
+                    <input type="text" class="msgr-status-message-input" placeholder="What's your status?"
+                           x-model="statusMessage" maxlength="80"
+                           x-on:keydown.enter.prevent="$wire.updateMyStatusMessage(statusMessage); showStatusMenu = false">
+                </div>
 
                 {{-- ── Header ── --}}
                 <div class="msgr-header">
                     @if($view === 'list')
                         <div class="msgr-header-left">
-                            <div class="msgr-avatar-wrap">
+                            <div class="msgr-avatar-wrap" style="cursor: pointer;" x-on:click.stop="showStatusMenu = ! showStatusMenu" title="Set status">
                                 <img src="{{ auth()->user()->avatar_url }}" alt="me" class="msgr-avatar">
-                                <span class="msgr-status-dot is-online"></span>
+                                <span class="msgr-status-dot" x-bind:class="statusClassFor({{ $this->currentUserId }})"></span>
                             </div>
                             <div>
                                 <div class="msgr-header-title">
@@ -768,6 +920,7 @@
                                         <span class="msgr-unread-badge">{{ $totalUnread > 99 ? '99+' : $totalUnread }}</span>
                                     @endif
                                 </div>
+                                <div class="msgr-header-subtitle" x-text="statusLabelFor({{ $this->currentUserId }})"></div>
                             </div>
                         </div>
                         <div class="msgr-header-actions">
@@ -785,12 +938,16 @@
                             </button>
                             <div class="msgr-avatar-wrap">
                                 <img src="{{ $this->activeConversation['other_avatar'] }}" alt="" class="msgr-avatar">
-                                <span class="msgr-status-dot" x-bind:class="onlineUserIds.includes({{ $this->activeConversation['other_id'] }}) ? 'is-online' : ''"></span>
+                                <span class="msgr-status-dot" x-bind:class="statusClassFor({{ $this->activeConversation['other_id'] }})"></span>
                             </div>
                             <div style="min-width:0;">
                                 <div class="msgr-header-title">{{ $this->activeConversation['other_name'] }}</div>
-                                <div class="msgr-header-subtitle"
-                                     x-text="onlineUserIds.includes({{ $this->activeConversation['other_id'] }}) ? 'Online' : 'Offline'"></div>
+                                <div class="msgr-header-subtitle">
+                                    <span x-text="statusLabelFor({{ $this->activeConversation['other_id'] }})"></span>
+                                    @if(! empty($this->activeConversation['other_status_message']))
+                                        · {{ $this->activeConversation['other_status_message'] }}
+                                    @endif
+                                </div>
                             </div>
                         </div>
                         <div class="msgr-header-actions">
@@ -829,7 +986,7 @@
                                 <div class="msgr-list-item" wire:click="openConversation({{ $c['id'] }})">
                                     <div class="msgr-avatar-wrap">
                                         <img src="{{ $c['other_avatar'] }}" alt="" class="msgr-avatar">
-                                        <span class="msgr-status-dot" x-bind:class="onlineUserIds.includes({{ $c['other_id'] }}) ? 'is-online' : ''"></span>
+                                        <span class="msgr-status-dot" x-bind:class="statusClassFor({{ $c['other_id'] }})"></span>
                                     </div>
                                     <div class="msgr-list-item-content">
                                         <div class="msgr-list-item-row">
@@ -863,6 +1020,16 @@
 
                     {{-- ─── CONVERSATION VIEW ─── --}}
                     @if($view === 'conversation' && $this->activeConversation)
+                        {{-- OOO banner if other user is on leave --}}
+                        @if(($this->activeConversation['other_status'] ?? null) === 'on_leave')
+                            <div class="msgr-leave-banner">
+                                <strong>{{ $this->activeConversation['other_name'] }}</strong> is on leave
+                                @if(! empty($this->activeConversation['other_on_leave_until']))
+                                    until {{ \Carbon\Carbon::parse($this->activeConversation['other_on_leave_until'])->format('d M Y') }}
+                                @endif
+                            </div>
+                        @endif
+
                         {{-- Search bar inside conversation --}}
                         <div class="msgr-search-bar">
                             <input type="text" class="msgr-search-input" placeholder="Search in this chat…" wire:model.debounce.400ms="searchQuery">
@@ -1096,12 +1263,24 @@
     {{-- Alpine widget script — Echo wiring, presence channel, sound, browser notif --}}
     <script>
         function messengerWidget() {
+            const initialMyStatus = @json($this->myStatus);
+            const todayStr = new Date().toISOString().split('T')[0];
+            const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
             return {
                 // ── Reactive state ──
                 onlineUserIds: [],
+                userStatuses: {},   // { userId: 'busy'|'in_meeting'|'on_leave'|null }
                 isOtherTyping: false,
                 typingTimeoutId: null,
                 lastWhisperAt: 0,
+
+                // Status menu state
+                showStatusMenu: false,
+                showLeaveForm: false,
+                statusMessage: initialMyStatus.status_message || '',
+                leaveFrom: initialMyStatus.on_leave_from || todayStr,
+                leaveUntil: initialMyStatus.on_leave_until || tomorrowStr,
 
                 // ── Internal state (not exposed to Alpine reactivity) ──
                 subscribedChannels: {},     // { conversationId: channel }
@@ -1111,6 +1290,12 @@
                 currentUserId: {{ (int) auth()->id() }},
 
                 init() {
+                    // Seed userStatuses with my own status so it renders
+                    // before presence channel returns the full list.
+                    if (initialMyStatus.status) {
+                        this.userStatuses[this.currentUserId] = initialMyStatus.status;
+                    }
+
                     // Preload notification sound
                     try {
                         this.notificationAudio = new Audio('/sounds/messenger-notification.mp3');
@@ -1168,20 +1353,58 @@
                         this.presenceChannel = window.Echo.join('messenger.online')
                             .here((users) => {
                                 this.onlineUserIds = users.map(u => parseInt(u.id, 10));
+                                users.forEach((u) => {
+                                    this.userStatuses[parseInt(u.id, 10)] = u.status || null;
+                                });
                             })
                             .joining((user) => {
                                 const id = parseInt(user.id, 10);
                                 if (! this.onlineUserIds.includes(id)) {
                                     this.onlineUserIds.push(id);
                                 }
+                                this.userStatuses[id] = user.status || null;
                             })
                             .leaving((user) => {
                                 const id = parseInt(user.id, 10);
                                 this.onlineUserIds = this.onlineUserIds.filter(x => x !== id);
+                            })
+                            .listen('.status.changed', (e) => {
+                                const id = parseInt(e.user_id, 10);
+                                this.userStatuses[id] = e.status || null;
+                                // Tell Livewire to refresh conversation list rows
+                                this.$wire.emit('messenger:incoming-status', id);
                             });
                     } catch (e) {
                         console.warn('[messenger] presence channel failed', e);
                     }
+                },
+
+                // ──────────────────────────────────────────────────────────
+                // Status helpers (used by Blade x-bind:class / x-text)
+                // ──────────────────────────────────────────────────────────
+                statusClassFor(userId) {
+                    const id = parseInt(userId, 10);
+                    const manual = this.userStatuses[id];
+                    if (manual === 'on_leave') return 'is-on-leave';
+                    if (manual === 'busy') return 'is-busy';
+                    if (manual === 'in_meeting') return 'is-in-meeting';
+                    if (this.onlineUserIds.includes(id)) return 'is-online';
+                    return '';
+                },
+
+                statusLabelFor(userId) {
+                    const id = parseInt(userId, 10);
+                    const manual = this.userStatuses[id];
+                    if (manual === 'on_leave') return 'On leave';
+                    if (manual === 'busy') return 'Do not disturb';
+                    if (manual === 'in_meeting') return 'In a meeting';
+                    if (this.onlineUserIds.includes(id)) return 'Online';
+                    return 'Offline';
+                },
+
+                isCurrentUserDND() {
+                    const me = this.userStatuses[this.currentUserId];
+                    return me === 'busy' || me === 'in_meeting';
                 },
 
                 // ──────────────────────────────────────────────────────────
@@ -1302,6 +1525,7 @@
                 // ──────────────────────────────────────────────────────────
                 playNotificationSound() {
                     if (! this.notificationAudio) return;
+                    if (this.isCurrentUserDND()) return; // mute when DND / in_meeting
                     try {
                         // Reset playhead so rapid messages still trigger sound
                         this.notificationAudio.currentTime = 0;

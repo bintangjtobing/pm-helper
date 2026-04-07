@@ -29,6 +29,7 @@ Broadcast::channel('messenger.conversation.{conversation}', function ($user, Mes
 /*
  * Messenger: presence channel for online status across the team.
  * Returning a payload (not a bool) is required for presence channels.
+ * Includes manual status fields so clients can render the right indicator.
  */
 Broadcast::channel('messenger.online', function ($user) {
     return [
@@ -36,5 +37,8 @@ Broadcast::channel('messenger.online', function ($user) {
         'name' => $user->name,
         'username' => $user->username,
         'avatar' => $user->avatar_url,
+        'status' => $user->effectiveStatus(),
+        'status_message' => $user->status_message,
+        'on_leave_until' => $user->on_leave_until?->toIso8601String(),
     ];
 });

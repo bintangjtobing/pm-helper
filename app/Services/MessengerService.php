@@ -7,6 +7,7 @@ use App\Events\Messenger\MessengerMessageEdited;
 use App\Events\Messenger\MessengerMessageRead;
 use App\Events\Messenger\MessengerMessageSent;
 use App\Events\Messenger\MessengerReactionToggled;
+use App\Events\Messenger\MessengerStatusChanged;
 use App\Models\MessengerConversation;
 use App\Models\MessengerMessage;
 use App\Models\MessengerMessageAttachment;
@@ -511,6 +512,111 @@ class MessengerService
             'absolute_path'     => $absolutePath,
         ];
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // User status
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Default in-meeting auto-clear duration in hours.
+     */
+    public const IN_MEETING_AUTO_CLEAR_HOURS = 2;
+
+    /**
+     * Set the user's manual status. Validates allowed values and applies
+     * sensible auto-clear rules.
+     *
+     * @param string|null $status One of User::ALLOWED_STATUSES, or null to clear.
+     * @param string|null $message Optional custom status message (max 80 chars).
+     * @param string|null $onLeaveFrom YYYY-MM-DD (only for on_leave).
+     * @param string|null $onLeaveUntil YYYY-MM-DD (only for on_leave).
+     */
+    public function setStatus(
+        User $user,
+        ?string $status,
+        ?string $message = null,
+        ?string $onLeaveFrom = null,
+        ?string $onLeaveUntil = null
+    ): User {
+        if ($status !== null && ! in_array($status, User::ALLOWED_STATUSES, true)) {
+            throw new InvalidArgumentException('Invalid status value.');
+        }
+
+        $message = $message !== null ? trim($message) : null;
+        if ($message !== null && mb_strlen($message) > 80) {
+            $message = mb_substr($message, 0, 80);
+        }
+
+        $updates = [
+            'status' => $status,
+            'status_message' => $message ?: null,
+            'status_until' => null,
+            'on_leave_from' => null,
+            'on_leave_until' => null,
+        ];
+
+        if ($status === 'in_meeting') {
+            $updates['status_until'] = now()->addHours(self::IN_MEETING_AUTO_CLEAR_HOURS);
+        }
+
+        if ($status === 'on_leave') {
+            if (! $onLeaveUntil) {
+                throw new InvalidArgumentException('on_leave requires an end date.');
+            }
+            $updates['on_leave_from'] = $onLeaveFrom ?: now()->toDateString();
+            $updates['on_leave_until'] = $onLeaveUntil;
+        }
+
+        $user->forceFill($updates)->saveQuietly();
+
+        event(new MessengerStatusChanged($user->fresh()));
+
+        return $user;
+    }
+
+    /**
+     * Clear the user's manual status (back to presence-driven).
+     */
+    public function clearStatus(User $user): User
+    {
+        return $this->setStatus($user, null);
+    }
+
+    /**
+     * Sweep expired statuses across all users. Called from a scheduled command.
+     */
+    public function clearExpiredStatuses(): int
+    {
+        $cleared = 0;
+
+        // status_until expired (e.g. in_meeting > 2h)
+        $rows = User::query()
+            ->whereNotNull('status_until')
+            ->where('status_until', '<', now())
+            ->get();
+
+        foreach ($rows as $u) {
+            $this->clearStatus($u);
+            $cleared++;
+        }
+
+        // on_leave_until expired
+        $leaveRows = User::query()
+            ->whereNotNull('on_leave_until')
+            ->whereDate('on_leave_until', '<', now()->toDateString())
+            ->get();
+
+        foreach ($leaveRows as $u) {
+            $this->clearStatus($u);
+            $cleared++;
+        }
+
+        return $cleared;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Attachment path helper
+    // ──────────────────────────────────────────────────────────────────────────
 
     /**
      * Resolve the absolute path of an attachment file. Returns null if missing.
