@@ -172,8 +172,9 @@ class Messenger extends Component
                 'userOne:id,name,username,avatar_url,last_seen_at',
                 'userTwo:id,name,username,avatar_url,last_seen_at',
                 'latestMessage' => function ($q) {
-                    $q->select('id', 'conversation_id', 'sender_id', 'body', 'deleted_for_everyone_at', 'created_at')
-                      ->with('attachments:id,message_id,mime_type');
+                    // Cannot select() here — latestOfMany() adds a subquery JOIN that
+                    // makes conversation_id ambiguous. Load all columns instead.
+                    $q->with('attachments:id,message_id,mime_type');
                 },
             ])
             ->orderByDesc('last_message_at')

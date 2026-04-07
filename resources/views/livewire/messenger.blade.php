@@ -960,7 +960,7 @@
                                     {{-- Hover action menu --}}
                                     @if(! $m['is_deleted_for_all'])
                                         <div class="msgr-msg-actions" x-data="{ showPicker: false }">
-                                            <button type="button" class="msgr-msg-action-btn" @click="showPicker = !showPicker" title="React">
+                                            <button type="button" class="msgr-msg-action-btn" x-on:click="showPicker = !showPicker" title="React">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </button>
                                             <button type="button" class="msgr-msg-action-btn" wire:click="setReplyTo({{ $m['id'] }})" title="Reply">
@@ -980,9 +980,9 @@
                                                 </button>
                                             @endif
 
-                                            <div x-show="showPicker" @click.outside="showPicker = false" class="msgr-emoji-picker" style="top: 28px; right: 0;">
+                                            <div x-show="showPicker" x-on:click.outside="showPicker = false" class="msgr-emoji-picker" style="top: 28px; right: 0;">
                                                 @foreach($this->allowedReactionEmojis as $emoji)
-                                                    <button type="button" @click="showPicker = false" wire:click="toggleReaction({{ $m['id'] }}, '{{ $emoji }}')">{{ $emoji }}</button>
+                                                    <button type="button" x-on:click="showPicker = false; $wire.call('toggleReaction', {{ $m['id'] }}, '{{ $emoji }}')">{{ $emoji }}</button>
                                                 @endforeach
                                             </div>
                                         </div>
@@ -1029,11 +1029,11 @@
                             <div class="msgr-composer-row">
                                 <textarea
                                     wire:model.defer="newMessage"
-                                    wire:keydown.enter.prevent="sendMessage"
                                     class="msgr-composer-textarea"
                                     placeholder="Write a message… (Enter to send)"
                                     rows="1"
-                                    x-on:input="onTyping()"></textarea>
+                                    x-on:input="onTyping()"
+                                    x-on:keydown.enter.prevent="$wire.call('sendMessage')"></textarea>
 
                                 <div class="msgr-composer-actions">
                                     <label class="msgr-icon-btn" title="Attach file">
