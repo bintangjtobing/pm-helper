@@ -58,9 +58,10 @@ class MessengerConversation extends Model
 
     /**
      * Check if a given user is part of this conversation.
+     * Uses loose comparison since foreign-key columns may come back from MySQL as strings.
      */
     public function hasParticipant(int $userId): bool
     {
-        return $userId === $this->user_one_id || $userId === $this->user_two_id;
+        return (int) $this->user_one_id === $userId || (int) $this->user_two_id === $userId;
     }
 }

@@ -21,15 +21,16 @@
 
         .msgr-collapsed {
             position: fixed;
-            bottom: 24px;
+            bottom: 0;
             right: 104px;
             z-index: 42;
             width: 320px;
             height: 56px;
-            background: #1d2226;
-            border: 1px solid #38434f;
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-bottom: none;
             border-radius: 12px 12px 0 0;
-            box-shadow: 0 -8px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -39,21 +40,22 @@
             transition: background 0.15s;
         }
         .msgr-collapsed:hover {
-            background: #232a30;
+            background: #1f2937;
         }
 
         .msgr-panel {
             position: fixed;
-            bottom: 24px;
+            bottom: 0;
             right: 104px;
             z-index: 42;
             width: 380px;
             height: 600px;
-            max-height: calc(100vh - 48px);
-            background: #1d2226;
-            border: 1px solid #38434f;
+            max-height: calc(100vh - 24px);
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-bottom: none;
             border-radius: 12px 12px 0 0;
-            box-shadow: 0 -16px 48px rgba(0,0,0,0.4);
+            box-shadow: 0 -16px 48px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -63,8 +65,8 @@
         .msgr-header {
             flex-shrink: 0;
             height: 56px;
-            background: #1a1f23;
-            border-bottom: 1px solid #38434f;
+            background: #0d1117;
+            border-bottom: 1px solid #1f2937;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -83,7 +85,7 @@
             height: 32px;
             border-radius: 50%;
             object-fit: cover;
-            background: #38434f;
+            background: #374151;
             flex-shrink: 0;
         }
         .msgr-avatar-wrap {
@@ -98,7 +100,7 @@
             height: 10px;
             border-radius: 50%;
             background: #22c55e;
-            border: 2px solid #1a1f23;
+            border: 2px solid #0d1117;
         }
         .msgr-offline-dot {
             position: absolute;
@@ -142,7 +144,7 @@
             transition: background 0.15s, color 0.15s;
         }
         .msgr-icon-btn:hover {
-            background: #2a3138;
+            background: #1f2937;
             color: #f3f4f6;
         }
         .msgr-unread-badge {
@@ -161,7 +163,7 @@
         .msgr-body {
             flex: 1;
             overflow-y: auto;
-            background: #1d2226;
+            background: #111827;
             display: flex;
             flex-direction: column;
         }
@@ -169,11 +171,11 @@
         /* ── List view ── */
         .msgr-search-bar {
             padding: 12px;
-            border-bottom: 1px solid #2a3138;
+            border-bottom: 1px solid #1f2937;
         }
         .msgr-search-input {
             width: 100%;
-            background: #2a3138;
+            background: #1f2937;
             border: 1px solid transparent;
             border-radius: 8px;
             padding: 8px 12px 8px 32px;
@@ -205,11 +207,11 @@
             gap: 12px;
             padding: 12px 14px;
             cursor: pointer;
-            border-bottom: 1px solid #232a30;
+            border-bottom: 1px solid #1f2937;
             transition: background 0.15s;
         }
         .msgr-list-item:hover {
-            background: #232a30;
+            background: #1f2937;
         }
         .msgr-list-item-content {
             flex: 1;
@@ -280,7 +282,7 @@
         }
         .msgr-load-more button {
             background: transparent;
-            border: 1px solid #38434f;
+            border: 1px solid #1f2937;
             color: #9ca3af;
             font-size: 11px;
             padding: 4px 12px;
@@ -288,7 +290,7 @@
             cursor: pointer;
         }
         .msgr-load-more button:hover {
-            background: #2a3138;
+            background: #1f2937;
         }
 
         .msgr-msg-row {
@@ -341,7 +343,7 @@
             border-bottom-right-radius: 4px;
         }
         .msgr-msg-other .msgr-msg-content {
-            background: #38434f;
+            background: #374151;
             color: #f3f4f6;
             border-bottom-left-radius: 4px;
         }
@@ -396,8 +398,8 @@
             opacity: 1;
         }
         .msgr-msg-action-btn {
-            background: #2a3138;
-            border: 1px solid #38434f;
+            background: #1f2937;
+            border: 1px solid #374151;
             color: #9ca3af;
             width: 24px;
             height: 24px;
@@ -409,7 +411,7 @@
             margin-bottom: 4px;
         }
         .msgr-msg-action-btn:hover {
-            background: #38434f;
+            background: #374151;
             color: #f3f4f6;
         }
 
@@ -421,8 +423,8 @@
             flex-wrap: wrap;
         }
         .msgr-reaction-chip {
-            background: #2a3138;
-            border: 1px solid #38434f;
+            background: #1f2937;
+            border: 1px solid #374151;
             border-radius: 12px;
             padding: 2px 8px;
             font-size: 12px;
@@ -442,13 +444,13 @@
         }
         .msgr-emoji-picker {
             position: absolute;
-            background: #2a3138;
-            border: 1px solid #38434f;
+            background: #1f2937;
+            border: 1px solid #374151;
             border-radius: 20px;
             padding: 4px 8px;
             display: flex;
             gap: 4px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             z-index: 5;
         }
         .msgr-emoji-picker button {
@@ -461,7 +463,7 @@
             transition: transform 0.1s, background 0.1s;
         }
         .msgr-emoji-picker button:hover {
-            background: #38434f;
+            background: #374151;
             transform: scale(1.2);
         }
 
@@ -510,8 +512,8 @@
         /* Composer */
         .msgr-composer {
             flex-shrink: 0;
-            border-top: 1px solid #2a3138;
-            background: #1a1f23;
+            border-top: 1px solid #1f2937;
+            background: #0d1117;
             padding: 10px 12px;
         }
         .msgr-composer-reply-bar {
@@ -533,8 +535,8 @@
             margin-bottom: 8px;
         }
         .msgr-composer-file-chip {
-            background: #2a3138;
-            border: 1px solid #38434f;
+            background: #1f2937;
+            border: 1px solid #374151;
             border-radius: 6px;
             padding: 4px 8px;
             font-size: 11px;
@@ -556,8 +558,8 @@
         }
         .msgr-composer-textarea {
             flex: 1;
-            background: #2a3138;
-            border: 1px solid #38434f;
+            background: #1f2937;
+            border: 1px solid #374151;
             border-radius: 18px;
             padding: 8px 14px;
             color: #f3f4f6;
@@ -628,10 +630,10 @@
             gap: 12px;
             padding: 10px 14px;
             cursor: pointer;
-            border-bottom: 1px solid #232a30;
+            border-bottom: 1px solid #1f2937;
         }
         .msgr-picker-item:hover {
-            background: #232a30;
+            background: #1f2937;
         }
         .msgr-picker-name {
             font-size: 13px;
@@ -645,15 +647,15 @@
 
         /* Search results panel */
         .msgr-search-results {
-            border-bottom: 1px solid #2a3138;
+            border-bottom: 1px solid #1f2937;
         }
         .msgr-search-result {
             padding: 8px 14px;
-            border-bottom: 1px solid #232a30;
+            border-bottom: 1px solid #1f2937;
             cursor: pointer;
         }
         .msgr-search-result:hover {
-            background: #232a30;
+            background: #1f2937;
         }
         .msgr-search-result-meta {
             font-size: 10px;
@@ -682,18 +684,22 @@
 
         /* Mobile fullscreen */
         @media (max-width: 640px) {
-            .msgr-collapsed,
-            .msgr-panel {
+            .msgr-collapsed {
                 right: 8px;
                 left: 8px;
                 width: auto;
+                bottom: 0;
             }
             .msgr-panel {
-                top: 8px;
-                bottom: 8px;
+                right: 0;
+                left: 0;
+                width: auto;
+                top: 0;
+                bottom: 0;
                 height: auto;
                 max-height: none;
-                border-radius: 12px;
+                border-radius: 0;
+                border: none;
             }
         }
     </style>
@@ -720,7 +726,7 @@
                     </div>
                 </div>
                 <div class="msgr-header-actions">
-                    <button type="button" class="msgr-icon-btn" wire:click.stop="openNewChatPicker" title="New message">
+                    <button type="button" class="msgr-icon-btn" x-on:click.stop="$wire.call('openNewChatPicker')" title="New message">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
                     <button type="button" class="msgr-icon-btn" title="Open">
@@ -788,7 +794,7 @@
                             </button>
                             <div>
                                 <div class="msgr-header-title">New message</div>
-                                <div class="msgr-header-subtitle">Pilih siapa yang mau dichat</div>
+                                <div class="msgr-header-subtitle">Pick someone to chat with</div>
                             </div>
                         </div>
                         <div class="msgr-header-actions">
@@ -805,7 +811,7 @@
                     {{-- ─── LIST VIEW ─── --}}
                     @if($view === 'list')
                         <div class="msgr-search-bar">
-                            <input type="text" class="msgr-search-input" placeholder="Search conversations…" wire:model.debounce.300ms="newChatSearch" wire:keydown.enter="openNewChatPicker">
+                            <input type="text" class="msgr-search-input" placeholder="Search conversations…" wire:model.debounce.300ms="newChatSearch">
                         </div>
                         <div class="msgr-list">
                             @forelse($conversations as $c)
@@ -837,8 +843,8 @@
                                 </div>
                             @empty
                                 <div class="msgr-list-empty">
-                                    <p>Belum ada percakapan.</p>
-                                    <p style="margin-top:8px; font-size:11px;">Klik ikon pensil di atas untuk mulai chat baru.</p>
+                                    <p>No conversations yet.</p>
+                                    <p style="margin-top:8px; font-size:11px;">Click the pencil icon above to start a new chat.</p>
                                 </div>
                             @endforelse
                         </div>
@@ -898,7 +904,7 @@
                                             </div>
                                         @else
                                             @if($m['is_deleted_for_all'])
-                                                <div class="msgr-msg-content msgr-msg-deleted">Pesan dihapus</div>
+                                                <div class="msgr-msg-content msgr-msg-deleted">Message deleted</div>
                                             @elseif($m['body'])
                                                 <div class="msgr-msg-content">{{ $m['body'] }}@if($m['edited_at'])<span class="msgr-msg-edited-mark">(edited)</span>@endif</div>
                                             @endif
@@ -1023,10 +1029,10 @@
                             <div class="msgr-composer-row">
                                 <textarea
                                     wire:model.defer="newMessage"
+                                    wire:keydown.enter.prevent="sendMessage"
                                     class="msgr-composer-textarea"
-                                    placeholder="Write a message…"
+                                    placeholder="Write a message… (Enter to send)"
                                     rows="1"
-                                    @keydown.enter.prevent="if (! $event.shiftKey) { $wire.sendMessage(); } else { $event.target.value += '\n'; }"
                                     x-on:input="onTyping()"></textarea>
 
                                 <div class="msgr-composer-actions">
@@ -1053,15 +1059,15 @@
                                     <img src="{{ $u['avatar'] }}" alt="" class="msgr-avatar">
                                     <div>
                                         <div class="msgr-picker-name">{{ $u['name'] }}</div>
-                                        <div class="msgr-picker-username">@{{ $u['username'] }}</div>
+                                        <div class="msgr-picker-username">{{ '@'.$u['username'] }}</div>
                                     </div>
                                 </div>
                             @empty
                                 <div class="msgr-list-empty">
                                     @if(strlen($newChatSearch) > 0)
-                                        Tidak ada user ditemukan.
+                                        No users found.
                                     @else
-                                        Ketik nama atau username untuk mencari.
+                                        Type a name or username to search.
                                     @endif
                                 </div>
                             @endforelse

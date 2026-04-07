@@ -240,7 +240,7 @@ class Messenger extends Component
             return ['text' => '', 'is_attachment' => false];
         }
         if ($latest->deleted_for_everyone_at) {
-            return ['text' => 'Pesan dihapus', 'is_attachment' => false];
+            return ['text' => 'Message deleted', 'is_attachment' => false];
         }
         if ($latest->body) {
             return ['text' => mb_substr($latest->body, 0, 80), 'is_attachment' => false];
@@ -248,7 +248,7 @@ class Messenger extends Component
         $att = $latest->attachments->first();
         if ($att) {
             $isImage = str_starts_with($att->mime_type, 'image/');
-            return ['text' => $isImage ? 'Mengirim gambar' : 'Mengirim file', 'is_attachment' => true];
+            return ['text' => $isImage ? 'Sent an image' : 'Sent a file', 'is_attachment' => true];
         }
         return ['text' => '', 'is_attachment' => false];
     }
@@ -594,32 +594,43 @@ class Messenger extends Component
     public function openNewChatPicker(): void
     {
         $this->view = 'new_chat';
+        $this->isOpen = true;
         $this->newChatSearch = '';
-        $this->userPickerResults = [];
+        $this->loadUserPicker('');
     }
 
     public function updatedNewChatSearch(): void
     {
-        $q = trim($this->newChatSearch);
-        if (mb_strlen($q) < 1) {
-            $this->userPickerResults = [];
-            return;
-        }
+        $this->loadUserPicker($this->newChatSearch);
+    }
+
+    /**
+     * Populate the user picker. Empty search returns the first 50 active users
+     * (excluding the current user); a search filters by name/username/email.
+     */
+    protected function loadUserPicker(string $search): void
+    {
         $userId = (int) auth()->id();
-        $like = '%' . $q . '%';
-        $users = User::query()
+        $query = User::query()
             ->where('id', '!=', $userId)
-            ->whereNull('deleted_at')
-            ->where(function ($w) use ($like) {
+            ->whereNull('deleted_at');
+
+        $q = trim($search);
+        if ($q !== '') {
+            $like = '%' . $q . '%';
+            $query->where(function ($w) use ($like) {
                 $w->where('name', 'like', $like)
                   ->orWhere('username', 'like', $like)
                   ->orWhere('email', 'like', $like);
-            })
-            ->limit(20)
+            });
+        }
+
+        $users = $query->orderBy('name')
+            ->limit(50)
             ->get(['id', 'name', 'username', 'email', 'avatar_url']);
 
         $this->userPickerResults = $users->map(fn ($u) => [
-            'id'       => $u->id,
+            'id'       => (int) $u->id,
             'name'     => $u->name,
             'username' => $u->username,
             'avatar'   => $u->avatar_url,
