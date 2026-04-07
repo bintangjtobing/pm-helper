@@ -92,25 +92,20 @@
             position: relative;
             flex-shrink: 0;
         }
-        .msgr-online-dot {
+        /* Status dot — single class, modifier toggles green */
+        .msgr-status-dot {
             position: absolute;
             bottom: 0;
             right: 0;
-            width: 10px;
-            height: 10px;
+            width: 11px;
+            height: 11px;
             border-radius: 50%;
-            background: #22c55e;
+            background: #6b7280;
             border: 2px solid #0d1117;
+            box-sizing: content-box;
         }
-        .msgr-offline-dot {
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: transparent;
-            border: 2px solid #6b7280;
+        .msgr-status-dot.is-online {
+            background: #22c55e;
         }
         .msgr-header-title {
             font-size: 14px;
@@ -163,9 +158,11 @@
         .msgr-body {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             background: #111827;
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
 
         /* ── List view ── */
@@ -271,10 +268,12 @@
         .msgr-messages {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
+            min-height: 0;
         }
         .msgr-load-more {
             text-align: center;
@@ -369,46 +368,50 @@
             justify-content: flex-end;
         }
         .msgr-tick {
+            display: inline-block;
             color: #9ca3af;
+            margin-left: 2px;
+            vertical-align: middle;
         }
         .msgr-tick-read {
             color: #60a5fa;
         }
 
-        /* Hover dropdown menu */
+        /* Hover action toolbar — Slack-style overlay above bubble */
         .msgr-msg-actions {
             position: absolute;
-            top: 0;
-            right: 100%;
-            margin-right: 4px;
-            opacity: 0;
-            transition: opacity 0.15s;
-        }
-        .msgr-msg-row-self .msgr-msg-actions {
-            right: 100%;
-            left: auto;
-        }
-        .msgr-msg-row-other .msgr-msg-actions {
-            right: auto;
-            left: 100%;
-            margin-right: 0;
-            margin-left: 4px;
-        }
-        .msgr-msg-row:hover .msgr-msg-actions {
-            opacity: 1;
-        }
-        .msgr-msg-action-btn {
+            top: -10px;
+            display: none;
+            flex-direction: row;
+            gap: 2px;
             background: #1f2937;
             border: 1px solid #374151;
+            border-radius: 14px;
+            padding: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            z-index: 5;
+        }
+        .msgr-msg-row-self .msgr-msg-actions {
+            right: 8px;
+        }
+        .msgr-msg-row-other .msgr-msg-actions {
+            left: 8px;
+        }
+        .msgr-msg-row:hover .msgr-msg-actions {
+            display: flex;
+        }
+        .msgr-msg-action-btn {
+            background: transparent;
+            border: none;
             color: #9ca3af;
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            margin-bottom: 4px;
+            transition: background 0.15s, color 0.15s;
         }
         .msgr-msg-action-btn:hover {
             background: #374151;
@@ -714,7 +717,7 @@
                 <div class="msgr-header-left">
                     <div class="msgr-avatar-wrap">
                         <img src="{{ auth()->user()->avatar_url }}" alt="me" class="msgr-avatar">
-                        <span class="msgr-online-dot"></span>
+                        <span class="msgr-status-dot is-online"></span>
                     </div>
                     <div>
                         <div class="msgr-header-title">
@@ -748,7 +751,7 @@
                         <div class="msgr-header-left">
                             <div class="msgr-avatar-wrap">
                                 <img src="{{ auth()->user()->avatar_url }}" alt="me" class="msgr-avatar">
-                                <span class="msgr-online-dot"></span>
+                                <span class="msgr-status-dot is-online"></span>
                             </div>
                             <div>
                                 <div class="msgr-header-title">
@@ -774,7 +777,7 @@
                             </button>
                             <div class="msgr-avatar-wrap">
                                 <img src="{{ $this->activeConversation['other_avatar'] }}" alt="" class="msgr-avatar">
-                                <span class="msgr-offline-dot" x-bind:class="onlineUserIds.includes({{ $this->activeConversation['other_id'] }}) ? 'msgr-online-dot' : 'msgr-offline-dot'"></span>
+                                <span class="msgr-status-dot" x-bind:class="onlineUserIds.includes({{ $this->activeConversation['other_id'] }}) ? 'is-online' : ''"></span>
                             </div>
                             <div style="min-width:0;">
                                 <div class="msgr-header-title">{{ $this->activeConversation['other_name'] }}</div>
@@ -818,7 +821,7 @@
                                 <div class="msgr-list-item" wire:click="openConversation({{ $c['id'] }})">
                                     <div class="msgr-avatar-wrap">
                                         <img src="{{ $c['other_avatar'] }}" alt="" class="msgr-avatar">
-                                        <span x-bind:class="onlineUserIds.includes({{ $c['other_id'] }}) ? 'msgr-online-dot' : 'msgr-offline-dot'"></span>
+                                        <span class="msgr-status-dot" x-bind:class="onlineUserIds.includes({{ $c['other_id'] }}) ? 'is-online' : ''"></span>
                                     </div>
                                     <div class="msgr-list-item-content">
                                         <div class="msgr-list-item-row">
@@ -950,9 +953,11 @@
                                                 @php
                                                     $readByOther = collect($m['reads'])->contains(fn($r) => $r['user_id'] !== $this->currentUserId);
                                                 @endphp
-                                                <span class="msgr-tick {{ $readByOther ? 'msgr-tick-read' : '' }}" title="{{ $readByOther ? 'Read' : 'Sent' }}">
-                                                    @if($readByOther) ✓✓ @else ✓ @endif
-                                                </span>
+                                                @if($readByOther)
+                                                    <svg class="msgr-tick msgr-tick-read" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 11" fill="none" width="16" height="11" title="Read"><path d="M11.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178l-6.19 7.636-2.405-2.405a.5.5 0 00-.353-.146.5.5 0 00-.354.146L.146 6.498a.5.5 0 000 .707l3.539 3.54a.5.5 0 00.354.146.5.5 0 00.354-.146l7.484-9.21a.5.5 0 00-.043-.671L11.071.653zm4.276.001a.457.457 0 00-.304-.102.493.493 0 00-.381.178L8.61 8.214 7.5 7.103l5.844-7.213a.457.457 0 00-.038-.617L12.391.273a.457.457 0 00-.305-.102.493.493 0 00-.381.178L4.43 9.225a.5.5 0 00.043.671l3.539 3.54a.5.5 0 00.354.146.5.5 0 00.354-.146L15.39.671a.5.5 0 00-.043-.018z" fill="currentColor"/></svg>
+                                                @else
+                                                    <svg class="msgr-tick" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 11" fill="none" width="12" height="11" title="Sent"><path d="M11.071.653a.457.457 0 00-.304-.102.493.493 0 00-.381.178L4.196 8.365 1.79 5.96a.5.5 0 00-.353-.146.5.5 0 00-.354.146l-.937.938a.5.5 0 000 .707l3.539 3.54a.5.5 0 00.354.146.5.5 0 00.354-.146L11.877 1.83a.5.5 0 00-.043-.671L11.071.653z" fill="currentColor"/></svg>
+                                                @endif
                                             @endif
                                         </div>
                                     </div>
