@@ -298,6 +298,14 @@ class AppServiceProvider extends ServiceProvider
                 : '',
         );
 
+        // Messenger Widget - 1-on-1 team chat, injected at bottom-right (left of chatbot)
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => auth()->check()
+                ? Blade::render('@livewire("messenger")')
+                : '',
+        );
+
         // Override Filament config for user avatar (for Filament v2)
         config(['filament.user.avatar' => function ($user) {
             return $user->avatar_url ?: null;

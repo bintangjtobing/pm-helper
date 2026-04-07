@@ -1,0 +1,733 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use App\Models\MessengerConversation;
+use App\Models\MessengerMessage;
+use App\Models\MessengerMessageReaction;
+use App\Models\User;
+use App\Services\MessengerService;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+
+class Messenger extends Component
+{
+    use WithFileUploads;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // UI state
+    // ──────────────────────────────────────────────────────────────────────
+
+    public bool $isOpen = false;
+
+    /** 'list' | 'conversation' | 'new_chat' */
+    public string $view = 'list';
+
+    public ?int $activeConversationId = null;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Conversation list
+    // ──────────────────────────────────────────────────────────────────────
+
+    public array $conversations = [];
+    public int $totalUnread = 0;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Active conversation messages
+    // ──────────────────────────────────────────────────────────────────────
+
+    public array $messages = [];
+    public ?int $oldestMessageId = null;
+    public bool $hasMoreMessages = false;
+    public int $messagesPerPage = 30;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Composer
+    // ──────────────────────────────────────────────────────────────────────
+
+    public string $newMessage = '';
+    public array $files = [];
+    public ?int $replyToMessageId = null;
+    public ?int $editingMessageId = null;
+    public string $editingBody = '';
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Search
+    // ──────────────────────────────────────────────────────────────────────
+
+    public string $searchQuery = '';
+    public array $searchResults = [];
+
+    // ──────────────────────────────────────────────────────────────────────
+    // New chat picker
+    // ──────────────────────────────────────────────────────────────────────
+
+    public string $newChatSearch = '';
+    public array $userPickerResults = [];
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Listeners (events emitted from Alpine on Echo callbacks)
+    // ──────────────────────────────────────────────────────────────────────
+
+    protected $listeners = [
+        'messenger:incoming-message'    => 'handleIncomingMessage',
+        'messenger:incoming-edit'       => 'handleIncomingEdit',
+        'messenger:incoming-delete'     => 'handleIncomingDelete',
+        'messenger:incoming-read'       => 'handleIncomingRead',
+        'messenger:incoming-reaction'   => 'handleIncomingReaction',
+        'messenger:open-conversation'   => 'openConversation',
+    ];
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Lifecycle
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function mount(): void
+    {
+        if (! auth()->check()) {
+            return;
+        }
+        $this->loadConversations();
+    }
+
+    public function render()
+    {
+        return view('livewire.messenger');
+    }
+
+    protected function service(): MessengerService
+    {
+        return app(MessengerService::class);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Open/close
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function toggleOpen(): void
+    {
+        $this->isOpen = ! $this->isOpen;
+        if ($this->isOpen) {
+            $this->loadConversations();
+        }
+    }
+
+    public function openConversation(int $conversationId): void
+    {
+        $conversation = MessengerConversation::find($conversationId);
+        if (! $conversation || ! $conversation->hasParticipant((int) auth()->id())) {
+            return;
+        }
+
+        $this->activeConversationId = $conversationId;
+        $this->view = 'conversation';
+        $this->isOpen = true;
+        $this->resetComposer();
+        $this->searchQuery = '';
+        $this->searchResults = [];
+
+        $this->loadMessages(initial: true);
+        $this->markActiveConversationAsRead();
+    }
+
+    public function closeConversation(): void
+    {
+        $this->activeConversationId = null;
+        $this->view = 'list';
+        $this->messages = [];
+        $this->oldestMessageId = null;
+        $this->hasMoreMessages = false;
+        $this->resetComposer();
+        $this->loadConversations();
+    }
+
+    public function backToList(): void
+    {
+        $this->closeConversation();
+    }
+
+    protected function resetComposer(): void
+    {
+        $this->newMessage = '';
+        $this->files = [];
+        $this->replyToMessageId = null;
+        $this->editingMessageId = null;
+        $this->editingBody = '';
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Conversation list
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function loadConversations(): void
+    {
+        $userId = (int) auth()->id();
+
+        $rows = MessengerConversation::query()
+            ->where(function ($q) use ($userId) {
+                $q->where('user_one_id', $userId)->orWhere('user_two_id', $userId);
+            })
+            ->with([
+                'userOne:id,name,username,avatar_url,last_seen_at',
+                'userTwo:id,name,username,avatar_url,last_seen_at',
+                'latestMessage' => function ($q) {
+                    $q->select('id', 'conversation_id', 'sender_id', 'body', 'deleted_for_everyone_at', 'created_at')
+                      ->with('attachments:id,message_id,mime_type');
+                },
+            ])
+            ->orderByDesc('last_message_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $conversationIds = $rows->pluck('id')->all();
+        $unreadMap = $this->computeUnreadCounts($conversationIds, $userId);
+
+        $totalUnread = 0;
+        $list = [];
+
+        foreach ($rows as $c) {
+            $other = $c->otherParticipant($userId);
+            if (! $other) {
+                continue;
+            }
+            $unread = (int) ($unreadMap[$c->id] ?? 0);
+            $totalUnread += $unread;
+
+            $latest = $c->latestMessage;
+            $preview = $this->buildPreview($latest, $userId);
+
+            $list[] = [
+                'id'                  => $c->id,
+                'other_id'            => $other->id,
+                'other_name'          => $other->name,
+                'other_username'      => $other->username,
+                'other_avatar'        => $other->avatar_url,
+                'other_last_seen_at'  => optional($other->last_seen_at)->toIso8601String(),
+                'unread'              => $unread,
+                'last_preview'        => $preview['text'],
+                'last_is_attachment'  => $preview['is_attachment'],
+                'last_is_self'        => $latest && (int) $latest->sender_id === $userId,
+                'last_at'             => optional($c->last_message_at)->diffForHumans(null, true),
+                'last_at_iso'         => optional($c->last_message_at)->toIso8601String(),
+            ];
+        }
+
+        $this->conversations = $list;
+        $this->totalUnread = $totalUnread;
+    }
+
+    protected function computeUnreadCounts(array $conversationIds, int $userId): array
+    {
+        if (empty($conversationIds)) {
+            return [];
+        }
+
+        return MessengerMessage::query()
+            ->whereIn('conversation_id', $conversationIds)
+            ->where('sender_id', '!=', $userId)
+            ->whereNull('deleted_for_everyone_at')
+            ->whereDoesntHave('reads', fn ($q) => $q->where('user_id', $userId))
+            ->select('conversation_id', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('conversation_id')
+            ->pluck('cnt', 'conversation_id')
+            ->toArray();
+    }
+
+    protected function buildPreview(?MessengerMessage $latest, int $userId): array
+    {
+        if (! $latest) {
+            return ['text' => '', 'is_attachment' => false];
+        }
+        if ($latest->deleted_for_everyone_at) {
+            return ['text' => 'Pesan dihapus', 'is_attachment' => false];
+        }
+        if ($latest->body) {
+            return ['text' => mb_substr($latest->body, 0, 80), 'is_attachment' => false];
+        }
+        $att = $latest->attachments->first();
+        if ($att) {
+            $isImage = str_starts_with($att->mime_type, 'image/');
+            return ['text' => $isImage ? 'Mengirim gambar' : 'Mengirim file', 'is_attachment' => true];
+        }
+        return ['text' => '', 'is_attachment' => false];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Active conversation messages (infinite scroll up)
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function loadMessages(bool $initial = false): void
+    {
+        if (! $this->activeConversationId) {
+            return;
+        }
+
+        $userId = (int) auth()->id();
+        $query = MessengerMessage::query()
+            ->where('conversation_id', $this->activeConversationId)
+            ->with([
+                'sender:id,name,username,avatar_url',
+                'replyTo' => fn ($q) => $q->select('id', 'sender_id', 'body')->with('sender:id,name'),
+                'attachments',
+                'reads',
+                'reactions',
+            ]);
+
+        if (! $initial && $this->oldestMessageId) {
+            $query->where('id', '<', $this->oldestMessageId);
+        }
+
+        $rows = $query->orderByDesc('id')
+            ->limit($this->messagesPerPage + 1)
+            ->get();
+
+        $this->hasMoreMessages = $rows->count() > $this->messagesPerPage;
+        if ($this->hasMoreMessages) {
+            $rows = $rows->take($this->messagesPerPage);
+        }
+
+        // Reverse so oldest first (top to bottom in UI).
+        $rows = $rows->reverse()->values();
+
+        $serialized = $rows->map(fn (MessengerMessage $m) => $this->serializeMessage($m, $userId))->all();
+
+        if ($initial) {
+            $this->messages = $serialized;
+        } else {
+            // Prepend older messages.
+            $this->messages = array_merge($serialized, $this->messages);
+        }
+
+        if (! empty($serialized)) {
+            $this->oldestMessageId = (int) $serialized[0]['id'];
+        }
+    }
+
+    protected function serializeMessage(MessengerMessage $m, int $userId): array
+    {
+        $isSelf = (int) $m->sender_id === $userId;
+        $hidden = $m->isHiddenFor($userId);
+        $deletedForEveryone = $m->isDeletedForEveryone();
+
+        // Group reactions by emoji.
+        $reactionGroups = [];
+        foreach ($m->reactions as $r) {
+            $emoji = $r->emoji;
+            if (! isset($reactionGroups[$emoji])) {
+                $reactionGroups[$emoji] = ['emoji' => $emoji, 'count' => 0, 'user_ids' => []];
+            }
+            $reactionGroups[$emoji]['count']++;
+            $reactionGroups[$emoji]['user_ids'][] = (int) $r->user_id;
+        }
+
+        $reads = $m->reads->map(fn ($r) => [
+            'user_id' => (int) $r->user_id,
+            'read_at' => $r->read_at?->toIso8601String(),
+        ])->all();
+
+        return [
+            'id'                    => (int) $m->id,
+            'conversation_id'       => (int) $m->conversation_id,
+            'sender_id'             => (int) $m->sender_id,
+            'sender_name'           => $m->sender?->name,
+            'sender_avatar'         => $m->sender?->avatar_url,
+            'is_self'               => $isSelf,
+            'body'                  => $deletedForEveryone ? null : $m->body,
+            'reply_to'              => $m->replyTo ? [
+                'id'          => (int) $m->replyTo->id,
+                'sender_name' => $m->replyTo->sender?->name,
+                'body'        => mb_substr((string) $m->replyTo->body, 0, 100),
+            ] : null,
+            'edited_at'             => $m->edited_at?->toIso8601String(),
+            'created_at'            => $m->created_at?->toIso8601String(),
+            'time_label'            => $m->created_at?->format('H:i'),
+            'date_label'            => $m->created_at?->format('d M Y'),
+            'within_edit_window'    => $isSelf && ! $deletedForEveryone && $m->isWithinEditWindow(),
+            'is_hidden_for_me'      => $hidden,
+            'is_deleted_for_all'    => $deletedForEveryone,
+            'attachments'           => $m->attachments->map(fn ($a) => [
+                'id'                => (int) $a->id,
+                'filename_original' => $a->filename_original,
+                'mime_type'         => $a->mime_type,
+                'size_bytes'        => (int) $a->size_bytes,
+                'is_image'          => str_starts_with($a->mime_type, 'image/'),
+                'width'             => $a->width,
+                'height'            => $a->height,
+                'preview_url'       => route('messenger.attachments.preview', ['message' => $m->id, 'attachment' => $a->id]),
+                'download_url'      => route('messenger.attachments.download', ['message' => $m->id, 'attachment' => $a->id]),
+            ])->all(),
+            'reactions'             => array_values($reactionGroups),
+            'reads'                 => $reads,
+        ];
+    }
+
+    public function loadMoreMessages(): void
+    {
+        if (! $this->hasMoreMessages) {
+            return;
+        }
+        $this->loadMessages(initial: false);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Send / edit / delete
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function sendMessage(): void
+    {
+        if (! $this->activeConversationId) {
+            return;
+        }
+        $conversation = MessengerConversation::find($this->activeConversationId);
+        if (! $conversation) {
+            return;
+        }
+
+        $body = trim($this->newMessage);
+        $files = $this->files;
+
+        if ($body === '' && empty($files)) {
+            return;
+        }
+
+        // Per-file validation: image (image/*) max 10 MB, others max 30 MB.
+        foreach ($files as $file) {
+            $mime = $file->getMimeType() ?: 'application/octet-stream';
+            $size = $file->getSize() ?: 0;
+            $isImage = str_starts_with($mime, 'image/');
+            $maxBytes = $isImage ? MessengerService::MAX_IMAGE_SIZE : MessengerService::MAX_FILE_SIZE;
+            if ($size > $maxBytes) {
+                $this->addError('files', $isImage
+                    ? 'Image attachment exceeds 10 MB.'
+                    : 'File attachment exceeds 30 MB.');
+                return;
+            }
+        }
+
+        try {
+            $this->service()->sendMessage(
+                $conversation,
+                auth()->user(),
+                $body !== '' ? $body : null,
+                $files,
+                $this->replyToMessageId
+            );
+        } catch (\Throwable $e) {
+            $this->addError('newMessage', $e->getMessage());
+            return;
+        }
+
+        $this->resetComposer();
+        $this->loadMessages(initial: true);
+        $this->loadConversations();
+
+        $this->dispatchBrowserEvent('messenger:message-sent');
+    }
+
+    public function startEdit(int $messageId): void
+    {
+        $message = MessengerMessage::find($messageId);
+        if (! $message) {
+            return;
+        }
+        if ((int) $message->sender_id !== (int) auth()->id()) {
+            return;
+        }
+        if (! $message->isWithinEditWindow() || $message->isDeletedForEveryone()) {
+            return;
+        }
+        $this->editingMessageId = $message->id;
+        $this->editingBody = (string) $message->body;
+    }
+
+    public function cancelEdit(): void
+    {
+        $this->editingMessageId = null;
+        $this->editingBody = '';
+    }
+
+    public function saveEdit(): void
+    {
+        if (! $this->editingMessageId) {
+            return;
+        }
+        $message = MessengerMessage::find($this->editingMessageId);
+        if (! $message) {
+            return;
+        }
+        try {
+            $this->service()->editMessage($message, auth()->user(), $this->editingBody);
+        } catch (\Throwable $e) {
+            $this->addError('editingBody', $e->getMessage());
+            return;
+        }
+        $this->cancelEdit();
+        $this->loadMessages(initial: true);
+    }
+
+    public function deleteMessageForMe(int $messageId): void
+    {
+        $this->doDelete($messageId, 'me');
+    }
+
+    public function deleteMessageForEveryone(int $messageId): void
+    {
+        $this->doDelete($messageId, 'everyone');
+    }
+
+    protected function doDelete(int $messageId, string $scope): void
+    {
+        $message = MessengerMessage::find($messageId);
+        if (! $message) {
+            return;
+        }
+        try {
+            $this->service()->deleteMessage($message, auth()->user(), $scope);
+        } catch (\Throwable $e) {
+            return;
+        }
+        $this->loadMessages(initial: true);
+        $this->loadConversations();
+    }
+
+    public function setReplyTo(int $messageId): void
+    {
+        $message = MessengerMessage::find($messageId);
+        if (! $message || (int) $message->conversation_id !== (int) $this->activeConversationId) {
+            return;
+        }
+        $this->replyToMessageId = $messageId;
+    }
+
+    public function cancelReply(): void
+    {
+        $this->replyToMessageId = null;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Reactions
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function toggleReaction(int $messageId, string $emoji): void
+    {
+        if (! MessengerMessageReaction::isAllowed($emoji)) {
+            return;
+        }
+        $message = MessengerMessage::find($messageId);
+        if (! $message) {
+            return;
+        }
+        try {
+            $this->service()->toggleReaction($message, auth()->user(), $emoji);
+        } catch (\Throwable $e) {
+            return;
+        }
+        $this->loadMessages(initial: true);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Read receipts
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function markActiveConversationAsRead(): void
+    {
+        if (! $this->activeConversationId) {
+            return;
+        }
+        $conversation = MessengerConversation::find($this->activeConversationId);
+        if (! $conversation) {
+            return;
+        }
+        $count = $this->service()->markConversationAsRead($conversation, auth()->user());
+        if ($count > 0) {
+            $this->loadConversations();
+            $this->loadMessages(initial: true);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Search (per-conversation, body only)
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function updatedSearchQuery(): void
+    {
+        $this->runSearch();
+    }
+
+    public function runSearch(): void
+    {
+        if (! $this->activeConversationId) {
+            $this->searchResults = [];
+            return;
+        }
+        $q = trim($this->searchQuery);
+        if (mb_strlen($q) < 2) {
+            $this->searchResults = [];
+            return;
+        }
+        $conversation = MessengerConversation::find($this->activeConversationId);
+        if (! $conversation) {
+            return;
+        }
+        $results = $this->service()->searchInConversation($conversation, auth()->user(), $q);
+        $this->searchResults = $results->map(function ($m) {
+            return [
+                'id'         => $m->id,
+                'sender'     => $m->sender?->name,
+                'body'       => mb_substr((string) $m->body, 0, 200),
+                'time_label' => $m->created_at?->format('d M Y H:i'),
+            ];
+        })->all();
+    }
+
+    public function clearSearch(): void
+    {
+        $this->searchQuery = '';
+        $this->searchResults = [];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // New chat picker
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function openNewChatPicker(): void
+    {
+        $this->view = 'new_chat';
+        $this->newChatSearch = '';
+        $this->userPickerResults = [];
+    }
+
+    public function updatedNewChatSearch(): void
+    {
+        $q = trim($this->newChatSearch);
+        if (mb_strlen($q) < 1) {
+            $this->userPickerResults = [];
+            return;
+        }
+        $userId = (int) auth()->id();
+        $like = '%' . $q . '%';
+        $users = User::query()
+            ->where('id', '!=', $userId)
+            ->whereNull('deleted_at')
+            ->where(function ($w) use ($like) {
+                $w->where('name', 'like', $like)
+                  ->orWhere('username', 'like', $like)
+                  ->orWhere('email', 'like', $like);
+            })
+            ->limit(20)
+            ->get(['id', 'name', 'username', 'email', 'avatar_url']);
+
+        $this->userPickerResults = $users->map(fn ($u) => [
+            'id'       => $u->id,
+            'name'     => $u->name,
+            'username' => $u->username,
+            'avatar'   => $u->avatar_url,
+        ])->all();
+    }
+
+    public function startConversationWith(int $userId): void
+    {
+        $other = User::find($userId);
+        if (! $other) {
+            return;
+        }
+        $conversation = $this->service()->createOrGetConversation(auth()->user(), $other);
+        $this->openConversation($conversation->id);
+    }
+
+    public function cancelNewChat(): void
+    {
+        $this->view = 'list';
+        $this->newChatSearch = '';
+        $this->userPickerResults = [];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Echo event handlers (called from Alpine via $wire.emit)
+    // ──────────────────────────────────────────────────────────────────────
+
+    /** New message arrived on a conversation channel. */
+    public function handleIncomingMessage(int $conversationId, int $messageId, int $senderId): void
+    {
+        if ($senderId === (int) auth()->id()) {
+            // Already added optimistically by sender flow.
+            return;
+        }
+        if ((int) $conversationId === (int) $this->activeConversationId) {
+            $this->loadMessages(initial: true);
+            $this->markActiveConversationAsRead();
+        }
+        $this->loadConversations();
+    }
+
+    public function handleIncomingEdit(int $messageId): void
+    {
+        if ($this->activeConversationId) {
+            $this->loadMessages(initial: true);
+        }
+    }
+
+    public function handleIncomingDelete(int $messageId): void
+    {
+        if ($this->activeConversationId) {
+            $this->loadMessages(initial: true);
+        }
+        $this->loadConversations();
+    }
+
+    public function handleIncomingRead(int $messageId, int $readerId): void
+    {
+        if ($this->activeConversationId) {
+            $this->loadMessages(initial: true);
+        }
+    }
+
+    public function handleIncomingReaction(int $messageId): void
+    {
+        if ($this->activeConversationId) {
+            $this->loadMessages(initial: true);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Helpers exposed to Blade
+    // ──────────────────────────────────────────────────────────────────────
+
+    public function getActiveConversationProperty(): ?array
+    {
+        if (! $this->activeConversationId) {
+            return null;
+        }
+        $conversation = MessengerConversation::with([
+            'userOne:id,name,username,avatar_url,last_seen_at',
+            'userTwo:id,name,username,avatar_url,last_seen_at',
+        ])->find($this->activeConversationId);
+        if (! $conversation) {
+            return null;
+        }
+        $userId = (int) auth()->id();
+        $other = $conversation->otherParticipant($userId);
+        if (! $other) {
+            return null;
+        }
+        return [
+            'id'                 => $conversation->id,
+            'other_id'           => $other->id,
+            'other_name'         => $other->name,
+            'other_username'     => $other->username,
+            'other_avatar'       => $other->avatar_url,
+            'other_last_seen_at' => optional($other->last_seen_at)->toIso8601String(),
+        ];
+    }
+
+    public function getAllowedReactionEmojisProperty(): array
+    {
+        return MessengerMessageReaction::ALLOWED_EMOJIS;
+    }
+
+    public function getCurrentUserIdProperty(): int
+    {
+        return (int) auth()->id();
+    }
+}

@@ -217,6 +217,24 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     }
 
     /**
+     * All messenger conversations where this user is a participant (either side).
+     */
+    public function messengerConversations()
+    {
+        return MessengerConversation::query()
+            ->where('user_one_id', $this->id)
+            ->orWhere('user_two_id', $this->id);
+    }
+
+    /**
+     * Messages sent by this user.
+     */
+    public function messengerMessagesSent(): HasMany
+    {
+        return $this->hasMany(MessengerMessage::class, 'sender_id');
+    }
+
+    /**
      * Semua projects yang bisa diakses user (owned + attached)
      */
     public function accessibleProjects()

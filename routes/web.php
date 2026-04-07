@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use App\Http\Controllers\RoadMap\DataController;
 use App\Http\Controllers\Auth\OidcAuthController;
+use App\Http\Controllers\Messenger\MessengerAttachmentController;
 
 // Share ticket
 Route::get('/tickets/share/{ticket:code}', function (Ticket $ticket) {
@@ -35,6 +36,17 @@ Route::name('oidc.')
     ->group(function () {
         Route::get('redirect', [OidcAuthController::class, 'redirect'])->name('redirect');
         Route::get('callback', [OidcAuthController::class, 'callback'])->name('callback');
+    });
+
+// Messenger attachment download/preview (private, auth-gated)
+Route::middleware(['web', 'auth'])
+    ->prefix('messenger/attachments')
+    ->name('messenger.attachments.')
+    ->group(function () {
+        Route::get('{message}/{attachment}/download', [MessengerAttachmentController::class, 'download'])
+            ->name('download');
+        Route::get('{message}/{attachment}/preview', [MessengerAttachmentController::class, 'preview'])
+            ->name('preview');
     });
 
 // Auto-detect timezone from browser
