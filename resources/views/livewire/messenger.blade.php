@@ -143,7 +143,7 @@
             color: #f3f4f6;
         }
         .msgr-unread-badge {
-            background: #c85a3a;
+            background: #3b82f6;
             color: #fff;
             font-size: 11px;
             font-weight: 600;
@@ -185,7 +185,7 @@
             background-size: 14px 14px;
         }
         .msgr-search-input:focus {
-            border-color: #c85a3a;
+            border-color: #3b82f6;
         }
 
         .msgr-list {
@@ -254,7 +254,7 @@
             opacity: 0.7;
         }
         .msgr-list-unread-pill {
-            background: #c85a3a;
+            background: #3b82f6;
             color: #fff;
             font-size: 10px;
             font-weight: 700;
@@ -315,7 +315,7 @@
         }
         .msgr-msg-reply-quote {
             background: rgba(255,255,255,0.05);
-            border-left: 3px solid #c85a3a;
+            border-left: 3px solid #3b82f6;
             padding: 6px 10px;
             border-radius: 6px;
             margin-bottom: 4px;
@@ -324,7 +324,7 @@
         }
         .msgr-msg-reply-quote-name {
             font-weight: 600;
-            color: #c85a3a;
+            color: #3b82f6;
             display: block;
             margin-bottom: 2px;
         }
@@ -337,7 +337,7 @@
             white-space: pre-wrap;
         }
         .msgr-msg-self .msgr-msg-content {
-            background: #c85a3a;
+            background: #3b82f6;
             color: #fff;
             border-bottom-right-radius: 4px;
         }
@@ -437,8 +437,8 @@
             cursor: pointer;
         }
         .msgr-reaction-chip-active {
-            background: rgba(200,90,58,0.2);
-            border-color: #c85a3a;
+            background: rgba(59,130,246,0.2);
+            border-color: #3b82f6;
         }
         .msgr-reaction-chip-count {
             font-size: 10px;
@@ -520,8 +520,8 @@
             padding: 10px 12px;
         }
         .msgr-composer-reply-bar {
-            background: rgba(200,90,58,0.1);
-            border-left: 3px solid #c85a3a;
+            background: rgba(59,130,246,0.1);
+            border-left: 3px solid #3b82f6;
             padding: 6px 10px;
             border-radius: 4px;
             margin-bottom: 8px;
@@ -575,14 +575,14 @@
             line-height: 1.4;
         }
         .msgr-composer-textarea:focus {
-            border-color: #c85a3a;
+            border-color: #3b82f6;
         }
         .msgr-composer-actions {
             display: flex;
             gap: 4px;
         }
         .msgr-send-btn {
-            background: #c85a3a;
+            background: #3b82f6;
             border: none;
             color: #fff;
             width: 36px;
@@ -593,13 +593,21 @@
             justify-content: center;
             cursor: pointer;
             transition: background 0.15s;
+            flex-shrink: 0;
         }
         .msgr-send-btn:hover {
-            background: #a0492f;
+            background: #2563eb;
         }
         .msgr-send-btn:disabled {
-            background: #38434f;
+            background: #374151;
             cursor: not-allowed;
+        }
+        @keyframes msgrSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .msgr-spin {
+            animation: msgrSpin 0.8s linear infinite;
         }
 
         /* Typing indicator */
@@ -901,7 +909,7 @@
                                                 <textarea wire:model.defer="editingBody" class="msgr-composer-textarea" style="margin-bottom:6px;" rows="2"></textarea>
                                                 <div style="display:flex; gap:6px; justify-content:flex-end;">
                                                     <button type="button" wire:click="cancelEdit" style="background:transparent;border:1px solid #38434f;color:#9ca3af;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;">Cancel</button>
-                                                    <button type="button" wire:click="saveEdit" style="background:#c85a3a;border:none;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;">Save</button>
+                                                    <button type="button" wire:click="saveEdit" style="background:#3b82f6;border:none;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;">Save</button>
                                                 </div>
                                                 @error('editingBody') <div class="msgr-error">{{ $message }}</div> @enderror
                                             </div>
@@ -1031,25 +1039,26 @@
                             @error('files') <div class="msgr-error">{{ $message }}</div> @enderror
                             @error('newMessage') <div class="msgr-error">{{ $message }}</div> @enderror
 
-                            <div class="msgr-composer-row">
+                            <form wire:submit.prevent="sendMessage" class="msgr-composer-row">
                                 <textarea
                                     wire:model.defer="newMessage"
                                     class="msgr-composer-textarea"
                                     placeholder="Write a message… (Enter to send)"
                                     rows="1"
                                     x-on:input="onTyping()"
-                                    x-on:keydown.enter.prevent="$wire.call('sendMessage')"></textarea>
+                                    x-on:keydown.enter.prevent="$el.form.requestSubmit()"></textarea>
 
                                 <div class="msgr-composer-actions">
                                     <label class="msgr-icon-btn" title="Attach file">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
                                         <input type="file" wire:model="files" multiple class="msgr-hidden-input">
                                     </label>
-                                    <button type="button" class="msgr-send-btn" wire:click="sendMessage" title="Send">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                    <button type="submit" class="msgr-send-btn" wire:loading.attr="disabled" wire:target="sendMessage" title="Send">
+                                        <svg wire:loading.remove wire:target="sendMessage" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                        <svg wire:loading wire:target="sendMessage" class="msgr-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     </button>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     @endif
 
