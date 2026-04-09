@@ -370,6 +370,9 @@ class ViewTicket extends ViewRecord implements HasForms
                 ->disableLabel()
                 ->placeholder(__('Type a new comment, use @username to mention users'))
                 ->required()
+                ->fileAttachmentsDisk('public')
+                ->fileAttachmentsDirectory('comment-attachments')
+                ->fileAttachmentsVisibility('public')
                 ->toolbarButtons([
                     'bold',
                     'italic',
