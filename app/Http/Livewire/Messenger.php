@@ -5,6 +5,8 @@ namespace App\Http\Livewire;
 use App\Models\MessengerConversation;
 use App\Models\MessengerMessage;
 use App\Models\MessengerMessageReaction;
+use App\Models\Project;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Services\MessengerService;
 use Illuminate\Support\Facades\DB;
@@ -339,6 +341,7 @@ class Messenger extends Component
             'sender_avatar'         => $m->sender?->avatar_url,
             'is_self'               => $isSelf,
             'body'                  => $deletedForEveryone ? null : $m->body,
+            'rendered_body'         => $deletedForEveryone ? null : $this->renderTicketBadges($m->body),
             'reply_to'              => $m->replyTo ? [
                 'id'          => (int) $m->replyTo->id,
                 'sender_name' => $m->replyTo->sender?->name,
@@ -764,6 +767,122 @@ class Messenger extends Component
             'on_leave_from' => $user->on_leave_from?->toDateString(),
             'on_leave_until' => $user->on_leave_until?->toDateString(),
         ];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Ticket badge rendering
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Parse message body and convert ticket references (e.g. QOS-101, #101)
+     * into clickable badge links with tooltip previews.
+     *
+     * Returns HTML-safe string (body is escaped first, then badges injected).
+     */
+    /** @var array|null Cached project prefixes for this request */
+    protected ?array $cachedPrefixes = null;
+
+    protected function getProjectPrefixes(): array
+    {
+        if ($this->cachedPrefixes === null) {
+            $this->cachedPrefixes = Project::whereNotNull('ticket_prefix')
+                ->where('ticket_prefix', '!=', '')
+                ->pluck('ticket_prefix')
+                ->all();
+        }
+        return $this->cachedPrefixes;
+    }
+
+    protected function renderTicketBadges(?string $body): ?string
+    {
+        if ($body === null || $body === '') {
+            return $body;
+        }
+
+        // Escape the entire body first for XSS safety.
+        $escaped = e($body);
+
+        // Collect all known project prefixes (cached per request).
+        $prefixes = $this->getProjectPrefixes();
+
+        if (empty($prefixes)) {
+            return $escaped;
+        }
+
+        // Build regex: match PREFIX-NUMBER patterns (case-insensitive).
+        $prefixPattern = implode('|', array_map(fn ($p) => preg_quote($p, '/'), $prefixes));
+        $pattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
+
+        // Also match #NUMBER shorthand.
+        $hashPattern = '/#(\d+)\b/';
+
+        // For #NUMBER: resolve project if there's only one project, or fallback
+        // to the single prefix if all prefixes are the same.
+        $singleProject = count($prefixes) === 1 ? $prefixes[0] : null;
+
+        // First pass: collect all ticket codes we need to look up.
+        $codes = [];
+        if (preg_match_all($pattern, $escaped, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $codes[] = strtoupper($match[1]) . '-' . $match[2];
+            }
+        }
+        if ($singleProject && preg_match_all($hashPattern, $escaped, $hashMatches, PREG_SET_ORDER)) {
+            foreach ($hashMatches as $match) {
+                $codes[] = strtoupper($singleProject) . '-' . $match[1];
+            }
+        }
+
+        if (empty($codes)) {
+            return $escaped;
+        }
+
+        // Batch-load tickets that exist (for tooltip data).
+        $tickets = Ticket::whereIn('code', array_unique($codes))
+            ->with(['status:id,name,color', 'responsible:id,name', 'project:id,ticket_prefix'])
+            ->get()
+            ->keyBy('code');
+
+        // Replace PREFIX-NUMBER patterns — always link, even if ticket doesn't exist yet.
+        $escaped = preg_replace_callback($pattern, function ($match) use ($tickets) {
+            $code = strtoupper($match[1]) . '-' . $match[2];
+            $ticket = $tickets->get($code);
+            return $this->buildTicketBadgeHtml($code, $ticket);
+        }, $escaped);
+
+        // Replace #NUMBER patterns (only if single project).
+        if ($singleProject) {
+            $escaped = preg_replace_callback($hashPattern, function ($match) use ($tickets, $singleProject) {
+                $code = strtoupper($singleProject) . '-' . $match[1];
+                $ticket = $tickets->get($code);
+                return $this->buildTicketBadgeHtml($code, $ticket);
+            }, $escaped);
+        }
+
+        return $escaped;
+    }
+
+    protected function buildTicketBadgeHtml(string $code, ?Ticket $ticket): string
+    {
+        $url = route('filament.resources.tickets.share', ['ticket' => $code]);
+        $escapedCode = e($code);
+
+        if ($ticket) {
+            $title = e($ticket->name);
+            $status = e($ticket->status?->name ?? 'No status');
+            $assignee = e($ticket->responsible?->name ?? 'Unassigned');
+
+            return '<a href="' . $url . '" target="_blank" class="msgr-ticket-badge" data-ticket-title="' . $title . '" data-ticket-status="' . $status . '" data-ticket-assignee="' . $assignee . '">'
+                . '<span class="msgr-ticket-badge-icon">#</span>'
+                . $escapedCode
+                . '</a>';
+        }
+
+        // Ticket not found — still link it, but no tooltip data.
+        return '<a href="' . $url . '" target="_blank" class="msgr-ticket-badge msgr-ticket-badge-unknown">'
+            . '<span class="msgr-ticket-badge-icon">#</span>'
+            . $escapedCode
+            . '</a>';
     }
 
     // ──────────────────────────────────────────────────────────────────────

@@ -826,6 +826,91 @@
                 border: none;
             }
         }
+
+        /* ── Ticket badge in chat messages ──────────────────────────── */
+        .msgr-ticket-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 1px 7px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.15s;
+            vertical-align: baseline;
+            line-height: 1.4;
+        }
+        .msgr-ticket-badge:hover {
+            background: rgba(59, 130, 246, 0.35);
+            color: #93bbfc;
+            text-decoration: none;
+        }
+        .msgr-msg-self .msgr-ticket-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+        .msgr-msg-self .msgr-ticket-badge:hover {
+            background: rgba(255, 255, 255, 0.35);
+            color: #fff;
+        }
+        .msgr-ticket-badge-icon {
+            font-weight: 700;
+            opacity: 0.7;
+            font-size: 11px;
+        }
+        /* Tooltip on hover */
+        .msgr-ticket-badge::after {
+            content: attr(data-ticket-title) "\A" "Status: " attr(data-ticket-status) "\A" "Assignee: " attr(data-ticket-assignee);
+            white-space: pre-wrap;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 400;
+            line-height: 1.5;
+            min-width: 180px;
+            max-width: 280px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 100;
+        }
+        .msgr-ticket-badge::before {
+            content: '';
+            position: absolute;
+            bottom: calc(100% + 2px);
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1e293b;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 100;
+        }
+        .msgr-ticket-badge:hover::after,
+        .msgr-ticket-badge:hover::before {
+            opacity: 1;
+        }
+        /* Ticket not found in DB — still clickable, slightly dimmer */
+        .msgr-ticket-badge-unknown {
+            opacity: 0.75;
+        }
+        .msgr-ticket-badge-unknown::after,
+        .msgr-ticket-badge-unknown::before {
+            display: none;
+        }
     </style>
 
     <div x-data="messengerWidget()" x-init="init()">
@@ -1084,7 +1169,7 @@
                                             @if($m['is_deleted_for_all'])
                                                 <div class="msgr-msg-content msgr-msg-deleted">Message deleted</div>
                                             @elseif($m['body'])
-                                                <div class="msgr-msg-content">{{ $m['body'] }}@if($m['edited_at'])<span class="msgr-msg-edited-mark">(edited)</span>@endif</div>
+                                                <div class="msgr-msg-content">{!! $m['rendered_body'] !!}@if($m['edited_at'])<span class="msgr-msg-edited-mark">(edited)</span>@endif</div>
                                             @endif
 
                                             @if(! empty($m['attachments']) && ! $m['is_deleted_for_all'])
