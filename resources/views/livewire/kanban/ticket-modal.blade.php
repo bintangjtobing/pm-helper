@@ -176,7 +176,7 @@
                                             </div>
                                             @if($item->type === 'comment')
                                             <div class="text-gray-700 prose-sm prose max-w-none dark:prose-invert">
-                                                {!! \App\Helpers\CodeBlockHelper::autoLinkUrls(\Illuminate\Support\Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($item->content))) !!}
+                                                {!! \App\Helpers\CodeBlockHelper::renderContent($item->content) !!}
                                             </div>
                                             @else
                                             <div class="text-sm text-gray-600">

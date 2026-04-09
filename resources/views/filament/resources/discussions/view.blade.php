@@ -30,7 +30,7 @@
 
                     {{-- Content --}}
                     <div class="prose prose-sm dark:prose-invert max-w-none">
-                        {!! \App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::autoLinkUrls(Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($record->content)))) !!}
+                        {!! \App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($record->content)) !!}
                     </div>
 
                     {{-- Linked ticket / project --}}
@@ -74,7 +74,7 @@
                             </div>
                         </div>
                         <div class="prose prose-sm dark:prose-invert max-w-none">
-                            {!! \App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::autoLinkUrls(Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($reply->content)))) !!}
+                            {!! \App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($reply->content)) !!}
                         </div>
                     </div>
                 </x-filament::card>

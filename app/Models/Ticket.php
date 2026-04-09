@@ -379,18 +379,7 @@ class Ticket extends Model implements HasMedia
             return '';
         }
 
-        // If content has Markdown indicators, parse it
-        if (preg_match('/^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>/m', $content)) {
-            $processed = \App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($content);
-            $html = \Illuminate\Support\Str::markdown($processed, [
-                'html_input' => 'allow',
-                'allow_unsafe_links' => false,
-            ]);
-            return \App\Helpers\CodeBlockHelper::autoLinkUrls($html);
-        }
-
-        // Already HTML — still auto-link bare URLs
-        return \App\Helpers\CodeBlockHelper::autoLinkUrls($content);
+        return \App\Helpers\CodeBlockHelper::renderContent($content);
     }
 
     public function ccUsers(): BelongsToMany
