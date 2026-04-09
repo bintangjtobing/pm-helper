@@ -410,7 +410,7 @@
                     @endif
                 </div>
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    {!! \App\Helpers\MentionHelper::renderMentions(Str::markdown($comment->content)) !!}
+                    {!! \App\Helpers\MentionHelper::renderMentions(Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($comment->content))) !!}
                 </div>
             </div>
             @endforeach
@@ -528,54 +528,7 @@
             font-weight: 500;
         }
 
-        /* 🎨 OPTIMIZED DESCRIPTION STYLING */
-        .prose {
-            line-height: 1.6;
-        }
-
-        .prose p {
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .prose h1,
-        .prose h2,
-        .prose h3,
-        .prose h4,
-        .prose h5,
-        .prose h6 {
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .prose ul,
-        .prose ol {
-            margin-top: 0.5rem;
-            margin-bottom: 0.5rem;
-            padding-left: 1.5rem;
-        }
-
-        .prose blockquote {
-            margin: 0.5rem 0;
-            padding-left: 1rem;
-            border-left: 3px solid #e5e7eb;
-            font-style: italic;
-        }
-
-        .prose pre {
-            margin: 0.5rem 0;
-            padding: 0.75rem;
-            background-color: #f3f4f6;
-            border-radius: 0.375rem;
-            overflow-x: auto;
-        }
-
-        .prose code {
-            background-color: #f3f4f6;
-            padding: 0.125rem 0.25rem;
-            border-radius: 0.25rem;
-            font-size: 0.875em;
-        }
+        /* Prose styling moved to filament.scss for global use */
     </style>
     @endpush
 </x-filament::page>
