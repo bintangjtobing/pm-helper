@@ -370,6 +370,7 @@ class Ticket extends Model implements HasMedia
 
     /**
      * Render content as HTML — supports both Markdown and raw HTML.
+     * Auto-detects code blocks and auto-links URLs.
      */
     public function getRenderedContentAttribute(): string
     {
@@ -380,14 +381,16 @@ class Ticket extends Model implements HasMedia
 
         // If content has Markdown indicators, parse it
         if (preg_match('/^#{1,6}\s|^\s*[-*+]\s|^\s*\d+\.\s|^\s*>/m', $content)) {
-            return \Illuminate\Support\Str::markdown($content, [
+            $processed = \App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($content);
+            $html = \Illuminate\Support\Str::markdown($processed, [
                 'html_input' => 'allow',
                 'allow_unsafe_links' => false,
             ]);
+            return \App\Helpers\CodeBlockHelper::autoLinkUrls($html);
         }
 
-        // Already HTML, return as-is
-        return $content;
+        // Already HTML — still auto-link bare URLs
+        return \App\Helpers\CodeBlockHelper::autoLinkUrls($content);
     }
 
     public function ccUsers(): BelongsToMany

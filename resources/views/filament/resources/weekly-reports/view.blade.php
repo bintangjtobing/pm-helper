@@ -238,7 +238,7 @@
                     </span>
                 </div>
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    {!! Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($feedback->content)) !!}
+                    {!! \App\Helpers\CodeBlockHelper::autoLinkUrls(Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($feedback->content))) !!}
                 </div>
             </div>
             @endforeach

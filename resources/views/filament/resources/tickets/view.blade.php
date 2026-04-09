@@ -410,7 +410,7 @@
                     @endif
                 </div>
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    {!! \App\Helpers\MentionHelper::renderMentions(Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($comment->content))) !!}
+                    {!! \App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::autoLinkUrls(Str::markdown(\App\Helpers\CodeBlockHelper::autoDetectCodeBlocks($comment->content)))) !!}
                 </div>
             </div>
             @endforeach
