@@ -5,11 +5,13 @@ namespace App\Helpers;
 class CodeBlockHelper
 {
     /**
-     * Smart content renderer — detects whether content is already HTML (from RichEditor/Trix)
-     * or plain text/markdown, and applies the appropriate processing pipeline.
+     * Smart content renderer — always processes markdown AND preserves HTML.
      *
-     * HTML content:  autoLinkUrls only (HTML is already structured)
-     * Plain text:    autoDetectCodeBlocks → Str::markdown → autoLinkUrls
+     * Uses html_input => 'allow' so that:
+     * - Markdown syntax (**bold**, ```code```, etc.) gets converted
+     * - Existing HTML from RichEditor (<p>, <figure>, <img>, etc.) is preserved
+     * - Auto-detects code blocks in plain text portions
+     * - Auto-links bare URLs
      */
     public static function renderContent(string $content): string
     {
@@ -18,14 +20,11 @@ class CodeBlockHelper
             return '';
         }
 
-        // If content contains HTML block-level tags, it's from RichEditor — don't run markdown.
-        if (preg_match('/<(p|div|br|ul|ol|li|h[1-6]|blockquote|pre|figure|img|table)\b/i', $content)) {
-            return self::autoLinkUrls($content);
-        }
-
-        // Plain text / markdown — run full pipeline.
         $processed = self::autoDetectCodeBlocks($content);
-        $html = \Illuminate\Support\Str::markdown($processed);
+        $html = \Illuminate\Support\Str::markdown($processed, [
+            'html_input' => 'allow',
+            'allow_unsafe_links' => false,
+        ]);
         return self::autoLinkUrls($html);
     }
 
