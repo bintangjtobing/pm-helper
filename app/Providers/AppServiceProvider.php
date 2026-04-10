@@ -189,10 +189,12 @@ class AppServiceProvider extends ServiceProvider
                 }
 
                 return '<style>
-                    .filament-sidebar {
+                    .filament-sidebar,
+                    .filament-main-topbar {
                         background-color: transparent !important;
                     }
-                    .filament-sidebar::before {
+                    .filament-sidebar::before,
+                    .filament-main-topbar::before {
                         content: "";
                         position: absolute;
                         inset: -40px;
@@ -202,16 +204,19 @@ class AppServiceProvider extends ServiceProvider
                         filter: blur(20px);
                         z-index: -2;
                     }
-                    .filament-sidebar::after {
+                    .filament-sidebar::after,
+                    .filament-main-topbar::after {
                         content: "";
                         position: absolute;
                         inset: 0;
                         z-index: -1;
                     }
-                    html.dark .filament-sidebar::after {
+                    html.dark .filament-sidebar::after,
+                    html.dark .filament-main-topbar::after {
                         background-color: rgba(17, 24, 39, 0.75);
                     }
-                    html:not(.dark) .filament-sidebar::after {
+                    html:not(.dark) .filament-sidebar::after,
+                    html:not(.dark) .filament-main-topbar::after {
                         background-color: rgba(255, 255, 255, 0.75);
                     }
                 </style>';
