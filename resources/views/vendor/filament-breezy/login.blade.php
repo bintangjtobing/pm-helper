@@ -15,10 +15,18 @@
     $appName = config('app.name');
 @endphp
 
-<div class="flex items-center justify-center min-h-screen p-4 bg-gray-100 sm:p-6 lg:p-8 dark:bg-gray-950 filament-breezy-auth-component filament-login-page">
+{{-- Override body bg so card is distinguishable --}}
+<style>
+    html, html body.filament-body { background-color: #f3f4f6 !important; }
+    html.dark, html.dark body.filament-body { background-color: #030712 !important; }
+    .login-card .filament-forms-component-container { gap: 0.75rem !important; }
+    .login-card .filament-forms-field-wrapper { padding: 0 !important; }
+</style>
+
+<div class="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8 filament-breezy-auth-component filament-login-page">
 
     {{-- Card Container --}}
-    <div class="flex w-full overflow-hidden bg-white shadow-2xl max-w-5xl rounded-2xl dark:bg-gray-900" style="min-height: 560px;">
+    <div class="login-card flex w-full overflow-hidden bg-white border border-gray-200 shadow-2xl max-w-5xl rounded-2xl dark:bg-gray-900 dark:border-gray-800">
 
         {{-- Left Panel: Image + Quote --}}
         <div class="relative flex-shrink-0 hidden overflow-hidden lg:flex" style="width: 44%;">
@@ -59,41 +67,45 @@
         </div>
 
         {{-- Right Panel: Login Form --}}
-        <div class="flex flex-col items-center justify-center flex-1 px-6 py-10 sm:px-10 lg:px-12 xl:px-16">
-            <div class="w-full max-w-sm space-y-6">
+        <div class="flex flex-col items-center justify-center flex-1 px-6 py-8 sm:px-10 lg:px-12 xl:px-16">
+            <div class="w-full max-w-sm">
 
                 {{-- Mobile Logo --}}
-                <div class="flex justify-center mb-2 lg:hidden">
+                <div class="flex justify-center mb-6 lg:hidden">
                     <x-filament::brand />
                 </div>
 
                 {{-- Heading --}}
-                <div>
+                <div class="mb-6">
                     <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
                         {{ __('filament::login.heading') }}
                     </h1>
-                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
                         {{ __('Welcome back! Please sign in to continue.') }}
                     </p>
                 </div>
 
                 {{-- OIDC Error --}}
                 @if(session()->has('oidc_error'))
-                <div class="p-4 text-sm rounded-lg text-red-800 bg-red-50 dark:bg-red-900/20 dark:text-red-400" role="alert">
+                <div class="p-3 mb-4 text-sm rounded-lg text-red-800 bg-red-50 dark:bg-red-900/20 dark:text-red-400" role="alert">
                     <span class="font-medium">{{ __('OIDC Connect error') }}</span> {{ __('Invalid account!') }}
                 </div>
                 @endif
 
                 {{-- Login Form --}}
                 @if(config('system.login_form.is_enabled'))
-                <form wire:submit.prevent="authenticate" class="space-y-5">
-                    {{ $this->form }}
+                <form wire:submit.prevent="authenticate">
+                    <div class="space-y-4">
+                        {{ $this->form }}
+                    </div>
 
-                    <x-filament::button type="submit" class="w-full">
-                        {{ __('filament::login.buttons.submit.label') }}
-                    </x-filament::button>
+                    <div class="mt-5">
+                        <x-filament::button type="submit" class="w-full">
+                            {{ __('filament::login.buttons.submit.label') }}
+                        </x-filament::button>
+                    </div>
 
-                    <div class="text-center">
+                    <div class="mt-3 text-center">
                         <a class="text-sm text-primary-600 hover:text-primary-500 dark:text-primary-400"
                            href="{{ route(config('filament-breezy.route_group_prefix').'password.request') }}">
                             {{ __('filament-breezy::default.login.forgot_password_link') }}
@@ -104,7 +116,7 @@
 
                 {{-- Divider --}}
                 @if(config('system.login_form.is_enabled') && (config('services.oidc.is_enabled') || config('filament-socialite.enabled')))
-                <div class="relative">
+                <div class="relative mt-6">
                     <div class="absolute inset-0 flex items-center">
                         <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
                     </div>
@@ -116,7 +128,7 @@
 
                 {{-- OIDC Button --}}
                 @if(config('services.oidc.is_enabled'))
-                <div>
+                <div class="mt-5">
                     <x-filament::button color="secondary" class="w-full" tag="a" :href="route('oidc.redirect')">
                         <div class="flex items-center justify-center w-full gap-2">
                             <x-heroicon-o-login class="w-5 h-5" />
@@ -128,7 +140,7 @@
 
                 {{-- Social Login --}}
                 @if(config('filament-socialite.enabled'))
-                <div>
+                <div class="mt-5">
                     <x-filament-socialite::buttons />
                 </div>
                 @endif
