@@ -217,6 +217,16 @@ class ManageGeneralSettings extends SettingsPage
                         ->image()
                         ->maxSize(1024)
                         ->enableReordering(),
+
+                    Select::make('default_auth_theme')
+                        ->label(__('Login page theme'))
+                        ->helperText(__('Default theme for login and reset password pages'))
+                        ->options([
+                            'dark' => __('Dark mode'),
+                            'light' => __('Light mode'),
+                            'system' => __('Follow system preference'),
+                        ])
+                        ->required(),
                 ]),
 
             // Weekly Report Settings

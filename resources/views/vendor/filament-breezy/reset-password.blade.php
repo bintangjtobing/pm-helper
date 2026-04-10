@@ -2,9 +2,11 @@
     $quote = \App\Models\MotivationalQuote::random();
 
     $backgrounds = [];
+    $authTheme = 'dark';
     try {
         $settings = app(\App\Settings\GeneralSettings::class);
         $backgrounds = $settings->login_backgrounds ?? [];
+        $authTheme = $settings->default_auth_theme ?? 'dark';
     } catch (\Exception $e) {}
     $bgImage = !empty($backgrounds) ? asset('storage/' . $backgrounds[array_rand($backgrounds)]) : null;
 
@@ -13,8 +15,15 @@
     $appName = config('app.name');
 @endphp
 
-<div class="flex items-center justify-center min-h-screen p-3 sm:p-4 lg:p-6 filament-breezy-auth-component"
-     style="background-color: #f3f4f6;">
+<div class="flex items-center justify-center min-h-screen p-3 sm:p-4 lg:p-6 filament-breezy-auth-component">
+    {{-- Force auth theme --}}
+    <script>
+        (function() {
+            var theme = '{{ $authTheme }}';
+            if (theme === 'dark') { document.documentElement.classList.add('dark'); }
+            else if (theme === 'light') { document.documentElement.classList.remove('dark'); }
+        })();
+    </script>
     <style>
         html, html body.filament-body { background-color: #f3f4f6 !important; }
         html.dark, html.dark body.filament-body { background-color: #030712 !important; }

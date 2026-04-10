@@ -19,6 +19,7 @@ class GeneralSettings extends Settings
     public bool $report_reminder_enabled;
     public ?string $site_favicon;
     public ?array $login_backgrounds;
+    public string $default_auth_theme;
 
     public static function group(): string
     {
@@ -49,6 +50,7 @@ class GeneralSettings extends Settings
             'report_reminder_enabled' => true,
             'site_favicon' => null,
             'login_backgrounds' => [],
+            'default_auth_theme' => 'dark',
         ];
     }
 }
