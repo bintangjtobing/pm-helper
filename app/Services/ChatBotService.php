@@ -98,6 +98,7 @@ class ChatBotService
             $arguments = json_decode($toolCall['function']['arguments'], true) ?? [];
 
             $result = match ($functionName) {
+                'search_tickets' => $this->executeSearchTickets($conversation, $arguments),
                 'create_customer_feedback' => $this->executeCreateFeedback($conversation, $arguments),
                 'link_feedback_to_ticket' => $this->executeLinkFeedback($conversation, $arguments),
                 'suggest_project_change' => $this->executeSuggestProjectChange($conversation, $arguments),
@@ -145,6 +146,60 @@ class ChatBotService
             'content' => $content,
             'metadata' => $metadata ?: null,
         ];
+    }
+
+    private function executeSearchTickets(ChatConversation $conversation, array $args): array
+    {
+        $keyword = $args['keyword'] ?? '';
+        if (empty($keyword)) {
+            return ['error' => 'Keyword is required for search.'];
+        }
+
+        $user = $conversation->user;
+
+        // Get project IDs the user has access to
+        $projectIds = Project::where('owner_id', $user->id)
+            ->orWhereHas('users', fn($q) => $q->where('users.id', $user->id))
+            ->pluck('id');
+
+        // Search tickets across multiple fields
+        $tickets = Ticket::whereIn('project_id', $projectIds)
+            ->where(function ($q) use ($keyword) {
+                $q->where('code', 'like', "%{$keyword}%")
+                    ->orWhere('name', 'like', "%{$keyword}%")
+                    ->orWhere('content', 'like', "%{$keyword}%")
+                    ->orWhere('objective', 'like', "%{$keyword}%")
+                    ->orWhere('expected_outcome', 'like', "%{$keyword}%")
+                    ->orWhere('steps_to_reproduce', 'like', "%{$keyword}%")
+                    ->orWhere('expected_behavior', 'like', "%{$keyword}%")
+                    ->orWhere('actual_behavior', 'like', "%{$keyword}%")
+                    ->orWhereHas('epic', fn($eq) => $eq->where('name', 'like', "%{$keyword}%"));
+            })
+            ->with(['status', 'priority', 'responsible', 'epic', 'project'])
+            ->limit(20)
+            ->get();
+
+        if ($tickets->isEmpty()) {
+            return ['results' => [], 'message' => 'No tickets found matching "' . $keyword . '".'];
+        }
+
+        $results = [];
+        foreach ($tickets as $ticket) {
+            $results[] = [
+                'code' => $ticket->code,
+                'name' => $ticket->name,
+                'project' => $ticket->project->name ?? 'N/A',
+                'status' => $ticket->status->name ?? 'Unknown',
+                'priority' => $ticket->priority->name ?? 'Normal',
+                'assignee' => $ticket->responsible->name ?? 'Unassigned',
+                'epic' => $ticket->epic->name ?? '-',
+                'due_date' => $ticket->due_date ? $ticket->due_date->format('Y-m-d') : '-',
+                'summary' => Str::limit(strip_tags($ticket->content ?? ''), 500),
+                'objective' => Str::limit(strip_tags($ticket->objective ?? ''), 300),
+            ];
+        }
+
+        return ['results' => $results, 'total_found' => count($results)];
     }
 
     private function executeCreateFeedback(ChatConversation $conversation, array $args): array
@@ -276,7 +331,7 @@ class ChatBotService
             ->with([
                 'status',
                 'media',
-                'tickets' => fn($q) => $q->with(['status', 'priority', 'responsible', 'epic'])->latest()->limit(60),
+                'tickets' => fn($q) => $q->with(['status', 'priority', 'responsible', 'epic'])->latest()->limit(200),
             ])
             ->get();
 
@@ -321,7 +376,7 @@ class ChatBotService
                 $priority = $ticket->priority->name ?? 'Normal';
                 $epic = $ticket->epic->name ?? '-';
                 $due = $ticket->due_date ? $ticket->due_date->format('Y-m-d') : '-';
-                $desc = Str::limit(strip_tags($ticket->content ?? ''), 100);
+                $desc = Str::limit(strip_tags($ticket->content ?? ''), 500);
                 $projectContext .= "\n  [{$ticket->code}] {$ticket->name}";
                 $projectContext .= "\n    Status: {$status} | Priority: {$priority} | Assignee: {$assignee} | Epic: {$epic} | Due: {$due}";
                 if ($desc && $desc !== '-') {
@@ -597,6 +652,23 @@ PROMPT;
     private function getTools(): array
     {
         return [
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'search_tickets',
+                    'description' => 'Search for tickets by keyword across ticket code, name, content, objective, expected_outcome, steps_to_reproduce, and epic name. Use this when the user asks about specific tickets, features, or topics and you cannot find them in the pre-loaded context. Always try this tool before saying a ticket does not exist.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'keyword' => [
+                                'type' => 'string',
+                                'description' => 'The search keyword (e.g. "MFA", "authentication", "login", "dashboard")',
+                            ],
+                        ],
+                        'required' => ['keyword'],
+                    ],
+                ],
+            ],
             [
                 'type' => 'function',
                 'function' => [
