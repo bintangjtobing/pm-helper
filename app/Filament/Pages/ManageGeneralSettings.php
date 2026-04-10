@@ -211,11 +211,11 @@ class ManageGeneralSettings extends SettingsPage
 
                     FileUpload::make('login_backgrounds')
                         ->label(__('Background Images'))
-                        ->helperText(__('Recommended: 1200 x 1800 px (portrait 2:3), JPG/PNG, max 1MB each'))
+                        ->helperText(__('Recommended: 1200 x 1800 px (portrait 2:3), JPG/PNG. Images over 1MB will be auto-compressed.'))
                         ->multiple()
                         ->maxFiles(5)
                         ->image()
-                        ->maxSize(1024)
+                        ->maxSize(10240)
                         ->enableReordering(),
 
                     Select::make('default_auth_theme')
@@ -263,6 +263,83 @@ class ManageGeneralSettings extends SettingsPage
                         ]),
                 ]),
         ];
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        if (!empty($data['login_backgrounds'])) {
+            $data['login_backgrounds'] = array_map(function ($path) {
+                return $this->compressImageIfNeeded($path);
+            }, $data['login_backgrounds']);
+        }
+
+        return $data;
+    }
+
+    private function compressImageIfNeeded(string $path, int $maxBytes = 1048576): string
+    {
+        $fullPath = storage_path('app/public/' . $path);
+
+        if (!file_exists($fullPath) || filesize($fullPath) <= $maxBytes) {
+            return $path;
+        }
+
+        $info = getimagesize($fullPath);
+        if (!$info) {
+            return $path;
+        }
+
+        $mime = $info['mime'];
+        $image = match ($mime) {
+            'image/jpeg' => imagecreatefromjpeg($fullPath),
+            'image/png' => imagecreatefrompng($fullPath),
+            'image/webp' => imagecreatefromwebp($fullPath),
+            default => null,
+        };
+
+        if (!$image) {
+            return $path;
+        }
+
+        // Progressively lower quality until under 1MB
+        $quality = 85;
+        do {
+            ob_start();
+            imagejpeg($image, null, $quality);
+            $compressed = ob_get_clean();
+            $quality -= 10;
+        } while (strlen($compressed) > $maxBytes && $quality >= 20);
+
+        // If still too large, also scale down
+        if (strlen($compressed) > $maxBytes) {
+            $w = imagesx($image);
+            $h = imagesy($image);
+            $ratio = sqrt($maxBytes / strlen($compressed));
+            $newW = (int) ($w * $ratio);
+            $newH = (int) ($h * $ratio);
+            $resized = imagecreatetruecolor($newW, $newH);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newW, $newH, $w, $h);
+            imagedestroy($image);
+            $image = $resized;
+
+            ob_start();
+            imagejpeg($image, null, 75);
+            $compressed = ob_get_clean();
+        }
+
+        // Save as JPG (replace original)
+        $jpgPath = preg_replace('/\.(png|webp)$/i', '.jpg', $path);
+        $jpgFullPath = storage_path('app/public/' . $jpgPath);
+        file_put_contents($jpgFullPath, $compressed);
+
+        // Remove original if different file
+        if ($jpgPath !== $path && file_exists($fullPath)) {
+            unlink($fullPath);
+        }
+
+        imagedestroy($image);
+
+        return $jpgPath;
     }
 
     protected function getSaveFormAction(): Action
