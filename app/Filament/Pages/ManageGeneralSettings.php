@@ -123,7 +123,13 @@ class ManageGeneralSettings extends SettingsPage
                                 ->content(function ($get) {
                                     $logo = $get('site_logo');
                                     if ($logo) {
-                                        $url = is_string($logo) ? asset('storage/' . $logo) : $logo->temporaryUrl();
+                                        if (is_array($logo)) {
+                                            $first = reset($logo);
+                                            $url = is_string($first) ? asset('storage/' . $first) : (is_object($first) ? $first->temporaryUrl() : null);
+                                        } else {
+                                            $url = is_string($logo) ? asset('storage/' . $logo) : $logo->temporaryUrl();
+                                        }
+                                        if (!$url) return new \Illuminate\Support\HtmlString('<div class="flex items-center justify-center p-4 text-gray-500 bg-white border border-gray-200 rounded-lg">Processing...</div>');
                                         return new \Illuminate\Support\HtmlString('
                                             <div class="flex items-center justify-center p-4 bg-white border border-gray-200 rounded-lg dark:bg-gray-100 dark:border-gray-300">
                                                 <img src="' . $url . '" alt="Light Logo Preview" class="w-auto max-h-16">
@@ -144,14 +150,26 @@ class ManageGeneralSettings extends SettingsPage
                                     $lightLogo = $get('site_logo');
 
                                     if ($darkLogo) {
-                                        $url = is_string($darkLogo) ? asset('storage/' . $darkLogo) : $darkLogo->temporaryUrl();
+                                        if (is_array($darkLogo)) {
+                                            $first = reset($darkLogo);
+                                            $url = is_string($first) ? asset('storage/' . $first) : (is_object($first) ? $first->temporaryUrl() : null);
+                                        } else {
+                                            $url = is_string($darkLogo) ? asset('storage/' . $darkLogo) : $darkLogo->temporaryUrl();
+                                        }
+                                        if (!$url) $url = '';
                                         return new \Illuminate\Support\HtmlString('
                                             <div class="flex items-center justify-center p-4 bg-gray-800 border border-gray-600 rounded-lg dark:bg-gray-900 dark:border-gray-700">
                                                 <img src="' . $url . '" alt="Dark Logo Preview" class="w-auto max-h-16">
                                             </div>
                                         ');
                                     } elseif ($lightLogo) {
-                                        $url = is_string($lightLogo) ? asset('storage/' . $lightLogo) : $lightLogo->temporaryUrl();
+                                        if (is_array($lightLogo)) {
+                                            $first = reset($lightLogo);
+                                            $url = is_string($first) ? asset('storage/' . $first) : (is_object($first) ? $first->temporaryUrl() : null);
+                                        } else {
+                                            $url = is_string($lightLogo) ? asset('storage/' . $lightLogo) : $lightLogo->temporaryUrl();
+                                        }
+                                        if (!$url) $url = '';
                                         return new \Illuminate\Support\HtmlString('
                                             <div class="relative flex items-center justify-center p-4 bg-gray-800 border border-gray-600 rounded-lg dark:bg-gray-900 dark:border-gray-700">
                                                 <img src="' . $url . '" alt="Light Logo (Inverted)" class="w-auto max-h-16 filter brightness-0 invert">
