@@ -14,15 +14,15 @@
     $appName = config('app.name');
 @endphp
 
-{{-- Override body bg so card is distinguishable --}}
-<style>
-    html, html body.filament-body { background-color: #f3f4f6 !important; }
-    html.dark, html.dark body.filament-body { background-color: #030712 !important; }
-    .login-card .filament-forms-component-container { gap: 0.75rem !important; }
-    .login-card .filament-forms-field-wrapper { padding: 0 !important; }
-</style>
-
-<div class="flex items-center justify-center min-h-screen p-3 sm:p-4 lg:p-6 filament-breezy-auth-component filament-login-page">
+<div class="flex items-center justify-center min-h-screen p-3 sm:p-4 lg:p-6 filament-breezy-auth-component filament-login-page"
+     style="background-color: #f3f4f6;">
+    {{-- Override body bg --}}
+    <style>
+        html, html body.filament-body { background-color: #f3f4f6 !important; }
+        html.dark, html.dark body.filament-body { background-color: #030712 !important; }
+        .login-card .filament-forms-component-container { gap: 0.75rem !important; }
+        .login-card .filament-forms-field-wrapper { padding: 0 !important; }
+    </style>
 
     {{-- Card Container - larger --}}
     <div class="login-card flex w-full overflow-hidden bg-white border border-gray-200 shadow-2xl rounded-2xl dark:bg-gray-900 dark:border-gray-800"
