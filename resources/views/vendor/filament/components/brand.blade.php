@@ -1,6 +1,6 @@
 @php
-$appLogo = env('APP_LOGO');
-$appLogoDark = env('APP_LOGO_DARK');
+$appLogo = config('app.logo');
+$appLogoDark = config('app.logo_dark');
 $appName = config('app.name');
 @endphp
 

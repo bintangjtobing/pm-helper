@@ -335,10 +335,11 @@ class AppServiceProvider extends ServiceProvider
             Config::set('app.logo_dark', $darkLogo);
 
             // Configure favicon
-            Config::set(
-                'app.favicon',
-                isset($settings->site_favicon) && $settings->site_favicon ? asset('storage/' . $settings->site_favicon) : null
-            );
+            $favicon = isset($settings->site_favicon) && $settings->site_favicon
+                ? asset('storage/' . $settings->site_favicon)
+                : null;
+            Config::set('app.favicon', $favicon);
+            Config::set('filament.favicon', $favicon ?: ($settings->site_logo ? asset('storage/' . $settings->site_logo) : null));
 
             Config::set('filament-breezy.enable_registration', $settings->enable_registration ?? false);
             Config::set('filament-socialite.registration', $settings->enable_registration ?? false);
