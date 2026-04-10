@@ -199,7 +199,7 @@ class AppServiceProvider extends ServiceProvider
                         background-image: url("' . $bgImage . '");
                         background-size: cover;
                         background-position: center;
-                        filter: blur(30px);
+                        filter: blur(20px);
                         z-index: -2;
                     }
                     .filament-sidebar::after {
@@ -209,10 +209,10 @@ class AppServiceProvider extends ServiceProvider
                         z-index: -1;
                     }
                     html.dark .filament-sidebar::after {
-                        background-color: rgba(17, 24, 39, 0.5);
+                        background-color: rgba(17, 24, 39, 0.75);
                     }
                     html:not(.dark) .filament-sidebar::after {
-                        background-color: rgba(255, 255, 255, 0.5);
+                        background-color: rgba(255, 255, 255, 0.75);
                     }
                 </style>';
             }
