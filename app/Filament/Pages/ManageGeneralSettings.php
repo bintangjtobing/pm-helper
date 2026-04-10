@@ -197,6 +197,28 @@ class ManageGeneralSettings extends SettingsPage
                         ])
                 ]),
 
+            // Login Page Backgrounds
+            Card::make()
+                ->schema([
+                    \Filament\Forms\Components\Placeholder::make('login_bg_heading')
+                        ->label('')
+                        ->content(new \Illuminate\Support\HtmlString('
+                            <div class="mb-2">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">' . __('Login Page Backgrounds') . '</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">' . __('Upload up to 5 background images for the login page. A random image will be shown each time.') . '</p>
+                            </div>
+                        ')),
+
+                    FileUpload::make('login_backgrounds')
+                        ->label(__('Background Images'))
+                        ->helperText(__('Recommended: 1200 x 1800 px (portrait 2:3), JPG/PNG, max 1MB each'))
+                        ->multiple()
+                        ->maxFiles(5)
+                        ->image()
+                        ->maxSize(1024)
+                        ->enableReordering(),
+                ]),
+
             // Weekly Report Settings
             Card::make()
                 ->schema([

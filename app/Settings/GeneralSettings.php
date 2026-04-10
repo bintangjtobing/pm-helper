@@ -18,6 +18,7 @@ class GeneralSettings extends Settings
     public string $report_due_day;
     public bool $report_reminder_enabled;
     public ?string $site_favicon;
+    public ?array $login_backgrounds;
 
     public static function group(): string
     {
@@ -47,6 +48,7 @@ class GeneralSettings extends Settings
             'report_due_day' => 'friday',
             'report_reminder_enabled' => true,
             'site_favicon' => null,
+            'login_backgrounds' => [],
         ];
     }
 }

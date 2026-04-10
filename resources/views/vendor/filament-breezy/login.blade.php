@@ -1,14 +1,13 @@
 @php
     $quote = \App\Models\MotivationalQuote::random();
 
-    $bgDir = public_path('images/login-bg');
-    $bgImages = [];
-    if (is_dir($bgDir)) {
-        foreach (glob($bgDir . '/*.{jpg,jpeg,png,webp}', GLOB_BRACE) ?: [] as $file) {
-            $bgImages[] = basename($file);
-        }
-    }
-    $bgImage = !empty($bgImages) ? asset('images/login-bg/' . $bgImages[array_rand($bgImages)]) : null;
+    // Get login backgrounds from settings
+    $backgrounds = [];
+    try {
+        $settings = app(\App\Settings\GeneralSettings::class);
+        $backgrounds = $settings->login_backgrounds ?? [];
+    } catch (\Exception $e) {}
+    $bgImage = !empty($backgrounds) ? asset('storage/' . $backgrounds[array_rand($backgrounds)]) : null;
 
     $appLogo = config('app.logo');
     $appLogoDark = config('app.logo_dark');
@@ -23,10 +22,11 @@
     .login-card .filament-forms-field-wrapper { padding: 0 !important; }
 </style>
 
-<div class="flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8 filament-breezy-auth-component filament-login-page">
+<div class="flex items-center justify-center min-h-screen p-3 sm:p-4 lg:p-6 filament-breezy-auth-component filament-login-page">
 
-    {{-- Card Container --}}
-    <div class="login-card flex w-full overflow-hidden bg-white border border-gray-200 shadow-2xl max-w-5xl rounded-2xl dark:bg-gray-900 dark:border-gray-800">
+    {{-- Card Container - larger --}}
+    <div class="login-card flex w-full overflow-hidden bg-white border border-gray-200 shadow-2xl rounded-2xl dark:bg-gray-900 dark:border-gray-800"
+         style="max-width: 1100px; min-height: min(80vh, 640px);">
 
         {{-- Left Panel: Image + Quote --}}
         <div class="relative flex-shrink-0 hidden overflow-hidden lg:flex" style="width: 44%;">
@@ -44,9 +44,9 @@
                 {{-- Logo (white version for dark overlay) --}}
                 <div>
                     @if($appLogoDark)
-                        <img src="{{ $appLogoDark }}" alt="{{ $appName }}" class="w-auto h-8">
+                        <img src="{{ $appLogoDark }}" alt="{{ $appName }}" class="w-auto h-10">
                     @elseif($appLogo && !str_ends_with($appLogo, 'favicon.ico'))
-                        <img src="{{ $appLogo }}" alt="{{ $appName }}" class="w-auto h-8" style="filter: brightness(0) invert(1);">
+                        <img src="{{ $appLogo }}" alt="{{ $appName }}" class="w-auto h-10" style="filter: brightness(0) invert(1);">
                     @else
                         <span class="text-xl font-bold tracking-tight text-white">{{ $appName }}</span>
                     @endif
@@ -67,7 +67,7 @@
         </div>
 
         {{-- Right Panel: Login Form --}}
-        <div class="flex flex-col items-center justify-center flex-1 px-6 py-8 sm:px-10 lg:px-12 xl:px-16">
+        <div class="flex flex-col items-center justify-center flex-1 px-6 py-8 sm:px-10 lg:px-14 xl:px-16">
             <div class="w-full max-w-sm">
 
                 {{-- Mobile Logo --}}
