@@ -191,8 +191,6 @@ class AppServiceProvider extends ServiceProvider
                 return '<style>
                     .filament-sidebar {
                         position: relative !important;
-                        overflow: hidden !important;
-                        background: transparent !important;
                     }
                     .filament-sidebar::before {
                         content: "";
@@ -201,20 +199,9 @@ class AppServiceProvider extends ServiceProvider
                         background-image: url("' . $bgImage . '");
                         background-size: cover;
                         background-position: center;
-                        filter: blur(50px) saturate(1.2);
+                        filter: blur(60px) saturate(1.3);
                         z-index: 0;
-                    }
-                    .filament-sidebar::after {
-                        content: "";
-                        position: absolute;
-                        inset: 0;
-                        z-index: 0;
-                    }
-                    html.dark .filament-sidebar::after {
-                        background: rgba(17, 24, 39, 0.82);
-                    }
-                    html:not(.dark) .filament-sidebar::after {
-                        background: rgba(255, 255, 255, 0.85);
+                        opacity: 0.12;
                     }
                     .filament-sidebar > * {
                         position: relative;
