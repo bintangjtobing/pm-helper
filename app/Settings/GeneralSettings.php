@@ -17,6 +17,7 @@ class GeneralSettings extends Settings
     public bool $enable_oidc_login;
     public string $report_due_day;
     public bool $report_reminder_enabled;
+    public ?string $site_favicon;
 
     public static function group(): string
     {
@@ -45,6 +46,7 @@ class GeneralSettings extends Settings
             'enable_oidc_login' => false,
             'report_due_day' => 'friday',
             'report_reminder_enabled' => true,
+            'site_favicon' => null,
         ];
     }
 }

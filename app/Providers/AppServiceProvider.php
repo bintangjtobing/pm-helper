@@ -263,11 +263,10 @@ class AppServiceProvider extends ServiceProvider
             // Manifest not built yet!
         }
 
-        // Add custom meta (favicon) - support for dark mode favicon too
-        $favicon = config('app.logo_dark') ?: config('app.logo');
+        // Add custom meta (favicon)
+        $favicon = config('app.favicon') ?: config('app.logo_dark') ?: config('app.logo');
         Filament::pushMeta([
-            new HtmlString('<link rel="icon" type="image/x-icon" href="' . $favicon . '">'),
-            new HtmlString('<link rel="icon" type="image/x-icon" href="' . $favicon . '" media="(prefers-color-scheme: dark)">'),
+            new HtmlString('<link rel="icon" href="' . $favicon . '">'),
             new HtmlString('<meta name="user-id" content="' . (auth()->id() ?? '') . '">'),
             new HtmlString('<meta name="user-birthday-today" content="' . (auth()->check() && auth()->user()->birthday && auth()->user()->birthday->format('m-d') === now()->format('m-d') ? '1' : '0') . '">'),
             new HtmlString('<meta name="any-birthday-today" content="' . (\App\Models\User::whereMonth('birthday', now()->month)->whereDay('birthday', now()->day)->exists() ? '1' : '0') . '">'),
@@ -334,6 +333,12 @@ class AppServiceProvider extends ServiceProvider
                 $darkLogo = env('APP_LOGO_DARK');
             }
             Config::set('app.logo_dark', $darkLogo);
+
+            // Configure favicon
+            Config::set(
+                'app.favicon',
+                isset($settings->site_favicon) && $settings->site_favicon ? asset('storage/' . $settings->site_favicon) : null
+            );
 
             Config::set('filament-breezy.enable_registration', $settings->enable_registration ?? false);
             Config::set('filament-socialite.registration', $settings->enable_registration ?? false);

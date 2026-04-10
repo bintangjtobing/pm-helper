@@ -62,6 +62,12 @@ class ManageGeneralSettings extends SettingsPage
                                         ->helperText(__('Logo for dark theme (optional - will use light logo if not set)'))
                                         ->image()
                                         ->maxSize(config('system.max_file_size')),
+
+                                    FileUpload::make('site_favicon')
+                                        ->label(__('Favicon'))
+                                        ->helperText(__('Browser tab icon (.ico, .png) - recommended 32x32 or 64x64 px'))
+                                        ->acceptedFileTypes(['image/x-icon', 'image/vnd.microsoft.icon', 'image/png', 'image/svg+xml'])
+                                        ->maxSize(512),
                                 ]),
 
                             Grid::make(1)
