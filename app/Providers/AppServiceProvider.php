@@ -175,42 +175,6 @@ class AppServiceProvider extends ServiceProvider
         // Configure application
         $this->configureApp();
 
-        // Sidebar blurred background from login images
-        Filament::registerRenderHook(
-            'head.end',
-            function (): string {
-                try {
-                    $settings = app(GeneralSettings::class);
-                    $backgrounds = $settings->login_backgrounds ?? [];
-                    if (empty($backgrounds)) return '';
-                    $bgImage = asset('storage/' . $backgrounds[array_rand($backgrounds)]);
-                } catch (\Exception $e) {
-                    return '';
-                }
-
-                return '<style>
-                    .filament-sidebar {
-                        position: relative !important;
-                    }
-                    .filament-sidebar::before {
-                        content: "";
-                        position: absolute;
-                        inset: -40px;
-                        background-image: url("' . $bgImage . '");
-                        background-size: cover;
-                        background-position: center;
-                        filter: blur(60px) saturate(1.3);
-                        z-index: 0;
-                        opacity: 0.12;
-                    }
-                    .filament-sidebar > * {
-                        position: relative;
-                        z-index: 1;
-                    }
-                </style>';
-            }
-        );
-
         // Register custom Filament theme
         Filament::serving(function () {
             Filament::registerTheme(
