@@ -226,13 +226,19 @@ class CodeBlockHelper
         }
 
         $prefixPattern = implode('|', array_map(fn ($p) => preg_quote($p, '/'), $prefixes));
-        $pattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
+
+        // Match [# QOS-92], [ QOS-92 ], [QOS-92] (bracket-wrapped, consume brackets)
+        $bracketPattern = '/\[\s*#?\s*(' . $prefixPattern . ')-(\d+)\s*\]/i';
+        // Match bare QOS-92 (word boundary)
+        $barePattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
 
         // Collect all codes first for batch DB lookup.
         $codes = [];
-        if (preg_match_all($pattern, $html, $allMatches, PREG_SET_ORDER)) {
-            foreach ($allMatches as $m) {
-                $codes[] = strtoupper($m[1]) . '-' . $m[2];
+        foreach ([$bracketPattern, $barePattern] as $p) {
+            if (preg_match_all($p, $html, $allMatches, PREG_SET_ORDER)) {
+                foreach ($allMatches as $m) {
+                    $codes[] = strtoupper($m[1]) . '-' . $m[2];
+                }
             }
         }
 
@@ -244,6 +250,12 @@ class CodeBlockHelper
             ->with(['status:id,name,color', 'responsible:id,name'])
             ->get()
             ->keyBy('code');
+
+        $replacer = function ($match) use ($tickets) {
+            $code = strtoupper($match[1]) . '-' . $match[2];
+            $ticket = $tickets->get($code);
+            return self::buildTicketBadge($code, $ticket);
+        };
 
         // Walk HTML: only replace inside text nodes (skip <a>, <code>, <pre>).
         $parts = preg_split('/(<[^>]+>)/i', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
@@ -267,11 +279,9 @@ class CodeBlockHelper
                 continue;
             }
 
-            $part = preg_replace_callback($pattern, function ($match) use ($tickets) {
-                $code = strtoupper($match[1]) . '-' . $match[2];
-                $ticket = $tickets->get($code);
-                return self::buildTicketBadge($code, $ticket);
-            }, $part);
+            // Bracket-wrapped first (strips [ ]), then bare codes
+            $part = preg_replace_callback($bracketPattern, $replacer, $part);
+            $part = preg_replace_callback($barePattern, $replacer, $part);
         }
 
         return implode('', $parts);
