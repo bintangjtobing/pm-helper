@@ -443,7 +443,7 @@
                     @endif
                     <div>
                         <div class="chat-msg-bubble">
-                            {!! \Illuminate\Support\Str::markdown($msg['content'], ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
+                            {!! \App\Helpers\CodeBlockHelper::linkTicketCodes(\Illuminate\Support\Str::markdown($msg['content'], ['html_input' => 'strip', 'allow_unsafe_links' => false])) !!}
                             @if(!empty($msg['metadata']))
                                 <div class="chat-msg-meta">
                                     @if(($msg['metadata']['type'] ?? '') === 'feedback_created')

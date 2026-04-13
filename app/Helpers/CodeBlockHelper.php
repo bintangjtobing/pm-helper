@@ -211,6 +211,92 @@ class CodeBlockHelper
     }
 
     /**
+     * Convert ticket codes (e.g. QOS-125, DCO-42) in rendered HTML into clickable badges.
+     * Call this AFTER Str::markdown() so we operate on HTML text nodes only.
+     */
+    public static function linkTicketCodes(string $html): string
+    {
+        $prefixes = \App\Models\Project::whereNotNull('ticket_prefix')
+            ->where('ticket_prefix', '!=', '')
+            ->pluck('ticket_prefix')
+            ->all();
+
+        if (empty($prefixes)) {
+            return $html;
+        }
+
+        $prefixPattern = implode('|', array_map(fn ($p) => preg_quote($p, '/'), $prefixes));
+        $pattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
+
+        // Collect all codes first for batch DB lookup.
+        $codes = [];
+        if (preg_match_all($pattern, $html, $allMatches, PREG_SET_ORDER)) {
+            foreach ($allMatches as $m) {
+                $codes[] = strtoupper($m[1]) . '-' . $m[2];
+            }
+        }
+
+        if (empty($codes)) {
+            return $html;
+        }
+
+        $tickets = \App\Models\Ticket::whereIn('code', array_unique($codes))
+            ->with(['status:id,name,color', 'responsible:id,name'])
+            ->get()
+            ->keyBy('code');
+
+        // Walk HTML: only replace inside text nodes (skip <a>, <code>, <pre>).
+        $parts = preg_split('/(<[^>]+>)/i', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $insideA = 0;
+        $insidePre = 0;
+        $insideCode = 0;
+
+        foreach ($parts as &$part) {
+            if (preg_match('/^<(a|\/a|pre|\/pre|code|\/code)\b/i', $part, $tag)) {
+                $t = strtolower($tag[1]);
+                if ($t === 'a') $insideA++;
+                elseif ($t === '/a') $insideA = max(0, $insideA - 1);
+                elseif ($t === 'pre') $insidePre++;
+                elseif ($t === '/pre') $insidePre = max(0, $insidePre - 1);
+                elseif ($t === 'code') $insideCode++;
+                elseif ($t === '/code') $insideCode = max(0, $insideCode - 1);
+                continue;
+            }
+
+            if (str_starts_with($part, '<') || $insideA > 0 || $insidePre > 0 || $insideCode > 0) {
+                continue;
+            }
+
+            $part = preg_replace_callback($pattern, function ($match) use ($tickets) {
+                $code = strtoupper($match[1]) . '-' . $match[2];
+                $ticket = $tickets->get($code);
+                return self::buildTicketBadge($code, $ticket);
+            }, $part);
+        }
+
+        return implode('', $parts);
+    }
+
+    protected static function buildTicketBadge(string $code, ?\App\Models\Ticket $ticket): string
+    {
+        $url = route('filament.resources.tickets.share', ['ticket' => $code]);
+        $escapedCode = e($code);
+
+        $style = 'display:inline-flex;align-items:center;gap:3px;padding:1px 8px;border-radius:10px;font-size:12px;font-weight:600;text-decoration:none;background:#1e3a5f;color:#60a5fa;border:1px solid #2563eb;';
+
+        if ($ticket) {
+            $title = e($ticket->name);
+            $status = e($ticket->status?->name ?? '');
+            $assignee = e($ticket->responsible?->name ?? '');
+            return '<a href="' . $url . '" target="_blank" style="' . $style . '" title="' . $title . ' [' . $status . '] ' . $assignee . '">'
+                . '<span style="opacity:0.6;font-weight:400;">#</span>' . $escapedCode . '</a>';
+        }
+
+        return '<a href="' . $url . '" target="_blank" style="' . $style . 'opacity:0.7;">'
+            . '<span style="opacity:0.6;font-weight:400;">#</span>' . $escapedCode . '</a>';
+    }
+
+    /**
      * Auto-link bare URLs in rendered HTML that are not already inside <a> or <code> tags.
      * Call this AFTER Str::markdown() processing.
      */

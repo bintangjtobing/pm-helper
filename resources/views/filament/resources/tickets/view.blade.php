@@ -410,7 +410,7 @@
                     @endif
                 </div>
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    {!! \App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($comment->content)) !!}
+                    {!! \App\Helpers\CodeBlockHelper::linkTicketCodes(\App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($comment->content))) !!}
                 </div>
             </div>
             @endforeach
