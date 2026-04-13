@@ -124,6 +124,28 @@
                 </div>
             </div>
 
+            @php
+                $qaActivity = \App\Models\TicketActivity::where('ticket_id', $record->id)
+                    ->whereHas('newStatus', fn ($q) => $q->whereIn('name', ['QA Passed', 'QA Failed', 'Retest']))
+                    ->with(['user', 'newStatus'])
+                    ->latest()
+                    ->first();
+            @endphp
+            @if($qaActivity && $qaActivity->user)
+            <div class="flex flex-col w-full gap-1 pt-3">
+                <span class="text-sm font-medium text-gray-500">
+                    {{ __('QA Reviewer') }}
+                </span>
+                <div class="flex items-center w-full gap-1 text-gray-500">
+                    <x-user-avatar :user="$qaActivity->user" />
+                    {{ $qaActivity->user->name }}
+                </div>
+                <span class="text-xs text-gray-400">
+                    {{ $qaActivity->newStatus->name }} &middot; {{ $qaActivity->created_at->diffForHumans() }}
+                </span>
+            </div>
+            @endif
+
             @if($record->project->type === 'scrum')
             <div class="flex flex-col w-full gap-1 pt-3">
                 <span class="text-sm font-medium text-gray-500">
