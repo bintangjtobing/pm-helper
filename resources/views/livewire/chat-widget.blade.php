@@ -55,9 +55,9 @@
             bottom: 96px;
             right: 24px;
             z-index: 41;
-            width: 400px;
+            width: 480px;
             max-width: calc(100vw - 32px);
-            height: 560px;
+            height: 620px;
             max-height: calc(100vh - 120px);
             background: #111827;
             border-radius: 16px;
@@ -189,7 +189,7 @@
         .chat-msg {
             display: flex;
             gap: 8px;
-            max-width: 85%;
+            max-width: 90%;
         }
         .chat-msg-user {
             align-self: flex-end;
@@ -208,8 +208,8 @@
         .chat-msg-bubble {
             padding: 10px 14px;
             border-radius: 12px;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 14px;
+            line-height: 1.6;
             word-break: break-word;
         }
         .chat-msg-user .chat-msg-bubble {
