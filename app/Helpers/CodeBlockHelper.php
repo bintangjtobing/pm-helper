@@ -276,17 +276,18 @@ class CodeBlockHelper
 
         $prefixPattern = implode('|', array_map(fn ($p) => preg_quote($p, '/'), $prefixes));
 
-        // Match [# QOS-92], [ QOS-92 ], [QOS-92] (bracket-wrapped, consume brackets)
-        $bracketPattern = '/\[\s*#?\s*(' . $prefixPattern . ')-(\d+)\s*\]/i';
-        // Match bare QOS-92 (word boundary)
-        $barePattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
+        // Single combined pattern: bracket-wrapped OR bare (bracket form takes priority via alternation order).
+        // Group 1,2 = bracket form; Group 3,4 = bare form.
+        $pattern = '/\[\s*#?\s*(' . $prefixPattern . ')-(\d+)\s*\]|\b(' . $prefixPattern . ')-(\d+)\b/i';
 
-        // Collect all codes first for batch DB lookup.
+        // Collect all codes for batch DB lookup.
         $codes = [];
-        foreach ([$bracketPattern, $barePattern] as $p) {
-            if (preg_match_all($p, $html, $allMatches, PREG_SET_ORDER)) {
-                foreach ($allMatches as $m) {
-                    $codes[] = strtoupper($m[1]) . '-' . $m[2];
+        if (preg_match_all($pattern, $html, $allMatches, PREG_SET_ORDER)) {
+            foreach ($allMatches as $m) {
+                $prefix = ($m[1] !== '' ? $m[1] : ($m[3] ?? ''));
+                $number = ($m[2] !== '' ? $m[2] : ($m[4] ?? ''));
+                if ($prefix && $number) {
+                    $codes[] = strtoupper($prefix) . '-' . $number;
                 }
             }
         }
@@ -301,7 +302,9 @@ class CodeBlockHelper
             ->keyBy('code');
 
         $replacer = function ($match) use ($tickets) {
-            $code = strtoupper($match[1]) . '-' . $match[2];
+            $prefix = ($match[1] !== '' ? $match[1] : ($match[3] ?? ''));
+            $number = ($match[2] !== '' ? $match[2] : ($match[4] ?? ''));
+            $code = strtoupper($prefix) . '-' . $number;
             $ticket = $tickets->get($code);
             return self::buildTicketBadge($code, $ticket);
         };
@@ -328,9 +331,7 @@ class CodeBlockHelper
                 continue;
             }
 
-            // Bracket-wrapped first (strips [ ]), then bare codes
-            $part = preg_replace_callback($bracketPattern, $replacer, $part);
-            $part = preg_replace_callback($barePattern, $replacer, $part);
+            $part = preg_replace_callback($pattern, $replacer, $part);
         }
 
         return implode('', $parts);
