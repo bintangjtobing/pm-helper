@@ -9,7 +9,7 @@
 
                 {{-- Project Header/Cover --}}
                 @php
-                    $coverUrl = $project->getFirstMediaUrl('cover');
+                    $coverUrl = $project->getFirstMediaUrl('cover') ?: $project->getFirstMediaUrl('default');
                     $gradients = [
                         'linear-gradient(135deg, #3b82f6, #9333ea)',
                         'linear-gradient(135deg, #10b981, #0d9488)',

@@ -120,8 +120,8 @@ class Project extends Model implements HasMedia
     {
         return new Attribute(
             get: fn() => $this->getFirstMediaUrl('cover')
-                ?:
-                'https://ui-avatars.com/api/?background=3f84f3&color=ffffff&name=' . urlencode($this->name)
+                ?: $this->getFirstMediaUrl('default')
+                ?: 'https://ui-avatars.com/api/?background=3f84f3&color=ffffff&name=' . urlencode($this->name)
         );
     }
 
