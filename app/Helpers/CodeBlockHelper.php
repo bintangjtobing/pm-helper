@@ -20,6 +20,9 @@ class CodeBlockHelper
             return '';
         }
 
+        // Normalize literal \r\n sequences (pasted/API content) to actual newlines
+        $content = str_replace(['\r\n', '\n', '\r'], "\n", $content);
+
         $processed = self::autoDetectCodeBlocks($content);
         $html = \Illuminate\Support\Str::markdown($processed, [
             'html_input' => 'allow',
