@@ -20,7 +20,12 @@ class CodeBlockHelper
             return '';
         }
 
-        // Normalize literal \r\n sequences (pasted/API content) to actual newlines
+        // Content from RichEditor (Trix) is already HTML — pass through as-is.
+        if (self::isHtml($content)) {
+            return self::autoLinkUrls($content);
+        }
+
+        // Plain text: normalize literal \r\n, detect code blocks, convert markdown.
         $content = str_replace(['\r\n', '\n', '\r'], "\n", $content);
 
         $processed = self::autoDetectCodeBlocks($content);
@@ -29,6 +34,14 @@ class CodeBlockHelper
             'allow_unsafe_links' => false,
         ]);
         return self::autoLinkUrls($html);
+    }
+
+    /**
+     * Detect if content is already HTML (from RichEditor/Trix) vs plain text.
+     */
+    protected static function isHtml(string $content): bool
+    {
+        return (bool) preg_match('/<(p|div|br|ul|ol|li|h[1-6]|blockquote|figure|table|strong|em)\b[^>]*>/i', $content);
     }
 
     /**
