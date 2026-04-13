@@ -20,9 +20,10 @@ class CodeBlockHelper
             return '';
         }
 
-        // Content from RichEditor (Trix) is already HTML — pass through as-is.
+        // Content from RichEditor (Trix) is already HTML — convert any
+        // inline markdown the user typed manually (e.g. **bold**) then pass through.
         if (self::isHtml($content)) {
-            return self::autoLinkUrls($content);
+            return self::autoLinkUrls(self::convertInlineMarkdown($content));
         }
 
         // Plain text: normalize literal \r\n, detect code blocks, convert markdown.
@@ -41,7 +42,42 @@ class CodeBlockHelper
      */
     protected static function isHtml(string $content): bool
     {
-        return (bool) preg_match('/<(p|div|br|ul|ol|li|h[1-6]|blockquote|figure|table|strong|em)\b[^>]*>/i', $content);
+        return (bool) preg_match('/<(p|div|br|ul|ol|li|h[1-6]|blockquote|figure|table)\b[^>]*>/i', $content);
+    }
+
+    /**
+     * Convert inline markdown patterns typed manually inside HTML content.
+     * Handles **bold**, *italic*, `code` — only in text nodes, not inside tags.
+     */
+    protected static function convertInlineMarkdown(string $html): string
+    {
+        $parts = preg_split('/(<[^>]+>)/i', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $insideCode = 0;
+        $insidePre = 0;
+
+        foreach ($parts as &$part) {
+            if (preg_match('/^<(code|\/code|pre|\/pre)\b/i', $part, $tag)) {
+                $t = strtolower($tag[1]);
+                if ($t === 'code') $insideCode++;
+                elseif ($t === '/code') $insideCode = max(0, $insideCode - 1);
+                elseif ($t === 'pre') $insidePre++;
+                elseif ($t === '/pre') $insidePre = max(0, $insidePre - 1);
+                continue;
+            }
+
+            if (str_starts_with($part, '<') || $insideCode > 0 || $insidePre > 0) {
+                continue;
+            }
+
+            // **bold** → <strong>bold</strong>
+            $part = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $part);
+            // *italic* → <em>italic</em>
+            $part = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/', '<em>$1</em>', $part);
+            // `code` → <code>code</code>
+            $part = preg_replace('/`([^`]+)`/', '<code style="background:rgba(0,0,0,0.2);padding:1px 5px;border-radius:4px;font-size:0.9em;">$1</code>', $part);
+        }
+
+        return implode('', $parts);
     }
 
     /**
