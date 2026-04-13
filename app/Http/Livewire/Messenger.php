@@ -114,6 +114,7 @@ class Messenger extends Component
         if ($this->isOpen) {
             $this->loadConversations();
         }
+        $this->dispatchBrowserEvent('messenger:reset-menus');
     }
 
     public function openConversation(int $conversationId): void
@@ -132,6 +133,7 @@ class Messenger extends Component
 
         $this->loadMessages(initial: true);
         $this->markActiveConversationAsRead();
+        $this->dispatchBrowserEvent('messenger:reset-menus');
     }
 
     public function closeConversation(): void
@@ -143,6 +145,7 @@ class Messenger extends Component
         $this->hasMoreMessages = false;
         $this->resetComposer();
         $this->loadConversations();
+        $this->dispatchBrowserEvent('messenger:reset-menus');
     }
 
     public function backToList(): void

@@ -913,7 +913,8 @@
         }
     </style>
 
-    <div x-data="messengerWidget()" x-init="init()">
+    <div x-data="messengerWidget()" x-init="init()"
+         @messenger:reset-menus.window="showStatusMenu = false; showLeaveForm = false">
 
         {{-- ────────────────────────────────────────────────────────────────
              COLLAPSED STATE — bottom bar acting as launcher
