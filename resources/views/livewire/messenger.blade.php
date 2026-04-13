@@ -631,6 +631,11 @@
             border-top: 1px solid #1f2937;
             background: #0d1117;
             padding: 10px 12px;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        .msgr-composer-dragover {
+            background: rgba(59, 130, 246, 0.08);
+            border-top-color: #3b82f6;
         }
         .msgr-composer-reply-bar {
             background: rgba(59,130,246,0.1);
@@ -1266,7 +1271,16 @@
                         </div>
 
                         {{-- Composer --}}
-                        <div class="msgr-composer">
+                        <div class="msgr-composer"
+                             x-on:dragover.prevent="$el.classList.add('msgr-composer-dragover')"
+                             x-on:dragleave.prevent="$el.classList.remove('msgr-composer-dragover')"
+                             x-on:drop.prevent="
+                                 $el.classList.remove('msgr-composer-dragover');
+                                 const dt = $event.dataTransfer;
+                                 if (!dt || !dt.files.length) return;
+                                 const input = $el.querySelector('.msgr-hidden-input');
+                                 if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                             ">
                             @if($replyToMessageId)
                                 @php
                                     $replyMsg = collect($messages)->firstWhere('id', $replyToMessageId);
@@ -1283,7 +1297,11 @@
                                 <div class="msgr-composer-files">
                                     @foreach($files as $idx => $file)
                                         <div class="msgr-composer-file-chip">
+                                            @if(str_starts_with($file->getMimeType(), 'image/'))
+                                                <img src="{{ $file->temporaryUrl() }}" style="width:24px;height:24px;object-fit:cover;border-radius:4px;margin-right:4px;">
+                                            @endif
                                             <span>{{ $file->getClientOriginalName() }}</span>
+                                            <span style="font-size:10px;color:#6b7280;margin-left:4px;">({{ number_format($file->getSize() / 1024, 0) }}KB)</span>
                                         </div>
                                     @endforeach
                                 </div>
@@ -1299,16 +1317,31 @@
                                     placeholder="Write a message… (Enter to send)"
                                     rows="1"
                                     x-on:input="onTyping()"
-                                    x-on:keydown.enter.prevent="$el.form.requestSubmit()"></textarea>
+                                    x-on:keydown.enter.prevent="$el.form.requestSubmit()"
+                                    x-on:paste="
+                                        const items = $event.clipboardData?.items;
+                                        if (!items) return;
+                                        for (const item of items) {
+                                            if (item.type.startsWith('image/')) {
+                                                $event.preventDefault();
+                                                const file = item.getAsFile();
+                                                const dt = new DataTransfer();
+                                                dt.items.add(file);
+                                                const input = $el.closest('.msgr-composer').querySelector('.msgr-hidden-input');
+                                                if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                                                break;
+                                            }
+                                        }
+                                    "></textarea>
 
                                 <div class="msgr-composer-actions">
-                                    <label class="msgr-icon-btn" title="Attach file">
+                                    <label class="msgr-icon-btn" title="Attach file (images: png, jpg, max 5MB)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
-                                        <input type="file" wire:model="files" multiple class="msgr-hidden-input">
+                                        <input type="file" wire:model="files" multiple accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" class="msgr-hidden-input">
                                     </label>
-                                    <button type="submit" class="msgr-send-btn" wire:loading.attr="disabled" wire:target="sendMessage" title="Send">
-                                        <svg wire:loading.remove wire:target="sendMessage" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
-                                        <svg wire:loading wire:target="sendMessage" class="msgr-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    <button type="submit" class="msgr-send-btn" wire:loading.attr="disabled" wire:target="sendMessage,files" title="Send">
+                                        <svg wire:loading.remove wire:target="sendMessage,files" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                                        <svg wire:loading wire:target="sendMessage,files" class="msgr-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     </button>
                                 </div>
                             </form>

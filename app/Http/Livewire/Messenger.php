@@ -49,7 +49,7 @@ class Messenger extends Component
     // ──────────────────────────────────────────────────────────────────────
 
     public string $newMessage = '';
-    public array $files = [];
+    public $files = [];
     public ?int $replyToMessageId = null;
     public ?int $editingMessageId = null;
     public string $editingBody = '';
@@ -402,15 +402,15 @@ class Messenger extends Component
             return;
         }
 
-        // Per-file validation: image (image/*) max 10 MB, others max 30 MB.
+        // Per-file validation: image max 5 MB, others max 30 MB.
         foreach ($files as $file) {
             $mime = $file->getMimeType() ?: 'application/octet-stream';
             $size = $file->getSize() ?: 0;
             $isImage = str_starts_with($mime, 'image/');
-            $maxBytes = $isImage ? MessengerService::MAX_IMAGE_SIZE : MessengerService::MAX_FILE_SIZE;
+            $maxBytes = $isImage ? (5 * 1024 * 1024) : MessengerService::MAX_FILE_SIZE;
             if ($size > $maxBytes) {
                 $this->addError('files', $isImage
-                    ? 'Image attachment exceeds 10 MB.'
+                    ? 'Image attachment exceeds 5 MB.'
                     : 'File attachment exceeds 30 MB.');
                 return;
             }
