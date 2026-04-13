@@ -8,12 +8,25 @@
                 class="overflow-hidden transition-all duration-200 bg-white border border-gray-200 rounded-lg shadow-sm cursor-pointer group hover:shadow-md hover:border-blue-300">
 
                 {{-- Project Header/Cover --}}
-                <div class="relative h-32 overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600">
-                    @php($coverUrl = $project->getFirstMediaUrl('cover'))
+                @php
+                    $coverUrl = $project->getFirstMediaUrl('cover');
+                    $gradients = [
+                        'from-blue-500 to-purple-600',
+                        'from-emerald-500 to-teal-600',
+                        'from-orange-500 to-rose-600',
+                        'from-indigo-500 to-blue-600',
+                        'from-pink-500 to-violet-600',
+                        'from-cyan-500 to-blue-600',
+                    ];
+                    $gradient = $gradients[$project->id % count($gradients)];
+                @endphp
+                <div class="relative h-36 overflow-hidden {{ $coverUrl ? '' : 'bg-gradient-to-br ' . $gradient }}">
                     @if($coverUrl)
                     <img src="{{ $coverUrl }}" alt="{{ $project->name }}" class="object-cover w-full h-full">
+                    <div class="absolute inset-0 bg-black bg-opacity-10"></div>
+                    @else
+                    <div class="absolute inset-0 bg-black bg-opacity-10"></div>
                     @endif
-                    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
 
                     {{-- Project Type Badge --}}
                     <div class="absolute top-3 right-3">
