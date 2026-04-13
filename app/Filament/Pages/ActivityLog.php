@@ -26,6 +26,9 @@ class ActivityLog extends Page
     public ?string $filterDateFrom = null;
     public ?string $filterDateTo = null;
 
+    // View mode
+    public string $viewMode = 'timeline'; // 'timeline' | 'tree'
+
     // Data
     public int $perPage = 50;
     public int $currentPage = 1;
@@ -157,5 +160,38 @@ class ActivityLog extends Page
     public function loadMore(): void
     {
         $this->currentPage++;
+    }
+
+    public function setViewMode(string $mode): void
+    {
+        $this->viewMode = $mode;
+    }
+
+    /**
+     * Group activities as: Project → Ticket → Activities (for tree view)
+     */
+    public function getTreeDataProperty(): Collection
+    {
+        return $this->activities
+            ->filter(fn ($a) => $a->ticket && $a->ticket->project)
+            ->groupBy(fn ($a) => $a->ticket->project->id)
+            ->map(function ($projectActivities) {
+                $project = $projectActivities->first()->ticket->project;
+                $tickets = $projectActivities->groupBy('ticket_id')->map(function ($ticketActivities) {
+                    $ticket = $ticketActivities->first()->ticket;
+                    return [
+                        'ticket' => $ticket,
+                        'activities' => $ticketActivities->sortByDesc('created_at')->values(),
+                        'users' => $ticketActivities->pluck('user')->unique('id')->values(),
+                    ];
+                })->sortByDesc(fn ($t) => $t['activities']->first()->created_at)->values();
+
+                return [
+                    'project' => $project,
+                    'tickets' => $tickets,
+                    'total_changes' => $projectActivities->count(),
+                    'unique_users' => $projectActivities->pluck('user_id')->unique()->count(),
+                ];
+            })->sortByDesc('total_changes')->values();
     }
 }
