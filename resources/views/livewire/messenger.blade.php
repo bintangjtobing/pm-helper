@@ -624,6 +624,62 @@
             font-size: 10px;
             opacity: 0.7;
         }
+        .msgr-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+            backdrop-filter: blur(4px);
+        }
+        .msgr-lightbox img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            object-fit: contain;
+        }
+        .msgr-lightbox-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .msgr-lightbox-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .msgr-lightbox-download {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .msgr-lightbox-download:hover {
+            background: rgba(255,255,255,0.3);
+        }
 
         /* Composer */
         .msgr-composer {
@@ -919,7 +975,21 @@
     </style>
 
     <div x-data="messengerWidget()" x-init="init()"
-         @messenger:reset-menus.window="showStatusMenu = false; showLeaveForm = false">
+         @messenger:reset-menus.window="showStatusMenu = false; showLeaveForm = false"
+         @msgr-lightbox-open.window="lightboxSrc = $event.detail.src; lightboxName = $event.detail.name; lightboxDownload = $event.detail.download"
+         @keydown.escape.window="lightboxSrc = null">
+
+        {{-- Image Lightbox --}}
+        <template x-if="lightboxSrc">
+            <div class="msgr-lightbox" x-on:click="lightboxSrc = null" x-transition.opacity>
+                <img x-bind:src="lightboxSrc" x-bind:alt="lightboxName" x-on:click.stop>
+                <button type="button" class="msgr-lightbox-close" x-on:click="lightboxSrc = null">&times;</button>
+                <a x-bind:href="lightboxDownload" class="msgr-lightbox-download" x-on:click.stop>
+                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download
+                </a>
+            </div>
+        </template>
 
         {{-- ────────────────────────────────────────────────────────────────
              COLLAPSED STATE — bottom bar acting as launcher
@@ -1182,9 +1252,9 @@
                                                 <div class="msgr-attachments">
                                                     @foreach($m['attachments'] as $att)
                                                         @if($att['is_image'])
-                                                            <a href="{{ $att['download_url'] }}" target="_blank">
-                                                                <img src="{{ $att['preview_url'] }}" alt="{{ $att['filename_original'] }}" class="msgr-attachment-image" loading="lazy">
-                                                            </a>
+                                                            <img src="{{ $att['preview_url'] }}" alt="{{ $att['filename_original'] }}" class="msgr-attachment-image" loading="lazy"
+                                                                 x-on:click.stop="$dispatch('msgr-lightbox-open', { src: '{{ $att['preview_url'] }}', name: '{{ e($att['filename_original']) }}', download: '{{ $att['download_url'] }}' })"
+                                                            >
                                                         @else
                                                             <a href="{{ $att['download_url'] }}" target="_blank" class="msgr-attachment-file">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
@@ -1397,6 +1467,11 @@
                 // Status menu state
                 showStatusMenu: false,
                 showLeaveForm: false,
+
+                // Lightbox state
+                lightboxSrc: null,
+                lightboxName: '',
+                lightboxDownload: '',
                 statusMessage: initialMyStatus.status_message || '',
                 leaveFrom: initialMyStatus.on_leave_from || todayStr,
                 leaveUntil: initialMyStatus.on_leave_until || tomorrowStr,
