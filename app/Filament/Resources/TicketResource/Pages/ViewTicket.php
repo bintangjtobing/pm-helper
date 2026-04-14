@@ -628,9 +628,20 @@ class ViewTicket extends ViewRecord implements HasForms
         // Remove current user, deduplicate
         $notifyIds = $notifyIds->unique()->reject(fn ($id) => (int) $id === (int) auth()->id());
 
+        $loadedDiscussion = $discussion->load(['user', 'project']);
+        $commentAuthorId = (int) $comment->user_id;
+        $raisedByName = auth()->user()->name;
+
         $users = User::whereIn('id', $notifyIds)->get();
         foreach ($users as $user) {
-            $user->notify(new \App\Notifications\DiscussionCreated($discussion->load(['user', 'project'])));
+            if ((int) $user->id === $commentAuthorId) {
+                // Special notification for the comment author.
+                $user->notify(new \App\Notifications\CommentRaisedToDiscussion(
+                    $loadedDiscussion, $raisedByName, $ticket->code
+                ));
+            } else {
+                $user->notify(new \App\Notifications\DiscussionCreated($loadedDiscussion));
+            }
         }
 
         $this->notify('success', __('Comment raised to open discussion'));
