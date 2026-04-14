@@ -14,7 +14,7 @@ class ProjectAuditOverview extends BaseWidget
     protected function getCards(): array
     {
         // Use more efficient query to get projects with basic ticket counts
-        $completedStatusNames = ['Released', 'Approved', 'QA Passed', 'Ready for Release'];
+        $completedStatusNames = ProjectAuditService::COMPLETED_STATUSES;
 
         $projects = Project::where(function ($query) {
             return $query->where('owner_id', auth()->user()->id)

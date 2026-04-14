@@ -89,9 +89,19 @@ class ProjectAuditResource extends Resource
                         try {
                             $service = new ProjectAuditService($record);
                             $rate = $service->getCompletionRate();
-                            $color = $rate >= 80 ? 'text-green-600' : ($rate >= 60 ? 'text-yellow-600' : 'text-red-600');
+                            $completed = $service->getCompletedTicketsCount();
+                            $total = $service->getTotalTicketsCount();
+                            $barColor = $rate >= 80 ? '#22c55e' : ($rate >= 60 ? '#eab308' : '#ef4444');
+                            $textColor = $rate >= 80 ? 'text-green-600 dark:text-green-400' : ($rate >= 60 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400');
 
-                            return "<span class='{$color} font-medium'>{$rate}%</span>";
+                            return '<div class="space-y-1">'
+                                . '<div class="flex items-center justify-between">'
+                                . '<span class="text-sm font-semibold ' . $textColor . '">' . $rate . '%</span>'
+                                . '<span class="text-xs text-gray-500 dark:text-gray-400">' . $completed . '/' . $total . '</span>'
+                                . '</div>'
+                                . '<div class="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">'
+                                . '<div class="h-full rounded-full" style="width:' . min($rate, 100) . '%;background:' . $barColor . '"></div>'
+                                . '</div></div>';
                         } catch (\Exception $e) {
                             return '<span class="text-gray-500">-</span>';
                         }
@@ -105,10 +115,11 @@ class ProjectAuditResource extends Resource
                             $service = new ProjectAuditService($record);
                             $days = $service->getAverageCycleTime();
 
-                            if ($days === 0) return '-';
+                            if ($days == 0) return '<span class="text-gray-400 dark:text-gray-500">-</span>';
 
-                            $color = $days <= 7 ? 'text-green-600' : ($days <= 14 ? 'text-yellow-600' : 'text-red-600');
-                            return "<span class='{$color}'>{$days} days</span>";
+                            $color = $days <= 7 ? 'text-green-600 dark:text-green-400' : ($days <= 14 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400');
+                            $label = $days == 1 ? '1 day' : $days . ' days';
+                            return "<span class='{$color} font-medium'>{$label}</span>";
                         } catch (\Exception $e) {
                             return '<span class="text-gray-500">-</span>';
                         }
@@ -122,11 +133,19 @@ class ProjectAuditResource extends Resource
                             $service = new ProjectAuditService($record);
                             $bottleneck = $service->getMainBottleneck();
 
-                            return $bottleneck['status'] ?? '-';
+                            if (!$bottleneck['status']) return '<span class="text-gray-400 dark:text-gray-500">-</span>';
+
+                            $color = e($bottleneck['color'] ?? '#6B7280');
+                            return '<span class="inline-flex items-center gap-1.5">'
+                                . '<span class="w-2 h-2 rounded-full flex-shrink-0" style="background:' . $color . '"></span>'
+                                . '<span class="font-medium">' . e($bottleneck['status']) . '</span>'
+                                . '<span class="text-xs text-gray-400 dark:text-gray-500">(' . $bottleneck['count'] . ')</span>'
+                                . '</span>';
                         } catch (\Exception $e) {
                             return '-';
                         }
-                    }),
+                    })
+                    ->html(),
             ])
             ->filters([
                 Filters\SelectFilter::make('health_level')

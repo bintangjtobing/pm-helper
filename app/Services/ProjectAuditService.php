@@ -8,6 +8,8 @@ use Illuminate\Support\Collection;
 
 class ProjectAuditService
 {
+    public const COMPLETED_STATUSES = ['Released', 'Approved', 'QA Passed', 'Ready for Release'];
+
     private Project $project;
 
     public function __construct(Project $project)
@@ -45,14 +47,14 @@ class ProjectAuditService
 
                 $completedTickets = $this->project->tickets()
                     ->whereHas('status', function ($query) {
-                        $query->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                        $query->whereIn('name', self::COMPLETED_STATUSES);
                     })
                     ->count();
 
                 $overdueTickets = $this->project->tickets()
                     ->where('due_date', '<', now())
                     ->whereHas('status', function ($query) {
-                        $query->whereNotIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                        $query->whereNotIn('name', self::COMPLETED_STATUSES);
                     })
                     ->count();
 
@@ -95,7 +97,7 @@ class ProjectAuditService
         // Count completed tickets efficiently
         $completedTickets = $this->project->tickets()
             ->whereHas('status', function ($query) {
-                $query->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                $query->whereIn('name', self::COMPLETED_STATUSES);
             })
             ->count();
 
@@ -103,7 +105,7 @@ class ProjectAuditService
         $overdueTickets = $this->project->tickets()
             ->where('due_date', '<', now())
             ->whereHas('status', function ($query) {
-                $query->whereNotIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                $query->whereNotIn('name', self::COMPLETED_STATUSES);
             })
             ->count();
 
@@ -160,7 +162,7 @@ class ProjectAuditService
             // Find bottleneck (status with most tickets that aren't completed)
             $bottleneck = collect($statusDistribution)
                 ->filter(function ($status) {
-                    return !in_array($status['name'], ['Done', 'Completed', 'Closed', 'Resolved']);
+                    return !in_array($status['name'], self::COMPLETED_STATUSES);
                 })
                 ->sortByDesc('count')
                 ->first();
@@ -231,7 +233,7 @@ class ProjectAuditService
             // Count on-time vs late completions efficiently
             $completedTickets = $this->project->tickets()
                 ->whereHas('status', function ($query) {
-                    $query->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereIn('name', self::COMPLETED_STATUSES);
                 })
                 ->whereNotNull('due_date')
                 ->select('id', 'due_date', 'updated_at')
@@ -275,7 +277,7 @@ class ProjectAuditService
             $overdueTickets = $this->project->tickets()
                 ->where('due_date', '<', now())
                 ->whereHas('status', function ($query) {
-                    $query->whereNotIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereNotIn('name', self::COMPLETED_STATUSES);
                 })
                 ->with(['priority:id,name,color', 'responsible:id,name,avatar_url'])
                 ->select('id', 'priority_id', 'responsible_id')
@@ -337,14 +339,14 @@ class ProjectAuditService
 
             $completedTickets = $this->project->tickets()
                 ->whereHas('status', function ($query) {
-                    $query->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereIn('name', self::COMPLETED_STATUSES);
                 })
                 ->count();
 
             $overdueTickets = $this->project->tickets()
                 ->where('due_date', '<', now())
                 ->whereHas('status', function ($query) {
-                    $query->whereNotIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereNotIn('name', self::COMPLETED_STATUSES);
                 })
                 ->count();
 
@@ -390,7 +392,7 @@ class ProjectAuditService
             // Simplified cycle time calculation to avoid memory issues
             $completedTickets = $this->project->tickets()
                 ->whereHas('status', function ($query) {
-                    $query->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereIn('name', self::COMPLETED_STATUSES);
                 })
                 ->whereNotNull('updated_at')
                 ->select('created_at', 'updated_at')
@@ -401,17 +403,17 @@ class ProjectAuditService
                 return 0;
             }
 
-            $totalHours = 0;
+            $totalDays = 0;
             $validTickets = 0;
 
             foreach ($completedTickets as $ticket) {
                 if ($ticket->created_at && $ticket->updated_at) {
-                    $totalHours += $ticket->created_at->diffInHours($ticket->updated_at);
+                    $totalDays += $ticket->created_at->diffInDays($ticket->updated_at);
                     $validTickets++;
                 }
             }
 
-            return $validTickets > 0 ? round($totalHours / $validTickets, 2) : 0;
+            return $validTickets > 0 ? round($totalDays / $validTickets, 1) : 0;
         } catch (\Exception $e) {
             \Log::error('Average cycle time calculation failed: ' . $e->getMessage());
             return 0;
@@ -484,7 +486,7 @@ class ProjectAuditService
             return $this->project->tickets()
                 ->where('due_date', '<', now())
                 ->whereHas('status', function ($query) {
-                    $query->whereNotIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereNotIn('name', self::COMPLETED_STATUSES);
                 })
                 ->count();
         } catch (\Exception $e) {
@@ -500,7 +502,7 @@ class ProjectAuditService
         try {
             return $this->project->tickets()
                 ->whereHas('status', function ($query) {
-                    $query->whereIn('name', ['Done', 'Completed', 'Closed', 'Resolved']);
+                    $query->whereIn('name', self::COMPLETED_STATUSES);
                 })
                 ->count();
         } catch (\Exception $e) {
@@ -584,7 +586,7 @@ class ProjectAuditService
                 try {
                     $status = \App\Models\TicketStatus::find($item->status_id);
 
-                    if ($status && !in_array($status->name, ['Done', 'Completed', 'Closed', 'Resolved'])) {
+                    if ($status && !in_array($status->name, self::COMPLETED_STATUSES)) {
                         return [
                             'status' => $status->name,
                             'count' => $item->count,
