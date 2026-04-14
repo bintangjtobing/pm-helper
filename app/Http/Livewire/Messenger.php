@@ -345,6 +345,7 @@ class Messenger extends Component
             'is_self'               => $isSelf,
             'body'                  => $deletedForEveryone ? null : $m->body,
             'rendered_body'         => $deletedForEveryone ? null : $this->renderTicketBadges($m->body),
+            'link_preview'          => $deletedForEveryone ? null : $m->link_preview,
             'reply_to'              => $m->replyTo ? [
                 'id'          => (int) $m->replyTo->id,
                 'sender_name' => $m->replyTo->sender?->name,
@@ -808,59 +809,58 @@ class Messenger extends Component
         // Collect all known project prefixes (cached per request).
         $prefixes = $this->getProjectPrefixes();
 
-        if (empty($prefixes)) {
-            return $escaped;
-        }
+        if (! empty($prefixes)) {
+            // Build regex: match PREFIX-NUMBER patterns (case-insensitive).
+            $prefixPattern = implode('|', array_map(fn ($p) => preg_quote($p, '/'), $prefixes));
+            $pattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
 
-        // Build regex: match PREFIX-NUMBER patterns (case-insensitive).
-        $prefixPattern = implode('|', array_map(fn ($p) => preg_quote($p, '/'), $prefixes));
-        $pattern = '/\b(' . $prefixPattern . ')-(\d+)\b/i';
+            // Also match #NUMBER shorthand.
+            $hashPattern = '/#(\d+)\b/';
 
-        // Also match #NUMBER shorthand.
-        $hashPattern = '/#(\d+)\b/';
+            // For #NUMBER: resolve project if there's only one project, or fallback
+            // to the single prefix if all prefixes are the same.
+            $singleProject = count($prefixes) === 1 ? $prefixes[0] : null;
 
-        // For #NUMBER: resolve project if there's only one project, or fallback
-        // to the single prefix if all prefixes are the same.
-        $singleProject = count($prefixes) === 1 ? $prefixes[0] : null;
+            // First pass: collect all ticket codes we need to look up.
+            $codes = [];
+            if (preg_match_all($pattern, $escaped, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $match) {
+                    $codes[] = strtoupper($match[1]) . '-' . $match[2];
+                }
+            }
+            if ($singleProject && preg_match_all($hashPattern, $escaped, $hashMatches, PREG_SET_ORDER)) {
+                foreach ($hashMatches as $match) {
+                    $codes[] = strtoupper($singleProject) . '-' . $match[1];
+                }
+            }
 
-        // First pass: collect all ticket codes we need to look up.
-        $codes = [];
-        if (preg_match_all($pattern, $escaped, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $codes[] = strtoupper($match[1]) . '-' . $match[2];
+            if (! empty($codes)) {
+                // Batch-load tickets that exist (for tooltip data).
+                $tickets = Ticket::whereIn('code', array_unique($codes))
+                    ->with(['status:id,name,color', 'responsible:id,name', 'project:id,ticket_prefix'])
+                    ->get()
+                    ->keyBy('code');
+
+                // Replace PREFIX-NUMBER patterns — always link, even if ticket doesn't exist yet.
+                $escaped = preg_replace_callback($pattern, function ($match) use ($tickets) {
+                    $code = strtoupper($match[1]) . '-' . $match[2];
+                    $ticket = $tickets->get($code);
+                    return $this->buildTicketBadgeHtml($code, $ticket);
+                }, $escaped);
+
+                // Replace #NUMBER patterns (only if single project).
+                if ($singleProject) {
+                    $escaped = preg_replace_callback($hashPattern, function ($match) use ($tickets, $singleProject) {
+                        $code = strtoupper($singleProject) . '-' . $match[1];
+                        $ticket = $tickets->get($code);
+                        return $this->buildTicketBadgeHtml($code, $ticket);
+                    }, $escaped);
+                }
             }
         }
-        if ($singleProject && preg_match_all($hashPattern, $escaped, $hashMatches, PREG_SET_ORDER)) {
-            foreach ($hashMatches as $match) {
-                $codes[] = strtoupper($singleProject) . '-' . $match[1];
-            }
-        }
 
-        if (empty($codes)) {
-            return $escaped;
-        }
-
-        // Batch-load tickets that exist (for tooltip data).
-        $tickets = Ticket::whereIn('code', array_unique($codes))
-            ->with(['status:id,name,color', 'responsible:id,name', 'project:id,ticket_prefix'])
-            ->get()
-            ->keyBy('code');
-
-        // Replace PREFIX-NUMBER patterns — always link, even if ticket doesn't exist yet.
-        $escaped = preg_replace_callback($pattern, function ($match) use ($tickets) {
-            $code = strtoupper($match[1]) . '-' . $match[2];
-            $ticket = $tickets->get($code);
-            return $this->buildTicketBadgeHtml($code, $ticket);
-        }, $escaped);
-
-        // Replace #NUMBER patterns (only if single project).
-        if ($singleProject) {
-            $escaped = preg_replace_callback($hashPattern, function ($match) use ($tickets, $singleProject) {
-                $code = strtoupper($singleProject) . '-' . $match[1];
-                $ticket = $tickets->get($code);
-                return $this->buildTicketBadgeHtml($code, $ticket);
-            }, $escaped);
-        }
+        // Auto-link bare URLs (skip URLs already inside <a> tags from ticket badges).
+        $escaped = $this->autoLinkUrls($escaped);
 
         return $escaped;
     }
@@ -886,6 +886,44 @@ class Messenger extends Component
             . '<span class="msgr-ticket-badge-icon">#</span>'
             . $escapedCode
             . '</a>';
+    }
+
+    protected function autoLinkUrls(string $html): string
+    {
+        // Split HTML into tags and text nodes to avoid linking inside existing <a> tags.
+        $parts = preg_split('/(<[^>]+>)/i', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $insideA = 0;
+
+        foreach ($parts as &$part) {
+            if (preg_match('/^<(a|\/a)\b/i', $part, $tag)) {
+                $t = strtolower($tag[1]);
+                if ($t === 'a') $insideA++;
+                elseif ($t === '/a') $insideA = max(0, $insideA - 1);
+                continue;
+            }
+
+            if (str_starts_with($part, '<') || $insideA > 0) {
+                continue;
+            }
+
+            // Replace bare URLs in text nodes.
+            $part = preg_replace_callback(
+                '#(https?://[^\s<>\'")\]]+)#i',
+                function ($matches) {
+                    $url = $matches[1];
+                    $trailing = '';
+                    // Strip trailing punctuation that's likely not part of the URL.
+                    if (preg_match('/([.,;:!?\)]+)$/', $url, $punct)) {
+                        $url = substr($url, 0, -strlen($punct[1]));
+                        $trailing = $punct[1];
+                    }
+                    return '<a href="' . e($url) . '" target="_blank" rel="noopener" class="msgr-auto-link">' . e($url) . '</a>' . $trailing;
+                },
+                $part
+            );
+        }
+
+        return implode('', $parts);
     }
 
     // ──────────────────────────────────────────────────────────────────────

@@ -972,6 +972,100 @@
         .msgr-ticket-badge-unknown::before {
             display: none;
         }
+
+        /* ── Auto-linked URLs ─────────────────────────────────────── */
+        .msgr-auto-link {
+            color: #93c5fd;
+            text-decoration: underline;
+            text-decoration-color: rgba(147, 197, 253, 0.4);
+            word-break: break-all;
+            transition: color 0.15s;
+        }
+        .msgr-auto-link:hover {
+            color: #bfdbfe;
+            text-decoration-color: rgba(191, 219, 254, 0.7);
+        }
+        .msgr-msg-self .msgr-auto-link {
+            color: #fff;
+            text-decoration-color: rgba(255, 255, 255, 0.5);
+        }
+        .msgr-msg-self .msgr-auto-link:hover {
+            text-decoration-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* ── Link preview card ────────────────────────────────────── */
+        .msgr-link-preview {
+            display: block;
+            margin-top: 6px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.15s;
+            max-width: 320px;
+        }
+        .msgr-link-preview:hover {
+            background: rgba(0, 0, 0, 0.3);
+            text-decoration: none;
+            color: inherit;
+        }
+        .msgr-link-preview-image {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            display: block;
+        }
+        .msgr-link-preview-body {
+            padding: 8px 10px;
+        }
+        .msgr-link-preview-domain {
+            font-size: 10px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .msgr-link-preview-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e2e8f0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .msgr-link-preview-desc {
+            font-size: 11px;
+            color: #9ca3af;
+            line-height: 1.35;
+            margin-top: 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .msgr-msg-self .msgr-link-preview {
+            background: rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .msgr-msg-self .msgr-link-preview:hover {
+            background: rgba(0, 0, 0, 0.25);
+        }
+        .msgr-msg-self .msgr-link-preview-domain {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        .msgr-msg-self .msgr-link-preview-title {
+            color: #fff;
+        }
+        .msgr-msg-self .msgr-link-preview-desc {
+            color: rgba(255, 255, 255, 0.7);
+        }
     </style>
 
     <div x-data="messengerWidget()" x-init="init()"
@@ -1246,6 +1340,24 @@
                                                 <div class="msgr-msg-content msgr-msg-deleted">Message deleted</div>
                                             @elseif($m['body'])
                                                 <div class="msgr-msg-content">{!! $m['rendered_body'] !!}@if($m['edited_at'])<span class="msgr-msg-edited-mark">(edited)</span>@endif</div>
+                                            @endif
+
+                                            @if(! empty($m['link_preview']) && ! $m['is_deleted_for_all'])
+                                                <a href="{{ $m['link_preview']['url'] }}" target="_blank" rel="noopener" class="msgr-link-preview">
+                                                    @if(! empty($m['link_preview']['image']))
+                                                        <img src="{{ $m['link_preview']['image'] }}" alt="" class="msgr-link-preview-image" loading="lazy" onerror="this.style.display='none'">
+                                                    @endif
+                                                    <div class="msgr-link-preview-body">
+                                                        <div class="msgr-link-preview-domain">
+                                                            <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                                                            {{ $m['link_preview']['domain'] }}
+                                                        </div>
+                                                        <div class="msgr-link-preview-title">{{ $m['link_preview']['title'] }}</div>
+                                                        @if(! empty($m['link_preview']['description']))
+                                                            <div class="msgr-link-preview-desc">{{ $m['link_preview']['description'] }}</div>
+                                                        @endif
+                                                    </div>
+                                                </a>
                                             @endif
 
                                             @if(! empty($m['attachments']) && ! $m['is_deleted_for_all'])

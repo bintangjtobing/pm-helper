@@ -15,6 +15,7 @@ class MessengerMessage extends Model
         'conversation_id',
         'sender_id',
         'body',
+        'link_preview',
         'reply_to_id',
         'edited_at',
         'hidden_for_user_ids',
@@ -25,6 +26,7 @@ class MessengerMessage extends Model
         'edited_at' => 'datetime',
         'deleted_for_everyone_at' => 'datetime',
         'hidden_for_user_ids' => 'array',
+        'link_preview' => 'array',
     ];
 
     public function conversation(): BelongsTo

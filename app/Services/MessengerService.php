@@ -184,6 +184,11 @@ class MessengerService
             throw $e;
         }
 
+        // Fetch link preview for the first URL (non-blocking, after commit).
+        if ($hasBody) {
+            $this->fetchAndStoreLinkPreview($message, $body);
+        }
+
         $message->load(['attachments', 'replyTo.sender', 'sender']);
 
         event(new MessengerMessageSent($message));
@@ -216,7 +221,11 @@ class MessengerService
         $message->update([
             'body'      => $newBody,
             'edited_at' => now(),
+            'link_preview' => null,
         ]);
+
+        // Re-fetch link preview for the updated body.
+        $this->fetchAndStoreLinkPreview($message, $newBody);
 
         event(new MessengerMessageEdited($message));
 
@@ -629,5 +638,126 @@ class MessengerService
         }
         $path = storage_path('app/messenger-attachments/' . $folder . '/' . $attachment->filename_stored);
         return is_file($path) ? $path : null;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Link preview (Open Graph)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Extract the first URL from message body, fetch its OG meta, and store on the message.
+     */
+    protected function fetchAndStoreLinkPreview(MessengerMessage $message, string $body): void
+    {
+        // Extract first URL from the body.
+        if (! preg_match('#(https?://[^\s<>\'")\]]+)#i', $body, $match)) {
+            return;
+        }
+
+        $url = $match[1];
+        // Strip trailing punctuation.
+        $url = preg_replace('/[.,;:!?\)]+$/', '', $url);
+
+        try {
+            $preview = $this->fetchOgMeta($url);
+            if ($preview) {
+                $message->update(['link_preview' => $preview]);
+            }
+        } catch (\Throwable $e) {
+            // Silently ignore — link preview is non-critical.
+        }
+    }
+
+    /**
+     * Fetch Open Graph meta tags from a URL.
+     *
+     * @return array{url: string, domain: string, title: ?string, description: ?string, image: ?string}|null
+     */
+    protected function fetchOgMeta(string $url): ?array
+    {
+        $context = stream_context_create([
+            'http' => [
+                'timeout'       => 3,
+                'max_redirects' => 3,
+                'header'        => "User-Agent: PMHelper/1.0 LinkPreview\r\n",
+                'ignore_errors' => true,
+            ],
+            'ssl' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false,
+            ],
+        ]);
+
+        $html = @file_get_contents($url, false, $context, 0, 100000); // Read max 100KB
+        if (! $html || strlen($html) < 50) {
+            return null;
+        }
+
+        $parsed = parse_url($url);
+        $domain = $parsed['host'] ?? $url;
+
+        // Parse OG meta tags with DOMDocument.
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="UTF-8">' . mb_substr($html, 0, 100000), LIBXML_NOERROR | LIBXML_NOWARNING);
+
+        $ogTitle = null;
+        $ogDescription = null;
+        $ogImage = null;
+        $pageTitle = null;
+
+        // Get <title> as fallback.
+        $titleTags = $doc->getElementsByTagName('title');
+        if ($titleTags->length > 0) {
+            $pageTitle = trim($titleTags->item(0)->textContent);
+        }
+
+        // Parse <meta> tags.
+        $metas = $doc->getElementsByTagName('meta');
+        foreach ($metas as $meta) {
+            $property = $meta->getAttribute('property') ?: $meta->getAttribute('name');
+            $content = $meta->getAttribute('content');
+
+            if (! $property || $content === '') {
+                continue;
+            }
+
+            switch (strtolower($property)) {
+                case 'og:title':
+                    $ogTitle = $content;
+                    break;
+                case 'og:description':
+                    $ogDescription = $content;
+                    break;
+                case 'og:image':
+                    $ogImage = $content;
+                    break;
+                case 'description':
+                    if (! $ogDescription) {
+                        $ogDescription = $content;
+                    }
+                    break;
+            }
+        }
+
+        $title = $ogTitle ?: $pageTitle;
+
+        // Must have at least a title to show a preview.
+        if (! $title) {
+            return null;
+        }
+
+        // Resolve relative image URL.
+        if ($ogImage && ! preg_match('#^https?://#i', $ogImage)) {
+            $base = ($parsed['scheme'] ?? 'https') . '://' . $domain;
+            $ogImage = str_starts_with($ogImage, '/') ? $base . $ogImage : $base . '/' . $ogImage;
+        }
+
+        return [
+            'url'         => $url,
+            'domain'      => $domain,
+            'title'       => mb_substr($title, 0, 200),
+            'description' => $ogDescription ? mb_substr($ogDescription, 0, 300) : null,
+            'image'       => $ogImage,
+        ];
     }
 }
