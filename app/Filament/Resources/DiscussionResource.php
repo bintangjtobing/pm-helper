@@ -56,6 +56,16 @@ class DiscussionResource extends Resource
                             ->label(__('Topic Title'))
                             ->required()
                             ->maxLength(255)
+                            ->placeholder('[DECISION] Feature X — Should we use approach A or B?')
+                            ->helperText(new HtmlString(
+                                '<span class="text-gray-500 dark:text-gray-400">'
+                                . __('Start with a tag in brackets to categorize:') . ' '
+                                . '<code class="px-1 py-0.5 text-[10px] rounded bg-red-500/15 text-red-500">[ROADBLOCK]</code> '
+                                . '<code class="px-1 py-0.5 text-[10px] rounded bg-amber-500/15 text-amber-500">[DECISION NEEDED]</code> '
+                                . '<code class="px-1 py-0.5 text-[10px] rounded bg-purple-500/15 text-purple-500">[RFC]</code> '
+                                . '<code class="px-1 py-0.5 text-[10px] rounded bg-blue-500/15 text-blue-500">[YOUR TAG]</code>'
+                                . '</span>'
+                            ))
                             ->columnSpan('full'),
 
                         Forms\Components\Grid::make(3)
@@ -127,6 +137,18 @@ class DiscussionResource extends Resource
                             ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
                         $replyCount = $record->replies_count ?? 0;
 
+                        // Parse [TAG] from title.
+                        $title = $record->title;
+                        $tagBadge = '';
+                        if (preg_match('/^\[([^\]]+)\]\s*/', $title, $tagMatch)) {
+                            $tag = strtoupper(trim($tagMatch[1]));
+                            $cleanTitle = trim(substr($title, strlen($tagMatch[0])));
+                            $tagColor = self::getTagColor($tag);
+                            $tagBadge = '<span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded ' . $tagColor . '">' . e($tag) . '</span> ';
+                        } else {
+                            $cleanTitle = $title;
+                        }
+
                         $badges = '';
                         if ($record->ticket) {
                             $badges .= '<span class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-blue-500/10 text-blue-500">' . e($record->ticket->code) . '</span>';
@@ -139,7 +161,9 @@ class DiscussionResource extends Resource
 
                         return new HtmlString(
                             '<div class="min-w-0 pl-2">'
-                            . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->title) . '</div>'
+                            . '<div class="flex items-center gap-1.5 flex-wrap text-sm font-medium text-gray-900 dark:text-gray-100">'
+                            . $tagBadge . e($cleanTitle)
+                            . '</div>'
                             . '<div class="flex items-center gap-1.5 mt-0.5">'
                             . '<img src="' . e($avatar) . '" class="w-4 h-4 rounded-full object-cover shrink-0" loading="lazy" />'
                             . '<span class="text-xs text-gray-500">' . e($user->name) . '</span>'
@@ -240,5 +264,50 @@ class DiscussionResource extends Resource
             'view' => Pages\ViewDiscussion::route('/{record}'),
             'edit' => Pages\EditDiscussion::route('/{record}/edit'),
         ];
+    }
+
+    /**
+     * Map a [TAG] label to Tailwind color classes.
+     * Any tag the user invents gets a default blue style.
+     */
+    public static function getTagColor(string $tag): string
+    {
+        $tag = strtoupper($tag);
+
+        // Red: blockers, urgent, critical
+        if (str_contains($tag, 'ROADBLOCK') || str_contains($tag, 'BLOCKER')
+            || str_contains($tag, 'URGENT') || str_contains($tag, 'CRITICAL')) {
+            return 'bg-red-500/15 text-red-600 dark:text-red-400';
+        }
+
+        // Amber: decision, approval
+        if (str_contains($tag, 'DECISION') || str_contains($tag, 'APPROVAL')) {
+            return 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
+        }
+
+        // Green: resolved, done, shipped
+        if (str_contains($tag, 'RESOLVED') || str_contains($tag, 'DONE') || str_contains($tag, 'SHIPPED')) {
+            return 'bg-green-500/15 text-green-600 dark:text-green-400';
+        }
+
+        // Purple: idea, proposal, RFC
+        if (str_contains($tag, 'IDEA') || str_contains($tag, 'PROPOSAL') || str_contains($tag, 'RFC')) {
+            return 'bg-purple-500/15 text-purple-600 dark:text-purple-400';
+        }
+
+        // Default: blue
+        return 'bg-blue-500/15 text-blue-600 dark:text-blue-400';
+    }
+
+    /**
+     * Parse a discussion title and return [tag, cleanTitle].
+     * Returns [null, $title] if no bracket tag found.
+     */
+    public static function parseTag(string $title): array
+    {
+        if (preg_match('/^\[([^\]]+)\]\s*/', $title, $m)) {
+            return [strtoupper(trim($m[1])), trim(substr($title, strlen($m[0])))];
+        }
+        return [null, $title];
     }
 }

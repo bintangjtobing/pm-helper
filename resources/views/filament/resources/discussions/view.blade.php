@@ -5,10 +5,19 @@
             {{-- Discussion Header --}}
             <x-filament::card>
                 <div class="space-y-4">
+                    @php
+                        [$discussionTag, $discussionCleanTitle] = \App\Filament\Resources\DiscussionResource::parseTag($record->title);
+                        $discussionTagColor = $discussionTag ? \App\Filament\Resources\DiscussionResource::getTagColor($discussionTag) : '';
+                    @endphp
                     <div class="flex items-start justify-between gap-4">
-                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-                            {{ $record->title }}
-                        </h2>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            @if($discussionTag)
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold uppercase tracking-wide rounded {{ $discussionTagColor }}">{{ $discussionTag }}</span>
+                            @endif
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                                {{ $discussionCleanTitle }}
+                            </h2>
+                        </div>
                         <div class="flex items-center gap-2 shrink-0">
                             {!! $record->priority_badge !!}
                             {!! $record->status_badge !!}

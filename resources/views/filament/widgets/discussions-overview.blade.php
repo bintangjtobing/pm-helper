@@ -48,10 +48,17 @@
                     @endphp
                     <img src="{{ $avatar }}" class="w-7 h-7 rounded-full object-cover shrink-0 mt-0.5" loading="lazy" />
 
+                    @php
+                        [$wTag, $wCleanTitle] = \App\Filament\Resources\DiscussionResource::parseTag($discussion->title);
+                        $wTagColor = $wTag ? \App\Filament\Resources\DiscussionResource::getTagColor($wTag) : '';
+                    @endphp
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
+                            @if($wTag)
+                                <span class="shrink-0 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded {{ $wTagColor }}">{{ $wTag }}</span>
+                            @endif
                             <span class="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-primary-600">
-                                {{ $discussion->title }}
+                                {{ $wCleanTitle }}
                             </span>
                             @if($discussion->priority === 'high')
                             <span class="shrink-0 px-1.5 py-0.5 text-[10px] font-semibold rounded bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">HIGH</span>
