@@ -907,6 +907,7 @@ class Messenger extends Component
             }
 
             // Replace bare URLs in text nodes.
+            // Note: $part is already HTML-escaped from e($body), so don't re-escape.
             $part = preg_replace_callback(
                 '#(https?://[^\s<>\'")\]]+)#i',
                 function ($matches) {
@@ -917,7 +918,9 @@ class Messenger extends Component
                         $url = substr($url, 0, -strlen($punct[1]));
                         $trailing = $punct[1];
                     }
-                    return '<a href="' . e($url) . '" target="_blank" rel="noopener" class="msgr-auto-link">' . e($url) . '</a>' . $trailing;
+                    // Decode &amp; back to & for href (browser needs real URL), display stays escaped.
+                    $hrefUrl = html_entity_decode($url, ENT_QUOTES, 'UTF-8');
+                    return '<a href="' . e($hrefUrl) . '" target="_blank" rel="noopener" class="msgr-auto-link">' . $url . '</a>' . $trailing;
                 },
                 $part
             );

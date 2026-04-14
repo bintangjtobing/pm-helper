@@ -415,6 +415,7 @@
         }
         .msgr-msg-bubble {
             max-width: 75%;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             gap: 2px;
@@ -447,7 +448,10 @@
             font-size: 13px;
             line-height: 1.45;
             word-wrap: break-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
             white-space: pre-wrap;
+            min-width: 0;
         }
         .msgr-msg-self .msgr-msg-content {
             background: #3b82f6;
@@ -975,22 +979,25 @@
 
         /* ── Auto-linked URLs ─────────────────────────────────────── */
         .msgr-auto-link {
-            color: #93c5fd;
+            color: #60a5fa;
             text-decoration: underline;
-            text-decoration-color: rgba(147, 197, 253, 0.4);
+            text-decoration-color: rgba(96, 165, 250, 0.5);
+            text-underline-offset: 2px;
             word-break: break-all;
-            transition: color 0.15s;
+            overflow-wrap: anywhere;
+            transition: color 0.15s, text-decoration-color 0.15s;
         }
         .msgr-auto-link:hover {
-            color: #bfdbfe;
-            text-decoration-color: rgba(191, 219, 254, 0.7);
+            color: #93c5fd;
+            text-decoration-color: rgba(147, 197, 253, 0.8);
         }
         .msgr-msg-self .msgr-auto-link {
-            color: #fff;
-            text-decoration-color: rgba(255, 255, 255, 0.5);
+            color: #dbeafe;
+            text-decoration-color: rgba(219, 234, 254, 0.6);
         }
         .msgr-msg-self .msgr-auto-link:hover {
-            text-decoration-color: rgba(255, 255, 255, 0.8);
+            color: #fff;
+            text-decoration-color: rgba(255, 255, 255, 0.9);
         }
 
         /* ── Link preview card ────────────────────────────────────── */
