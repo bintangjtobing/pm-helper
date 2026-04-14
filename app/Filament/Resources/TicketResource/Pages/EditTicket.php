@@ -50,32 +50,6 @@ class EditTicket extends EditRecord
 
     protected function saved(): void
     {
-        // Check if status was changed and trigger notifications manually
-        if ($this->oldStatusId && $this->oldStatusId != $this->record->status_id) {
-
-            // Create activity record
-            TicketActivity::create([
-                'ticket_id' => $this->record->id,
-                'old_status_id' => $this->oldStatusId,
-                'new_status_id' => $this->record->status_id,
-                'user_id' => auth()->user()->id
-            ]);
-
-            // Get fresh ticket with watchers
-            $freshTicket = $this->record->load('watchers', 'status');
-
-            // Send notifications to all watchers
-            foreach ($freshTicket->watchers as $user) {
-                $user->notify(new TicketStatusUpdated($freshTicket));
-            }
-
-            // Log the notification for debugging
-            \Log::info('Status update notification sent', [
-                'ticket_id' => $this->record->id,
-                'old_status' => $this->oldStatusId,
-                'new_status' => $this->record->status_id,
-                'watchers_count' => $freshTicket->watchers->count()
-            ]);
-        }
+        // Activity logging + notifications handled by Ticket model boot().
     }
 }
