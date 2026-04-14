@@ -615,14 +615,33 @@ class ViewTicket extends ViewRecord implements HasForms
             }
 
             $originalName = $file->getClientOriginalName();
-            $storedName = uniqid('vid_') . '.' . $file->getClientOriginalExtension();
+            $storedName = uniqid('vid_') . '.mp4';
 
             $file->storeAs($storagePath, $storedName, 'public');
+
+            $absolutePath = storage_path('app/public/' . $storagePath . '/' . $storedName);
+
+            // Remux .mov / QuickTime to .mp4 container for browser compatibility.
+            if ($mime === 'video/quicktime' || str_ends_with(strtolower($originalName), '.mov')) {
+                $tmpMp4 = $absolutePath . '.tmp.mp4';
+                $cmd = sprintf(
+                    'ffmpeg -y -i %s -c copy -movflags +faststart %s 2>/dev/null',
+                    escapeshellarg($absolutePath),
+                    escapeshellarg($tmpMp4)
+                );
+                exec($cmd, $output, $exitCode);
+                if ($exitCode === 0 && is_file($tmpMp4)) {
+                    rename($tmpMp4, $absolutePath);
+                    $size = filesize($absolutePath) ?: $size;
+                } else {
+                    @unlink($tmpMp4);
+                }
+            }
 
             $comment->attachments()->create([
                 'filename_stored'   => $storagePath . '/' . $storedName,
                 'filename_original' => $originalName,
-                'mime_type'         => $mime,
+                'mime_type'         => 'video/mp4',
                 'size_bytes'        => $size,
             ]);
         }

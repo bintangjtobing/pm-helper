@@ -513,7 +513,7 @@
                                 class="w-full max-h-[400px] bg-black"
                                 style="max-width: 640px;"
                             >
-                                <source src="{{ asset('storage/' . $att->filename_stored) }}" type="{{ $att->mime_type }}">
+                                <source src="{{ asset('storage/' . $att->filename_stored) }}" type="video/mp4">
                                 {{ __('Your browser does not support the video tag.') }}
                             </video>
                             <div class="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-700">
