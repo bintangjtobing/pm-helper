@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use TicketMentioned;
 
@@ -76,5 +77,10 @@ class TicketComment extends Model
     {
         return $this->belongsToMany(User::class, 'ticket_comment_mentions', 'comment_id', 'user_id')
                     ->withTimestamps();
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketCommentAttachment::class, 'comment_id');
     }
 }

@@ -13,16 +13,16 @@ return [
     | Livewire Temporary File Uploads
     |--------------------------------------------------------------------------
     |
-    | Default Livewire allows max 12 MB per upload. The Messenger feature
-    | needs up to 30 MB for non-image attachments, so we raise the rule
-    | here. Per-component validation enforces stricter limits where needed
-    | (e.g. 10 MB for images).
+    | Default Livewire allows max 12 MB per upload. Messenger needs up to
+    | 30 MB for attachments, ticket comments need up to 100 MB for screen
+    | recordings. Per-component validation enforces stricter limits where
+    | needed (e.g. 10 MB for images).
     |
     */
 
     'temporary_file_upload' => [
         'disk' => null,
-        'rules' => ['required', 'file', 'max:30720'], // 30 MB
+        'rules' => ['required', 'file', 'max:102400'], // 100 MB
         'directory' => null,
         'middleware' => null,
         'preview_mimes' => [
@@ -30,7 +30,7 @@ return [
             'mov', 'avi', 'wmv', 'mp3', 'm4a',
             'jpg', 'jpeg', 'mpga', 'webp', 'wma',
         ],
-        'max_upload_time' => 5,
+        'max_upload_time' => 10,
     ],
 
 ];

@@ -27,10 +27,11 @@ use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\HtmlString;
+use Livewire\WithFileUploads;
 
 class ViewTicket extends ViewRecord implements HasForms
 {
-    use InteractsWithForms;
+    use InteractsWithForms, WithFileUploads;
 
     protected static string $resource = TicketResource::class;
 
@@ -41,6 +42,9 @@ class ViewTicket extends ViewRecord implements HasForms
     protected $listeners = ['doDeleteComment'];
 
     public $selectedCommentId;
+
+    /** @var \Livewire\TemporaryUploadedFile[] */
+    public $commentVideos = [];
 
     public function mount($record): void
     {
@@ -460,11 +464,14 @@ class ViewTicket extends ViewRecord implements HasForms
                 }
             }
 
-            TicketComment::create([
+            $comment = TicketComment::create([
                 'user_id' => auth()->user()->id,
                 'ticket_id' => $this->record->id,
                 'content' => $commentContent
             ]);
+
+            // Store video/screen recording attachments.
+            $this->storeCommentVideos($comment);
 
             $this->notify('success', __('Comment created successfully'));
         }
@@ -571,6 +578,56 @@ class ViewTicket extends ViewRecord implements HasForms
     {
         $this->form->fill();
         $this->selectedCommentId = null;
+        $this->commentVideos = [];
+    }
+
+    public function removeVideo(int $index): void
+    {
+        $videos = collect($this->commentVideos)->values()->all();
+        if (isset($videos[$index])) {
+            unset($videos[$index]);
+            $this->commentVideos = array_values($videos);
+        }
+    }
+
+    protected function storeCommentVideos(TicketComment $comment): void
+    {
+        if (empty($this->commentVideos)) {
+            return;
+        }
+
+        $storagePath = 'comment-videos/' . $comment->id;
+
+        foreach ($this->commentVideos as $file) {
+            if (! $file instanceof \Livewire\TemporaryUploadedFile) {
+                continue;
+            }
+
+            $mime = $file->getMimeType() ?: 'video/mp4';
+            $size = $file->getSize() ?: 0;
+
+            // Validate: video only, max 100 MB.
+            if (! str_starts_with($mime, 'video/')) {
+                continue;
+            }
+            if ($size > 100 * 1024 * 1024) {
+                continue;
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $storedName = uniqid('vid_') . '.' . $file->getClientOriginalExtension();
+
+            $file->storeAs($storagePath, $storedName, 'public');
+
+            $comment->attachments()->create([
+                'filename_stored'   => $storagePath . '/' . $storedName,
+                'filename_original' => $originalName,
+                'mime_type'         => $mime,
+                'size_bytes'        => $size,
+            ]);
+        }
+
+        $this->commentVideos = [];
     }
 
     protected function mutateFormDataBeforeSave(array $data): array

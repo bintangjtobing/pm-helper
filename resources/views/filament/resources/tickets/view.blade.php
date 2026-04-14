@@ -393,15 +393,82 @@
             @if($tab === 'comments')
             <form wire:submit.prevent="submitComment" class="pb-5">
                 {{ $this->form }}
-                <button type="submit" class="px-3 py-2 mt-3 text-white rounded bg-primary-500 hover:bg-primary-600">
-                    {{ __($selectedCommentId ? 'Edit comment' : 'Add comment') }}
-                </button>
-                @if($selectedCommentId)
-                <button type="button" wire:click="cancelEditComment"
-                    class="px-3 py-2 mt-3 text-white rounded bg-warning-500 hover:bg-warning-600">
-                    {{ __('Cancel') }}
-                </button>
+
+                {{-- Video / Screen Recording upload --}}
+                @if(!$selectedCommentId)
+                <div class="mt-3" x-data="{ dragOver: false }">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {{ __('Screen Recording / Video') }}
+                        <span class="text-xs text-gray-400 font-normal">({{ __('.mp4, .mov — max 100 MB') }})</span>
+                    </label>
+                    <div
+                        class="relative border-2 border-dashed rounded-lg p-4 text-center transition-colors"
+                        :class="dragOver ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'"
+                        x-on:dragover.prevent="dragOver = true"
+                        x-on:dragleave.prevent="dragOver = false"
+                        x-on:drop.prevent="dragOver = false; $refs.videoInput.files = $event.dataTransfer.files; $refs.videoInput.dispatchEvent(new Event('change', { bubbles: true }))"
+                    >
+                        <input
+                            type="file"
+                            wire:model="commentVideos"
+                            x-ref="videoInput"
+                            accept="video/mp4,video/quicktime,video/x-m4v,.mp4,.mov,.m4v"
+                            multiple
+                            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        >
+                        <div class="flex flex-col items-center gap-1">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ __('Click or drag video files here') }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Upload progress --}}
+                    <div wire:loading wire:target="commentVideos" class="mt-2">
+                        <div class="flex items-center gap-2 text-xs text-primary-600 dark:text-primary-400">
+                            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            {{ __('Uploading video...') }}
+                        </div>
+                    </div>
+
+                    {{-- Preview uploaded videos --}}
+                    @if(!empty($commentVideos))
+                    <div class="mt-2 space-y-2">
+                        @foreach($commentVideos as $idx => $video)
+                            @if($video instanceof \Livewire\TemporaryUploadedFile)
+                            <div class="flex items-center justify-between gap-2 px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <svg class="w-5 h-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ $video->getClientOriginalName() }}</span>
+                                    <span class="text-xs text-gray-400 flex-shrink-0">
+                                        {{ round($video->getSize() / 1048576, 1) }} MB
+                                    </span>
+                                </div>
+                                <button type="button" wire:click="removeVideo({{ $idx }})"
+                                    class="text-red-500 hover:text-red-700 flex-shrink-0" title="{{ __('Remove') }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            @endif
+                        @endforeach
+                    </div>
+                    @endif
+                    @error('commentVideos.*')
+                        <p class="mt-1 text-xs text-danger-600">{{ $message }}</p>
+                    @enderror
+                </div>
                 @endif
+
+                <div class="flex items-center gap-2 mt-3">
+                    <button type="submit" class="px-3 py-2 text-white rounded bg-primary-500 hover:bg-primary-600">
+                        {{ __($selectedCommentId ? 'Edit comment' : 'Add comment') }}
+                    </button>
+                    @if($selectedCommentId)
+                    <button type="button" wire:click="cancelEditComment"
+                        class="px-3 py-2 text-white rounded bg-warning-500 hover:bg-warning-600">
+                        {{ __('Cancel') }}
+                    </button>
+                    @endif
+                </div>
             </form>
 
             @foreach($record->comments->sortByDesc('created_at') as $comment)
@@ -434,6 +501,39 @@
                 <div class="w-full prose-sm prose max-w-none dark:prose-invert">
                     {!! \App\Helpers\CodeBlockHelper::linkTicketCodes(\App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($comment->content))) !!}
                 </div>
+
+                {{-- Video / Screen Recording attachments --}}
+                @if($comment->attachments->count())
+                <div class="mt-3 space-y-3">
+                    @foreach($comment->attachments as $att)
+                        <div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                            <video
+                                controls
+                                preload="metadata"
+                                class="w-full max-h-[400px] bg-black"
+                                style="max-width: 640px;"
+                            >
+                                <source src="{{ asset('storage/' . $att->filename_stored) }}" type="{{ $att->mime_type }}">
+                                {{ __('Your browser does not support the video tag.') }}
+                            </video>
+                            <div class="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-700">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ $att->filename_original }}</span>
+                                    <span class="text-xs text-gray-400">
+                                        {{ $att->size_bytes >= 1048576 ? round($att->size_bytes / 1048576, 1) . ' MB' : round($att->size_bytes / 1024, 1) . ' KB' }}
+                                    </span>
+                                </div>
+                                <a href="{{ asset('storage/' . $att->filename_stored) }}" download="{{ $att->filename_original }}"
+                                    class="flex items-center gap-1 text-xs text-primary-500 hover:text-primary-600 flex-shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    {{ __('Download') }}
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                @endif
             </div>
             @endforeach
             @endif
