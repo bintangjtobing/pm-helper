@@ -574,6 +574,70 @@ class ViewTicket extends ViewRecord implements HasForms
         $this->notify('success', __('Comment deleted successfully'));
     }
 
+    public function raiseToDiscussion(int $commentId): void
+    {
+        $comment = TicketComment::with('user')->find($commentId);
+        if (! $comment) {
+            $this->notify('danger', __('Comment not found'));
+            return;
+        }
+
+        $ticket = $this->record;
+        $title = $ticket->code . ' — ' . $ticket->name;
+        $commentPreview = \Illuminate\Support\Str::limit(strip_tags($comment->content), 120);
+
+        // Build discussion content with context.
+        $content = '<p><strong>' . __('Raised from ticket comment by') . ' ' . e($comment->user->name) . ':</strong></p>'
+            . '<blockquote>' . $comment->content . '</blockquote>'
+            . '<p><strong>' . __('Source Ticket:') . '</strong> '
+            . '<a href="' . route('filament.resources.tickets.share', $ticket->code) . '">'
+            . e($ticket->code) . ' — ' . e($ticket->name) . '</a></p>';
+
+        $discussion = \App\Models\Discussion::create([
+            'user_id'    => auth()->id(),
+            'project_id' => $ticket->project_id,
+            'ticket_id'  => $ticket->id,
+            'title'      => $title,
+            'content'    => $content,
+            'status'     => 'open',
+            'priority'   => 'high',
+        ]);
+
+        // Notify related users (project members + watchers + ticket stakeholders).
+        $notifyIds = collect();
+
+        // Project members
+        if ($ticket->project_id) {
+            $notifyIds = $notifyIds->merge(
+                $ticket->project->users()->pluck('users.id')
+            );
+        }
+
+        // Ticket watchers
+        $notifyIds = $notifyIds->merge(
+            $ticket->watchers->pluck('id')
+        );
+
+        // Add owner + responsible
+        if ($ticket->owner_id) $notifyIds->push($ticket->owner_id);
+        if ($ticket->responsible_id) $notifyIds->push($ticket->responsible_id);
+
+        // Comment author
+        $notifyIds->push($comment->user_id);
+
+        // Remove current user, deduplicate
+        $notifyIds = $notifyIds->unique()->reject(fn ($id) => (int) $id === (int) auth()->id());
+
+        $users = User::whereIn('id', $notifyIds)->get();
+        foreach ($users as $user) {
+            $user->notify(new \App\Notifications\DiscussionCreated($discussion->load(['user', 'project'])));
+        }
+
+        $this->notify('success', __('Comment raised to open discussion'));
+
+        $this->redirect(route('filament.resources.discussions.view', $discussion->id));
+    }
+
     public function cancelEditComment(): void
     {
         $this->form->fill();
