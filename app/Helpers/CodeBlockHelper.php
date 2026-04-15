@@ -21,6 +21,10 @@ class CodeBlockHelper
         }
 
         if (self::isHtml($content)) {
+            // Fix headings that accidentally wrap multi-line content
+            // (e.g. user typed everything inside an <h1> in Trix).
+            $content = self::normalizeWrappingHeadings($content);
+
             // Unformatted HTML (just <div>/<br> from Trix without headings/lists/bold):
             // convert to plain text for proper typography rendering.
             if (self::isUnformattedHtml($content)) {
@@ -49,6 +53,25 @@ class CodeBlockHelper
     protected static function isHtml(string $content): bool
     {
         return (bool) preg_match('/<(p|div|br|ul|ol|li|h[1-6]|blockquote|figure|table)\b[^>]*>/i', $content);
+    }
+
+    /**
+     * Detect heading tags (<h1>–<h6>) that wrap multi-line content (contain
+     * multiple <br> tags). This is clearly unintentional — the user typed
+     * everything inside a heading in Trix. Replace with <div> to normalize.
+     */
+    protected static function normalizeWrappingHeadings(string $content): string
+    {
+        return preg_replace_callback(
+            '/<(h[1-6])\b[^>]*>(.*?)<\/\1>/si',
+            function ($match) {
+                if (substr_count(strtolower($match[2]), '<br') > 2) {
+                    return '<div>' . $match[2] . '</div>';
+                }
+                return $match[0];
+            },
+            $content
+        );
     }
 
     /**

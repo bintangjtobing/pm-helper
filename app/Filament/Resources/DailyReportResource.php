@@ -107,7 +107,7 @@ class DailyReportResource extends Resource
                             ->toolbarButtons([
                                 'bold', 'italic', 'strike', 'link',
                                 'orderedList', 'bulletList', 'blockquote',
-                                'h2', 'h3', 'redo', 'undo',
+                                'redo', 'undo',
                             ])
                             ->columnSpan('full'),
 
