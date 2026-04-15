@@ -20,16 +20,22 @@ class CodeBlockHelper
             return '';
         }
 
-        // Content from RichEditor (Trix) is already HTML — convert any
-        // inline markdown the user typed manually (e.g. **bold**) then pass through.
         if (self::isHtml($content)) {
-            return self::autoLinkUrls(self::convertInlineMarkdown($content));
+            // Unformatted HTML (just <div>/<br> from Trix without headings/lists/bold):
+            // convert to plain text for proper typography rendering.
+            if (self::isUnformattedHtml($content)) {
+                $content = self::htmlToPlainText($content);
+                // Fall through to plain text processing below
+            } else {
+                return self::autoLinkUrls(self::convertInlineMarkdown($content));
+            }
         }
 
         // Plain text: normalize literal \r\n, detect code blocks, convert markdown.
         $content = str_replace(['\r\n', '\n', '\r'], "\n", $content);
 
         $processed = self::autoDetectCodeBlocks($content);
+        $processed = self::preserveLineBreaks($processed);
         $html = \Illuminate\Support\Str::markdown($processed, [
             'html_input' => 'allow',
             'allow_unsafe_links' => false,
@@ -43,6 +49,65 @@ class CodeBlockHelper
     protected static function isHtml(string $content): bool
     {
         return (bool) preg_match('/<(p|div|br|ul|ol|li|h[1-6]|blockquote|figure|table)\b[^>]*>/i', $content);
+    }
+
+    /**
+     * Check if HTML content is essentially unformatted — only generic wrappers
+     * (<div>, <br>, <p>, <span>) without semantic formatting tags like
+     * headings, lists, bold, images, etc.
+     */
+    protected static function isUnformattedHtml(string $content): bool
+    {
+        $stripped = preg_replace('/<\/?(div|br|p|span)\b[^>]*\/?>/i', '', $content);
+        return ! preg_match('/<[a-z][^>]*>/i', $stripped);
+    }
+
+    /**
+     * Convert simple/unformatted HTML (Trix output with only <div>/<br>) to
+     * plain text, preserving line breaks.
+     */
+    protected static function htmlToPlainText(string $html): string
+    {
+        // Trix empty line: <div><br></div> → paragraph break
+        $text = preg_replace('/<div>\s*<br\s*\/?>\s*<\/div>/i', "\n\n", $html);
+        $text = preg_replace('/<br\s*\/?>/i', "\n", $text);
+        $text = preg_replace('/<\/div>/i', "\n", $text);
+        $text = preg_replace('/<\/p>/i', "\n\n", $text);
+        $text = strip_tags($text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+
+        return trim($text);
+    }
+
+    /**
+     * Add markdown hard line breaks (trailing two spaces) to preserve visible
+     * line structure in plain-text content. Skips inside code fences.
+     */
+    protected static function preserveLineBreaks(string $text): string
+    {
+        $lines = explode("\n", $text);
+        $inCodeBlock = false;
+
+        for ($i = 0; $i < count($lines); $i++) {
+            $trimmed = trim($lines[$i]);
+
+            if (str_starts_with($trimmed, '```')) {
+                $inCodeBlock = ! $inCodeBlock;
+                continue;
+            }
+
+            if ($inCodeBlock) {
+                continue;
+            }
+
+            $nextLine = $lines[$i + 1] ?? '';
+            if ($trimmed !== '' && trim($nextLine) !== '' && ! str_starts_with(trim($nextLine), '```')) {
+                $lines[$i] = rtrim($lines[$i]) . '  ';
+            }
+        }
+
+        return implode("\n", $lines);
     }
 
     /**
@@ -127,22 +192,28 @@ class CodeBlockHelper
             // Check if this line is entirely a code line.
             $detected = self::detectCodeLine($line);
             if ($detected) {
-                $codeLabel = $detected['label'];
-                $codeBuffer[] = $line;
-                $inCode = true;
-                $braceDepth = substr_count($line, '{') - substr_count($line, '}');
-                $bracketDepth = substr_count($line, '[') - substr_count($line, ']');
-
-                // If brace/bracket is already balanced (single-line), flush immediately.
-                if ($braceDepth <= 0 && $bracketDepth <= 0) {
-                    $result[] = self::wrapCodeBlock($codeBuffer, $codeLabel);
-                    $codeBuffer = [];
-                    $codeLabel = null;
-                    $inCode = false;
-                    $braceDepth = 0;
-                    $bracketDepth = 0;
+                if (empty($codeBuffer)) {
+                    $codeLabel = $detected['label'];
                 }
+                $codeBuffer[] = $line;
+                $braceDepth += substr_count($line, '{') - substr_count($line, '}');
+                $bracketDepth += substr_count($line, '[') - substr_count($line, ']');
+
+                // Enter brace-tracking mode only when braces are unbalanced.
+                if ($braceDepth > 0 || $bracketDepth > 0) {
+                    $inCode = true;
+                }
+                // Don't flush yet — continue buffering consecutive code lines.
                 continue;
+            }
+
+            // Non-code line: flush any pending code buffer first.
+            if (! empty($codeBuffer)) {
+                $result[] = self::wrapCodeBlock($codeBuffer, $codeLabel);
+                $codeBuffer = [];
+                $codeLabel = null;
+                $braceDepth = 0;
+                $bracketDepth = 0;
             }
 
             // Check if line ENDS with { or [ (mixed: prose + start of code block).
@@ -240,6 +311,21 @@ class CodeBlockHelper
         // Log lines with timestamps [2026-01-01 12:00:00]
         if (preg_match('/^\[\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}/', $trimmed)) {
             return ['label' => 'Log'];
+        }
+
+        // JavaScript/V8 runtime errors: "Uncaught TypeError:", "TypeError:", etc.
+        if (preg_match('/(Uncaught\s+)?(TypeError|ReferenceError|SyntaxError|RangeError|URIError|EvalError)\s*:/i', $trimmed)) {
+            return ['label' => 'Error'];
+        }
+
+        // V8/Node.js stack trace: indented "at ..." lines
+        if (preg_match('/^\s{2,}at\s+/', $line)) {
+            return ['label' => 'Stack Trace'];
+        }
+
+        // Console error lines containing file.js:line references with error context
+        if (preg_match('/\.\w{2,4}:\d+/', $trimmed) && preg_match('/(Error|error|Exception|Uncaught|Cannot\s+read)/i', $trimmed)) {
+            return ['label' => 'Error'];
         }
 
         return null;
