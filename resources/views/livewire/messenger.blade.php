@@ -60,7 +60,7 @@
             box-shadow: 0 -16px 48px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
             animation: msgrPanelSlide 0.25s ease-out;
         }
 
@@ -69,6 +69,7 @@
             height: 56px;
             background: #0d1117;
             border-bottom: 1px solid #1f2937;
+            border-radius: 12px 12px 0 0;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -122,15 +123,20 @@
         .msgr-status-dot.is-on-leave  { background: #6b7280; border-color: #fbbf24; }
 
         /* ── Status menu (dropdown overlay) ── */
+        .msgr-status-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 49;
+        }
         .msgr-status-menu {
             position: absolute;
             top: 56px;
-            left: 12px;
-            width: 280px;
-            background: #1f2937;
+            left: 0;
+            right: 0;
+            background: #0f172a;
             border: 1px solid #374151;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             padding: 6px 0;
             z-index: 50;
         }
@@ -276,6 +282,7 @@
             display: flex;
             flex-direction: column;
             min-height: 0;
+            border-radius: 0 0 12px 12px;
         }
 
         /* ── List view ── */
@@ -1128,8 +1135,11 @@
         @if($isOpen)
             <div class="msgr-panel" style="position: fixed;">
 
+                {{-- Status menu backdrop --}}
+                <div x-show="showStatusMenu" x-cloak x-on:click="showStatusMenu = false" class="msgr-status-backdrop"></div>
+
                 {{-- Status menu dropdown overlay (only in list view header) --}}
-                <div x-show="showStatusMenu" x-cloak x-on:click.outside="showStatusMenu = false" class="msgr-status-menu">
+                <div x-show="showStatusMenu" x-cloak class="msgr-status-menu">
                     <div class="msgr-status-menu-header">Set your status</div>
 
                     <button type="button" class="msgr-status-option" x-on:click="$wire.clearMyStatus(); showStatusMenu = false">
