@@ -156,7 +156,7 @@ class AppServiceProvider extends ServiceProvider
                 html.dark .kanban-record .record-title { color: #e5e7eb !important; }
                 html.dark .kanban-record .record-subtitle { color: #9ca3af !important; }
                 html.dark .kanban-record .code { color: #9ca3af !important; }
-                html.dark .kanban-record .record-relations div { color: #9ca3af !important; }
+                html.dark .kanban-record .record-relations { border-color: rgba(75,85,99,0.5) !important; }
                 html.dark .kanban-record .avatar { background-color: #4b5563 !important; }
                 html.dark .create-record { color: #9ca3af !important; }
                 html.dark .create-record:hover { background-color: #374151 !important; color: #d1d5db !important; }

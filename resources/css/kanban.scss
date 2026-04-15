@@ -78,15 +78,7 @@
                 }
 
                 .record-relations {
-                    @apply w-full flex flex-col gap-1;
-
-                    & > div {
-                        @apply flex items-center gap-1 text-sm text-gray-600;
-
-                        a {
-                            @apply font-medium hover:underline;
-                        }
-                    }
+                    @apply w-full flex flex-col gap-1.5 pt-1 mt-1 border-t border-gray-200 dark:border-gray-600;
                 }
 
                 .record-logged-hours {

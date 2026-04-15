@@ -72,16 +72,28 @@
     </div>
     @if($record['relations']?->count())
     <div class="record-relations">
-        @foreach($record['relations'] as $relation)
-        <div>
-            <span class="type text-{{ config('system.tickets.relations.colors.' . $relation->type) }}-600">
-                {{ __(config('system.tickets.relations.list.' . $relation->type)) }}
-            </span>
-            <a target="_blank" class="relation"
-                href="{{ route('filament.resources.tickets.share', $relation->relation->code) }}">
-                {{ $relation->relation->code }}
-            </a>
-        </div>
+        @php
+            $colorMap = [
+                'primary' => ['bg' => 'rgba(59,130,246,0.15)', 'border' => 'rgba(59,130,246,0.3)', 'text' => '#60a5fa', 'hash' => 'rgba(96,165,250,0.5)'],
+                'warning' => ['bg' => 'rgba(245,158,11,0.15)', 'border' => 'rgba(245,158,11,0.3)', 'text' => '#fbbf24', 'hash' => 'rgba(251,191,36,0.5)'],
+                'danger'  => ['bg' => 'rgba(239,68,68,0.15)', 'border' => 'rgba(239,68,68,0.3)', 'text' => '#f87171', 'hash' => 'rgba(248,113,113,0.5)'],
+            ];
+            $grouped = collect($record['relations'])->groupBy('type');
+        @endphp
+        @foreach($grouped as $type => $relations)
+            @php($colors = $colorMap[config('system.tickets.relations.colors.' . $type)] ?? $colorMap['primary'])
+            <div class="flex flex-wrap items-center gap-1">
+                <span style="color: {{ $colors['text'] }}; font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {{ __(config('system.tickets.relations.list.' . $type)) }}
+                </span>
+                @foreach($relations as $relation)
+                <a target="_blank" title="{{ $relation->relation->name ?? '' }}"
+                    href="{{ route('filament.resources.tickets.share', $relation->relation->code) }}"
+                    style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;text-decoration:none;background:{{ $colors['bg'] }};color:{{ $colors['text'] }};border:1px solid {{ $colors['border'] }};transition:background 0.15s;">
+                    <span style="opacity:0.5;font-weight:400;">#</span>{{ $relation->relation->code }}
+                </a>
+                @endforeach
+            </div>
         @endforeach
     </div>
     @endif

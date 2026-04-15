@@ -330,24 +330,38 @@
             </div>
 
             @if($record->relations->count())
-            <div class="flex flex-col w-full gap-1 pt-3">
+            <div class="flex flex-col w-full gap-2 pt-3">
                 <span class="text-sm font-medium text-gray-500">
                     {{ __('Ticket relations') }}
                 </span>
-                <div class="w-full text-gray-500">
-                    @foreach($record->relations as $relation)
-                    <div class="flex items-center w-full gap-1 text-xs">
-                        <span
-                            class="rounded px-2 py-1 text-white bg-{{ config('system.tickets.relations.colors.' . $relation->type) }}-600">
-                            {{ __(config('system.tickets.relations.list.' . $relation->type)) }}
+                @php
+                    $colorMap = [
+                        'primary' => ['bg' => 'rgba(59,130,246,0.15)', 'border' => 'rgba(59,130,246,0.3)', 'text' => '#60a5fa', 'type_bg' => '#2563eb'],
+                        'warning' => ['bg' => 'rgba(245,158,11,0.15)', 'border' => 'rgba(245,158,11,0.3)', 'text' => '#fbbf24', 'type_bg' => '#d97706'],
+                        'danger'  => ['bg' => 'rgba(239,68,68,0.15)', 'border' => 'rgba(239,68,68,0.3)', 'text' => '#f87171', 'type_bg' => '#dc2626'],
+                    ];
+                    $grouped = $record->relations->groupBy('type');
+                @endphp
+                @foreach($grouped as $type => $relations)
+                    @php($colors = $colorMap[config('system.tickets.relations.colors.' . $type)] ?? $colorMap['primary'])
+                    <div class="flex flex-col gap-1.5">
+                        <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: {{ $colors['text'] }};">
+                            {{ __(config('system.tickets.relations.list.' . $type)) }}
                         </span>
-                        <a target="_blank" class="font-medium hover:underline"
-                            href="{{ route('filament.resources.tickets.share', $relation->relation->code) }}">
-                            {{ $relation->relation->code }}
+                        @foreach($relations as $relation)
+                        <a target="_blank"
+                            href="{{ route('filament.resources.tickets.share', $relation->relation->code) }}"
+                            style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;background:{{ $colors['bg'] }};border:1px solid {{ $colors['border'] }};text-decoration:none;transition:background 0.15s;">
+                            <span style="display:inline-flex;align-items:center;gap:2px;padding:1px 6px;border-radius:6px;font-size:11px;font-weight:700;background:{{ $colors['border'] }};color:{{ $colors['text'] }};white-space:nowrap;">
+                                <span style="opacity:0.5;font-weight:400;">#</span>{{ $relation->relation->code }}
+                            </span>
+                            <span style="font-size:12px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                {{ \Illuminate\Support\Str::limit($relation->relation->name ?? '', 40) }}
+                            </span>
                         </a>
+                        @endforeach
                     </div>
-                    @endforeach
-                </div>
+                @endforeach
             </div>
             @endif
         </x-filament::card>
