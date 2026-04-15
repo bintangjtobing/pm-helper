@@ -59,7 +59,7 @@
     </div>
     <div class="record-footer">
         <div class="record-type-code">
-            @php($epic = $record['epic'])
+            @php $epic = $record['epic']; @endphp
             @if($epic && $epic != "")
             <div class="inline-flex items-center px-1.5 py-0.5 text-[10px] leading-tight text-white bg-purple-500 rounded break-words"
                 title="{{ __('Epic') }}: {{ $epic->name }}">
@@ -81,7 +81,7 @@
             $grouped = collect($record['relations'])->groupBy('type');
         @endphp
         @foreach($grouped as $type => $relations)
-            @php($colors = $colorMap[config('system.tickets.relations.colors.' . $type)] ?? $colorMap['primary'])
+            @php $colors = $colorMap[config('system.tickets.relations.colors.' . $type)] ?? $colorMap['primary']; @endphp
             <div class="flex flex-wrap items-center gap-1">
                 <span style="color: {{ $colors['text'] }}; font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;">
                     {{ __(config('system.tickets.relations.list.' . $type)) }}
