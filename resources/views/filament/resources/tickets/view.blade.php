@@ -343,7 +343,7 @@
                     $grouped = $record->relations->groupBy('type');
                 @endphp
                 @foreach($grouped as $type => $relations)
-                    @php($colors = $colorMap[config('system.tickets.relations.colors.' . $type)] ?? $colorMap['primary'])
+                    @php $colors = $colorMap[config('system.tickets.relations.colors.' . $type)] ?? $colorMap['primary']; @endphp
                     <div class="flex flex-col gap-1.5">
                         <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: {{ $colors['text'] }};">
                             {{ __(config('system.tickets.relations.list.' . $type)) }}
