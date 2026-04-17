@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMHelper API Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <style>
+        html { scroll-behavior: smooth; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', system-ui, sans-serif; }
+        pre[class*="language-"] { margin: 0; border-radius: 8px; font-size: 13px; line-height: 1.5; }
+        code[class*="language-"], pre[class*="language-"] { font-family: 'SF Mono', Monaco, Menlo, Consolas, 'Courier New', monospace; }
+        .method-get { background: #10b981; }
+        .method-post { background: #3b82f6; }
+        .method-patch { background: #f59e0b; }
+        .method-delete { background: #ef4444; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .endpoint-anchor { scroll-margin-top: 24px; }
+        .nav-link.active { color: #60a5fa; background: rgba(59,130,246,0.1); }
+        [x-cloak] { display: none !important; }
+        .hidden-by-search { display: none !important; }
+        mark.search-hit { background: #fbbf24; color: #1f2937; padding: 0 2px; border-radius: 2px; }
+        .copy-btn { opacity: 0; transition: opacity 0.2s; }
+        .code-wrap:hover .copy-btn { opacity: 1; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+
+<div class="flex">
+    <!-- Sidebar -->
+    <aside class="fixed top-0 left-0 h-screen w-72 bg-gray-950 border-r border-gray-800 flex flex-col">
+        <div class="p-5 border-b border-gray-800">
+            <div class="flex items-center gap-2 mb-1">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-sm">PM</div>
+                <div>
+                    <h1 class="text-sm font-bold">PMHelper API</h1>
+                    <p class="text-[11px] text-gray-500">v1.0 · Mobile REST</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-b border-gray-800">
+            <div class="relative">
+                <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10 17a7 7 0 100-14 7 7 0 000 14z"/></svg>
+                <input id="search" type="text" placeholder="Search endpoints…" autocomplete="off"
+                    class="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-sm focus:outline-none focus:border-blue-500 placeholder-gray-500">
+                <kbd class="absolute right-2 top-2 text-[10px] text-gray-500 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5">/</kbd>
+            </div>
+            <div id="searchResultsCount" class="mt-2 text-xs text-gray-500"></div>
+        </div>
+
+        <nav id="sidebarNav" class="flex-1 overflow-y-auto scrollbar-thin p-3 text-sm">
+            <!-- Getting Started -->
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Getting Started</div>
+                <a href="#introduction" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300">Introduction</a>
+                <a href="#base-url" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300">Base URL</a>
+                <a href="#authentication" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300">Authentication</a>
+                <a href="#response-format" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300">Response Format</a>
+                <a href="#errors" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300">Errors</a>
+                <a href="#realtime" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300">Realtime Events</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Auth</div>
+                <a href="#auth-login" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Login</a>
+                <a href="#auth-logout" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Logout</a>
+                <a href="#auth-me" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Current User</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Projects</div>
+                <a href="#projects-index" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>List Projects</a>
+                <a href="#projects-show" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Get Project</a>
+                <a href="#projects-tickets" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Project Tickets</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Tickets</div>
+                <a href="#tickets-show" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Get Ticket</a>
+                <a href="#tickets-create" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Create Ticket</a>
+                <a href="#tickets-update" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-amber-500 mr-2 align-middle"></span>Update Ticket</a>
+                <a href="#tickets-destroy" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-red-500 mr-2 align-middle"></span>Delete Ticket</a>
+                <a href="#tickets-move" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Move Ticket</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Ticket Comments</div>
+                <a href="#comments-index" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>List Comments</a>
+                <a href="#comments-store" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Add Comment</a>
+                <a href="#comments-destroy" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-red-500 mr-2 align-middle"></span>Delete Comment</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Lookups</div>
+                <a href="#lookup-statuses" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Ticket Statuses</a>
+                <a href="#lookup-types" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Ticket Types</a>
+                <a href="#lookup-priorities" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Ticket Priorities</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Daily Reports</div>
+                <a href="#daily-index" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>List Daily Reports</a>
+                <a href="#daily-show" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Get Daily Report</a>
+                <a href="#daily-store" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Create Daily Report</a>
+                <a href="#daily-update" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-amber-500 mr-2 align-middle"></span>Update Daily Report</a>
+                <a href="#daily-destroy" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-red-500 mr-2 align-middle"></span>Delete Daily Report</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Weekly Reports</div>
+                <a href="#weekly-index" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>List Weekly Reports</a>
+                <a href="#weekly-show" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Get Weekly Report</a>
+                <a href="#weekly-store" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Create Weekly Report</a>
+                <a href="#weekly-update" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-amber-500 mr-2 align-middle"></span>Update Weekly Report</a>
+                <a href="#weekly-destroy" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-red-500 mr-2 align-middle"></span>Delete Weekly Report</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Discussions</div>
+                <a href="#disc-index" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>List Discussions</a>
+                <a href="#disc-show" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Get Discussion</a>
+                <a href="#disc-store" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Create Discussion</a>
+                <a href="#disc-update" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-amber-500 mr-2 align-middle"></span>Update Discussion</a>
+                <a href="#disc-destroy" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-red-500 mr-2 align-middle"></span>Delete Discussion</a>
+                <a href="#disc-reply-store" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-blue-500 mr-2 align-middle"></span>Add Reply</a>
+                <a href="#disc-reply-destroy" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-red-500 mr-2 align-middle"></span>Delete Reply</a>
+            </div>
+
+            <div class="mb-4">
+                <div class="px-2 py-1 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Users</div>
+                <a href="#users-index" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>List Users</a>
+                <a href="#users-show" class="nav-link block px-2 py-1.5 rounded hover:bg-gray-800 text-gray-300"><span class="inline-block w-1 h-1 rounded-full bg-emerald-500 mr-2 align-middle"></span>Get User</a>
+            </div>
+        </nav>
+
+        <div class="p-3 border-t border-gray-800 text-[11px] text-gray-500">
+            Last verified: 2026-04-17 · 37 routes · 100% passed
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="ml-72 flex-1 max-w-5xl px-10 py-12">
+
+        <!-- Introduction -->
+        <section id="introduction" class="endpoint-anchor mb-16" data-search="introduction getting started overview mobile api">
+            <h1 class="text-4xl font-bold mb-3">PMHelper API</h1>
+            <p class="text-lg text-gray-400 mb-6">REST API for the PMHelper mobile app. Exposes the six core modules — projects, tickets, daily reports, weekly reports, discussions, and users — so native iOS and Android clients can consume the same data the web dashboard uses.</p>
+            <p class="text-gray-400 leading-relaxed">The API is additive: the Filament admin web dashboard keeps its existing Livewire-based flows. All endpoints live under <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">/api</code>, share Eloquent models + policies with the web side, and reuse the same Pusher private channels for realtime ticket updates.</p>
+        </section>
+
+        <!-- Base URL -->
+        <section id="base-url" class="endpoint-anchor mb-16" data-search="base url host endpoint">
+            <h2 class="text-2xl font-bold mb-3">Base URL</h2>
+            <p class="text-gray-400 mb-4">All endpoints are relative to:</p>
+            <div class="code-wrap relative">
+                <pre class="language-bash"><code>https://pm.digicrats.com/api</code></pre>
+            </div>
+        </section>
+
+        <!-- Authentication -->
+        <section id="authentication" class="endpoint-anchor mb-16" data-search="auth authentication bearer token sanctum login">
+            <h2 class="text-2xl font-bold mb-3">Authentication</h2>
+            <p class="text-gray-400 mb-4">The API uses <strong class="text-gray-200">Laravel Sanctum</strong> with plain-text bearer tokens. Obtain a token by calling <a href="#auth-login" class="text-blue-400 hover:underline"><code>POST /auth/login</code></a>, then include it as a <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">Authorization</code> header on every subsequent request:</p>
+            <div class="code-wrap relative">
+                <pre class="language-http"><code>Authorization: Bearer 1|abc…xyz
+Accept: application/json</code></pre>
+            </div>
+            <p class="text-gray-400 mt-4">Tokens are user-scoped and revocable. Call <a href="#auth-logout" class="text-blue-400 hover:underline"><code>POST /auth/logout</code></a> to invalidate the current token on logout.</p>
+        </section>
+
+        <!-- Response Format -->
+        <section id="response-format" class="endpoint-anchor mb-16" data-search="response format json shape pagination data meta">
+            <h2 class="text-2xl font-bold mb-3">Response Format</h2>
+            <p class="text-gray-400 mb-4">All successful responses return JSON. Single resources and collections are nested under a <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">data</code> key; paginated collections add a <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">meta</code> block.</p>
+            <p class="text-sm text-gray-500 mb-2">Single resource:</p>
+            <div class="code-wrap relative mb-6">
+                <pre class="language-json"><code>{
+  "data": { "id": 1, "name": "Example" }
+}</code></pre>
+            </div>
+            <p class="text-sm text-gray-500 mb-2">Paginated collection:</p>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "data": [ ... ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 5,
+    "per_page": 25,
+    "total": 123
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Errors -->
+        <section id="errors" class="endpoint-anchor mb-16" data-search="errors status codes 401 403 404 422 500 validation">
+            <h2 class="text-2xl font-bold mb-3">Errors</h2>
+            <p class="text-gray-400 mb-4">The API uses standard HTTP status codes. Error responses include a <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">message</code> field; validation errors also include a structured <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">errors</code> map.</p>
+            <div class="overflow-hidden rounded-lg border border-gray-800 mb-6">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50">
+                        <tr><th class="text-left px-4 py-2 font-semibold">Code</th><th class="text-left px-4 py-2 font-semibold">Meaning</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        <tr><td class="px-4 py-2 font-mono text-emerald-400">200</td><td class="px-4 py-2 text-gray-400">OK — request succeeded</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-emerald-400">201</td><td class="px-4 py-2 text-gray-400">Created — resource successfully created</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-amber-400">401</td><td class="px-4 py-2 text-gray-400">Unauthenticated — missing or invalid token</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-amber-400">403</td><td class="px-4 py-2 text-gray-400">Forbidden — authenticated but lacks permission</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-amber-400">404</td><td class="px-4 py-2 text-gray-400">Not Found — resource doesn't exist</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-amber-400">422</td><td class="px-4 py-2 text-gray-400">Unprocessable — validation failure</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-red-400">500</td><td class="px-4 py-2 text-gray-400">Server Error — unexpected failure</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-sm text-gray-500 mb-2">Validation error shape:</p>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "message": "The week start has already been taken.",
+  "errors": {
+    "week_start": ["The week start has already been taken."]
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- Realtime -->
+        <section id="realtime" class="endpoint-anchor mb-16" data-search="realtime pusher channels broadcast websocket ticket moved">
+            <h2 class="text-2xl font-bold mb-3">Realtime Events</h2>
+            <p class="text-gray-400 mb-4">Ticket moves broadcast via <strong class="text-gray-200">Pusher Channels</strong> on a private channel per project. Mobile clients should subscribe with Pusher's native iOS/Android SDK or <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">pusher-js</code> and listen for <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">ticket.moved</code> events.</p>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-gray-800/50 border border-gray-800 rounded-lg p-4">
+                    <div class="text-xs uppercase text-gray-500 mb-1">Channel</div>
+                    <code class="text-sm text-blue-300">private:project.{id}.kanban</code>
+                </div>
+                <div class="bg-gray-800/50 border border-gray-800 rounded-lg p-4">
+                    <div class="text-xs uppercase text-gray-500 mb-1">Event</div>
+                    <code class="text-sm text-blue-300">ticket.moved</code>
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mb-2">Event payload:</p>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "project_id": 1,
+  "ticket_id": 42,
+  "old_status_id": 3,
+  "new_status_id": 5,
+  "new_index": 0,
+  "moved_by_user_id": 7
+}</code></pre>
+            </div>
+            <div class="mt-4 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-sm text-blue-200">
+                <strong>Tip:</strong> Skip events where <code class="bg-gray-900 px-1.5 py-0.5 rounded text-xs">moved_by_user_id</code> equals the current user — those are your own optimistic updates.
+            </div>
+        </section>
+
+        <!-- ============ AUTH ENDPOINTS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Auth</h2>
+
+        <!-- POST /auth/login -->
+        <section id="auth-login" class="endpoint-anchor mb-12" data-search="login authentication token sanctum email password">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/auth/login</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Login</h3>
+            <p class="text-gray-400 mb-5">Exchange email + password for a bearer token. No auth required.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2 mt-6">Request Body</h4>
+            <div class="overflow-hidden rounded-lg border border-gray-800 mb-4">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50"><tr><th class="text-left px-4 py-2">Field</th><th class="text-left px-4 py-2">Type</th><th class="text-left px-4 py-2">Description</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800">
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">email</td><td class="px-4 py-2 text-gray-400">string, required</td><td class="px-4 py-2 text-gray-400">User email</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">password</td><td class="px-4 py-2 text-gray-400">string, required</td><td class="px-4 py-2 text-gray-400">User password</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">device_name</td><td class="px-4 py-2 text-gray-400">string, optional</td><td class="px-4 py-2 text-gray-400">Label shown in DB (falls back to User-Agent)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2 mt-6">Example Request</h4>
+            <div class="code-wrap relative mb-4">
+                <pre class="language-bash"><code>curl -X POST https://pm.digicrats.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "secret",
+    "device_name": "iPhone 15"
+  }'</code></pre>
+            </div>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response <span class="text-emerald-400 ml-2 text-xs">200 OK</span></h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "token": "1|abc...xyz",
+  "user": {
+    "id": 2,
+    "name": "Bintang Jerry",
+    "username": "bintangjerry",
+    "email": "user@example.com",
+    "avatar_url": "/storage/avatars/2_1775191617.jpg",
+    "status": null,
+    "status_message": null
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- POST /auth/logout -->
+        <section id="auth-logout" class="endpoint-anchor mb-12" data-search="logout revoke token sanctum">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/auth/logout</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Logout</h3>
+            <p class="text-gray-400 mb-5">Revokes the current access token. Requires authentication.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response <span class="text-emerald-400 ml-2 text-xs">200 OK</span></h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{ "message": "Logged out" }</code></pre>
+            </div>
+        </section>
+
+        <!-- GET /auth/me -->
+        <section id="auth-me" class="endpoint-anchor mb-12" data-search="me current user profile auth">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/auth/me</code>
+                <span class="text-xs text-gray-500">(alias: <code>/user</code>)</span>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Current User</h3>
+            <p class="text-gray-400 mb-5">Returns the authenticated user. Handy for hydrating the mobile app on launch after token restore.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response <span class="text-emerald-400 ml-2 text-xs">200 OK</span></h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "user": {
+    "id": 2,
+    "name": "Bintang Jerry",
+    "username": "bintangjerry",
+    "email": "user@example.com",
+    "avatar_url": "/storage/avatars/2_1775191617.jpg",
+    "status": null,
+    "status_message": null
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <!-- ============ PROJECTS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Projects</h2>
+
+        <section id="projects-index" class="endpoint-anchor mb-12" data-search="projects list index all projects">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/projects</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">List Projects</h3>
+            <p class="text-gray-400 mb-5">Returns all projects the authenticated user owns or is a member of, with ticket + member counts.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response <span class="text-emerald-400 ml-2 text-xs">200 OK</span></h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "data": [
+    {
+      "id": 1,
+      "name": "PMHelper",
+      "description": "Internal project management tool",
+      "ticket_prefix": "PMH",
+      "type": "kanban",
+      "status_type": "default",
+      "owner": { "id": 1, "name": "Admin", "email": "..." },
+      "status": { "id": 1, "name": "Active", "color": "#10b981" },
+      "tickets_count": 42,
+      "members_count": 5,
+      "created_at": "2026-01-01T00:00:00+07:00",
+      "updated_at": "2026-04-17T09:00:00+07:00"
+    }
+  ]
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="projects-show" class="endpoint-anchor mb-12" data-search="project show detail get single">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/projects/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Get Project</h3>
+            <p class="text-gray-400 mb-5">Returns a single project by ID. User must own or be a member of the project (<strong class="text-amber-300">403</strong> otherwise).</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response <span class="text-emerald-400 ml-2 text-xs">200 OK</span></h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "data": {
+    "id": 1,
+    "name": "PMHelper",
+    "description": "…",
+    "ticket_prefix": "PMH",
+    "type": "kanban",
+    "owner": { "id": 1, "name": "Admin" },
+    "tickets_count": 42,
+    "members_count": 5
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="projects-tickets" class="endpoint-anchor mb-12" data-search="project tickets list by project kanban">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/projects/{id}/tickets</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Project Tickets</h3>
+            <p class="text-gray-400 mb-5">Paginated list of tickets in a project, with owner/responsible/status/type/priority eager-loaded.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2 mt-6">Query Parameters</h4>
+            <div class="overflow-hidden rounded-lg border border-gray-800 mb-4">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50"><tr><th class="text-left px-4 py-2">Param</th><th class="text-left px-4 py-2">Description</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800">
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">status_id</td><td class="px-4 py-2 text-gray-400">Filter by status ID</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">mine</td><td class="px-4 py-2 text-gray-400"><code>1</code> to show only tickets owned by or assigned to you</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">sort_by</td><td class="px-4 py-2 text-gray-400"><code>updated_at</code> (default) · <code>created_at</code> · <code>priority</code> · <code>due_date</code> · <code>order</code></td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">per_page</td><td class="px-4 py-2 text-gray-400">Items per page (default 25)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============ TICKETS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Tickets</h2>
+
+        <section id="tickets-show" class="endpoint-anchor mb-12" data-search="ticket show detail get single">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/tickets/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Get Ticket</h3>
+            <p class="text-gray-400 mb-5">Returns a ticket with project, owner, responsible, status, type, priority, epic, and sprint relationships loaded.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response <span class="text-emerald-400 ml-2 text-xs">200 OK</span></h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "data": {
+    "id": 180,
+    "code": "PMH-180",
+    "name": "Fix kanban realtime",
+    "content": "…markdown content…",
+    "order": 0,
+    "estimation": 5,
+    "due_date": "2026-04-20",
+    "project": { "id": 1, "name": "PMHelper" },
+    "owner": { "id": 2, "name": "Bintang Jerry" },
+    "responsible": null,
+    "status": { "id": 5, "name": "In Progress", "color": "#3b82f6" },
+    "type": { "id": 1, "name": "Task", "color": "#6b7280", "icon": "task" },
+    "priority": { "id": 2, "name": "Normal", "color": "#10b981" },
+    "epic": null,
+    "created_at": "2026-04-10T09:00:00+07:00",
+    "updated_at": "2026-04-17T08:00:00+07:00"
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="tickets-create" class="endpoint-anchor mb-12" data-search="ticket create store new">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/tickets</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Create Ticket</h3>
+            <p class="text-gray-400 mb-5">Requires <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">Create ticket</code> permission and project access.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="overflow-hidden rounded-lg border border-gray-800 mb-4">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50"><tr><th class="text-left px-4 py-2">Field</th><th class="text-left px-4 py-2">Type</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800 text-gray-400">
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">name</td><td class="px-4 py-2">string, required, max 255</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">content</td><td class="px-4 py-2">string, required</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">project_id</td><td class="px-4 py-2">integer, required</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">responsible_id</td><td class="px-4 py-2">integer, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">type_id</td><td class="px-4 py-2">integer, optional (defaults to is_default type)</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">priority_id</td><td class="px-4 py-2">integer, optional (defaults to is_default priority)</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">status_id</td><td class="px-4 py-2">integer, optional (defaults to is_default status)</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">epic_id</td><td class="px-4 py-2">integer, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">sprint_id</td><td class="px-4 py-2">integer, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">estimation</td><td class="px-4 py-2">numeric, optional (hours)</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">due_date</td><td class="px-4 py-2">date, optional</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Request</h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "name": "Add dark mode toggle",
+  "content": "Settings page should have a toggle to switch themes.",
+  "project_id": 1,
+  "priority_id": 3,
+  "estimation": 4,
+  "due_date": "2026-04-25"
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="tickets-update" class="endpoint-anchor mb-12" data-search="ticket update patch edit modify">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-patch px-2.5 py-1 rounded text-xs font-bold">PATCH</span>
+                <code class="text-lg">/tickets/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Update Ticket</h3>
+            <p class="text-gray-400 mb-5">Partial update. Requires ticket update permission. Accepts any subset of the fields listed in <a href="#tickets-create" class="text-blue-400 hover:underline">Create Ticket</a>.</p>
+        </section>
+
+        <section id="tickets-destroy" class="endpoint-anchor mb-12" data-search="ticket delete destroy remove">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-delete px-2.5 py-1 rounded text-xs font-bold">DELETE</span>
+                <code class="text-lg">/tickets/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Delete Ticket</h3>
+            <p class="text-gray-400 mb-5">Soft-deletes the ticket. Requires <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">delete</code> policy on the ticket.</p>
+        </section>
+
+        <section id="tickets-move" class="endpoint-anchor mb-12" data-search="ticket move status change kanban drag drop broadcast">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/tickets/{id}/move</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Move Ticket</h3>
+            <p class="text-gray-400 mb-5">Change the ticket's status and order. Broadcasts <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">ticket.moved</code> on the project kanban channel so web + mobile clients stay in sync.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "status_id": 5,
+  "order": 0
+}</code></pre>
+            </div>
+
+            <div class="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-sm text-amber-200">
+                <strong>Permission:</strong> The target status's <code>canBeSetByUser</code> check runs — returns <strong>403</strong> if the user's role is not allowed to set that status.
+            </div>
+        </section>
+
+        <!-- ============ COMMENTS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Ticket Comments</h2>
+
+        <section id="comments-index" class="endpoint-anchor mb-12" data-search="comment list ticket comments">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/tickets/{id}/comments</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">List Comments</h3>
+            <p class="text-gray-400 mb-5">Returns all comments on the ticket, ordered by creation time.</p>
+        </section>
+
+        <section id="comments-store" class="endpoint-anchor mb-12" data-search="comment add create new post">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/tickets/{id}/comments</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Add Comment</h3>
+            <p class="text-gray-400 mb-5">Adds a comment to the ticket. Triggers mention notifications via existing boot logic.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{ "content": "LGTM — shipping tomorrow!" }</code></pre>
+            </div>
+        </section>
+
+        <section id="comments-destroy" class="endpoint-anchor mb-12" data-search="comment delete destroy remove">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-delete px-2.5 py-1 rounded text-xs font-bold">DELETE</span>
+                <code class="text-lg">/ticket-comments/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Delete Comment</h3>
+            <p class="text-gray-400 mb-5">Only the comment author or anyone with update permission on the parent ticket may delete.</p>
+        </section>
+
+        <!-- ============ LOOKUPS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Lookups</h2>
+        <p class="text-gray-400 mb-6">Helper endpoints that return the lists used in dropdowns when creating or filtering tickets.</p>
+
+        <section id="lookup-statuses" class="endpoint-anchor mb-12" data-search="lookup statuses ticket status list dropdown">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/ticket-statuses</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Ticket Statuses</h3>
+            <p class="text-gray-400 mb-5">Pass <code class="bg-gray-800 px-2 py-0.5 rounded text-sm text-blue-300">?project_id=X</code> to include project-custom statuses alongside the global ones.</p>
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Example Response</h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "data": [
+    { "id": 1, "name": "Backlog", "color": "#6b7280", "order": 0, "is_default": true },
+    { "id": 2, "name": "In Progress", "color": "#3b82f6", "order": 1, "is_default": false }
+  ]
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="lookup-types" class="endpoint-anchor mb-12" data-search="lookup types ticket type list dropdown">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/ticket-types</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Ticket Types</h3>
+            <p class="text-gray-400 mb-5">Returns all ticket types (Task, Bug, Feature, Request, etc.) with their color and icon.</p>
+        </section>
+
+        <section id="lookup-priorities" class="endpoint-anchor mb-12" data-search="lookup priorities ticket priority list dropdown">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/ticket-priorities</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Ticket Priorities</h3>
+            <p class="text-gray-400 mb-5">Returns priorities in alphabetical order (Blocker, Critical, High, Low, Normal).</p>
+        </section>
+
+        <!-- ============ DAILY REPORTS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Daily Reports</h2>
+        <p class="text-gray-400 mb-6">Daily standup-style reports. Unique per <em>(user, date, project)</em> — attempting to create a duplicate returns <strong class="text-amber-300">422</strong>.</p>
+
+        <section id="daily-index" class="endpoint-anchor mb-12" data-search="daily report list index">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/daily-reports</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">List Daily Reports</h3>
+            <p class="text-gray-400 mb-5">Returns a paginated list. Defaults to the current user's own reports.</p>
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Query Parameters</h4>
+            <div class="overflow-hidden rounded-lg border border-gray-800">
+                <table class="w-full text-sm">
+                    <tbody class="divide-y divide-gray-800 text-gray-400">
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">mine</td><td class="px-4 py-2"><code>0</code> to include team reports you have access to (default <code>1</code>)</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">project_id</td><td class="px-4 py-2">Filter by project</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">from / to</td><td class="px-4 py-2">Date range filter (YYYY-MM-DD)</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">per_page</td><td class="px-4 py-2">Items per page (default 25)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="daily-show" class="endpoint-anchor mb-12" data-search="daily report show detail single get">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/daily-reports/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Get Daily Report</h3>
+            <p class="text-gray-400 mb-5">Returns a single report if the user is the owner or has project access.</p>
+        </section>
+
+        <section id="daily-store" class="endpoint-anchor mb-12" data-search="daily report create store new">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/daily-reports</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Create Daily Report</h3>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="overflow-hidden rounded-lg border border-gray-800 mb-4">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50"><tr><th class="text-left px-4 py-2">Field</th><th class="text-left px-4 py-2">Type</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800 text-gray-400">
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">project_id</td><td class="px-4 py-2">integer, required</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">report_date</td><td class="px-4 py-2">date, required, unique per user+project</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">accomplished</td><td class="px-4 py-2">string, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">plans</td><td class="px-4 py-2">string, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">blockers</td><td class="px-4 py-2">string, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">status</td><td class="px-4 py-2"><code>draft</code> or <code>submitted</code> (default: draft)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-sm text-gray-500">Setting <code>status</code> to <code>submitted</code> stamps <code>submitted_at = now()</code>.</p>
+        </section>
+
+        <section id="daily-update" class="endpoint-anchor mb-12" data-search="daily report update patch edit">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-patch px-2.5 py-1 rounded text-xs font-bold">PATCH</span>
+                <code class="text-lg">/daily-reports/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Update Daily Report</h3>
+            <p class="text-gray-400 mb-5">Only the report owner can update. Transitioning <code>status</code> from draft → submitted stamps <code>submitted_at</code>.</p>
+        </section>
+
+        <section id="daily-destroy" class="endpoint-anchor mb-12" data-search="daily report delete destroy remove">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-delete px-2.5 py-1 rounded text-xs font-bold">DELETE</span>
+                <code class="text-lg">/daily-reports/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Delete Daily Report</h3>
+            <p class="text-gray-400 mb-5">Owner-only.</p>
+        </section>
+
+        <!-- ============ WEEKLY REPORTS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Weekly Reports</h2>
+        <p class="text-gray-400 mb-6">Weekly summaries. Unique per <em>(user, week_start)</em>.</p>
+
+        <section id="weekly-index" class="endpoint-anchor mb-12" data-search="weekly report list index">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/weekly-reports</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">List Weekly Reports</h3>
+            <p class="text-gray-400 mb-5">Paginated. Accepts <code>mine</code>, <code>project_id</code>, <code>per_page</code> query params.</p>
+        </section>
+
+        <section id="weekly-show" class="endpoint-anchor mb-12" data-search="weekly report show single detail">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/weekly-reports/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Get Weekly Report</h3>
+            <p class="text-gray-400 mb-5">Accessible to owner or anyone with project access.</p>
+        </section>
+
+        <section id="weekly-store" class="endpoint-anchor mb-12" data-search="weekly report create store new">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/weekly-reports</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Create Weekly Report</h3>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="overflow-hidden rounded-lg border border-gray-800 mb-4">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-800/50"><tr><th class="text-left px-4 py-2">Field</th><th class="text-left px-4 py-2">Type</th></tr></thead>
+                    <tbody class="divide-y divide-gray-800 text-gray-400">
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">project_id</td><td class="px-4 py-2">integer, required</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">week_start</td><td class="px-4 py-2">date, required, unique per user</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">week_end</td><td class="px-4 py-2">date, required, ≥ week_start</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">content</td><td class="px-4 py-2">string, optional</td></tr>
+                        <tr><td class="px-4 py-2 font-mono text-blue-300">status</td><td class="px-4 py-2"><code>draft</code> or <code>submitted</code></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="weekly-update" class="endpoint-anchor mb-12" data-search="weekly report update patch edit">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-patch px-2.5 py-1 rounded text-xs font-bold">PATCH</span>
+                <code class="text-lg">/weekly-reports/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Update Weekly Report</h3>
+            <p class="text-gray-400 mb-5">Owner-only. Supports <code>content</code> and <code>status</code> partial update.</p>
+        </section>
+
+        <section id="weekly-destroy" class="endpoint-anchor mb-12" data-search="weekly report delete destroy">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-delete px-2.5 py-1 rounded text-xs font-bold">DELETE</span>
+                <code class="text-lg">/weekly-reports/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Delete Weekly Report</h3>
+            <p class="text-gray-400 mb-5">Owner-only.</p>
+        </section>
+
+        <!-- ============ DISCUSSIONS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Discussions</h2>
+        <p class="text-gray-400 mb-6">Threaded discussions scoped to a project, optionally tied to a ticket.</p>
+
+        <section id="disc-index" class="endpoint-anchor mb-12" data-search="discussion list index threads">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/discussions</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">List Discussions</h3>
+            <p class="text-gray-400 mb-5">Paginated list across all projects the user has access to. Filter by <code>project_id</code> or <code>status</code>.</p>
+        </section>
+
+        <section id="disc-show" class="endpoint-anchor mb-12" data-search="discussion show detail single with replies">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/discussions/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Get Discussion</h3>
+            <p class="text-gray-400 mb-5">Returns the discussion with all replies eager-loaded (chronological).</p>
+        </section>
+
+        <section id="disc-store" class="endpoint-anchor mb-12" data-search="discussion create store new thread">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/discussions</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Create Discussion</h3>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{
+  "project_id": 1,
+  "ticket_id": 180,          // optional — link to a ticket
+  "title": "Should we migrate to v2?",
+  "content": "…markdown…",
+  "priority": "normal",      // optional
+  "status": "open"           // optional, defaults to open
+}</code></pre>
+            </div>
+        </section>
+
+        <section id="disc-update" class="endpoint-anchor mb-12" data-search="discussion update patch resolve edit">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-patch px-2.5 py-1 rounded text-xs font-bold">PATCH</span>
+                <code class="text-lg">/discussions/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Update Discussion</h3>
+            <p class="text-gray-400 mb-5">Creator or project owner only. Changing <code>status</code> to <code>resolved</code> stamps <code>resolved_by</code> + <code>resolved_at</code> automatically.</p>
+        </section>
+
+        <section id="disc-destroy" class="endpoint-anchor mb-12" data-search="discussion delete destroy remove">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-delete px-2.5 py-1 rounded text-xs font-bold">DELETE</span>
+                <code class="text-lg">/discussions/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Delete Discussion</h3>
+            <p class="text-gray-400 mb-5">Creator or project owner only.</p>
+        </section>
+
+        <section id="disc-reply-store" class="endpoint-anchor mb-12" data-search="discussion reply add new post">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-post px-2.5 py-1 rounded text-xs font-bold">POST</span>
+                <code class="text-lg">/discussions/{id}/replies</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Add Reply</h3>
+            <p class="text-gray-400 mb-5">Any project member can reply.</p>
+
+            <h4 class="text-sm font-semibold text-gray-300 mb-2">Request Body</h4>
+            <div class="code-wrap relative">
+                <pre class="language-json"><code>{ "content": "Agreed — let's schedule a call." }</code></pre>
+            </div>
+        </section>
+
+        <section id="disc-reply-destroy" class="endpoint-anchor mb-12" data-search="discussion reply delete destroy">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-delete px-2.5 py-1 rounded text-xs font-bold">DELETE</span>
+                <code class="text-lg">/discussion-replies/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Delete Reply</h3>
+            <p class="text-gray-400 mb-5">Reply author only.</p>
+        </section>
+
+        <!-- ============ USERS ============ -->
+        <h2 class="text-3xl font-bold mt-20 mb-6 pb-3 border-b border-gray-800">Users</h2>
+
+        <section id="users-index" class="endpoint-anchor mb-12" data-search="users list team directory search">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/users</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">List Users</h3>
+            <p class="text-gray-400 mb-5">Paginated team directory. Pass <code>?search=jerry</code> to filter by name/username/email.</p>
+        </section>
+
+        <section id="users-show" class="endpoint-anchor mb-12" data-search="user show profile detail">
+            <div class="flex items-center gap-3 mb-3">
+                <span class="method-get px-2.5 py-1 rounded text-xs font-bold">GET</span>
+                <code class="text-lg">/users/{id}</code>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Get User</h3>
+            <p class="text-gray-400 mb-5">Returns a single user with department + position.</p>
+        </section>
+
+        <div class="mt-20 pt-8 border-t border-gray-800 text-sm text-gray-500 text-center">
+            PMHelper API · Built for mobile · <span class="text-gray-400">37 endpoints</span> · Fully verified 2026-04-17
+        </div>
+    </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-http.min.js"></script>
+
+<script>
+    // --- Search ---
+    const searchInput = document.getElementById('search');
+    const sections = document.querySelectorAll('section[data-search]');
+    const navLinks = document.querySelectorAll('#sidebarNav a.nav-link');
+    const resultsCount = document.getElementById('searchResultsCount');
+
+    function normalize(s) { return (s || '').toLowerCase().trim(); }
+
+    function applySearch(query) {
+        query = normalize(query);
+        let visibleCount = 0;
+
+        sections.forEach(section => {
+            const haystack = (section.dataset.search + ' ' + section.textContent).toLowerCase();
+            const match = !query || haystack.includes(query);
+            section.classList.toggle('hidden-by-search', !match);
+            if (match) visibleCount++;
+        });
+
+        navLinks.forEach(link => {
+            const target = link.getAttribute('href');
+            const section = target ? document.querySelector(target) : null;
+            if (section && section.classList.contains('hidden-by-search')) {
+                link.classList.add('hidden-by-search');
+            } else {
+                link.classList.remove('hidden-by-search');
+            }
+        });
+
+        if (query) {
+            resultsCount.textContent = visibleCount + ' section' + (visibleCount === 1 ? '' : 's') + ' match';
+        } else {
+            resultsCount.textContent = '';
+        }
+    }
+
+    searchInput.addEventListener('input', e => applySearch(e.target.value));
+
+    // Press "/" anywhere to focus search
+    document.addEventListener('keydown', e => {
+        if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            searchInput.focus();
+        }
+        if (e.key === 'Escape' && document.activeElement === searchInput) {
+            searchInput.value = '';
+            applySearch('');
+            searchInput.blur();
+        }
+    });
+
+    // --- Active section highlighting on scroll ---
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const id = entry.target.id;
+                navLinks.forEach(link => {
+                    link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+                });
+            }
+        });
+    }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+    sections.forEach(s => observer.observe(s));
+
+    // --- Copy button on code blocks ---
+    document.querySelectorAll('pre[class*="language-"]').forEach(pre => {
+        const wrap = pre.closest('.code-wrap');
+        if (!wrap) return;
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn absolute top-2 right-2 px-2 py-1 text-[11px] bg-gray-700 hover:bg-gray-600 rounded text-gray-200';
+        btn.textContent = 'Copy';
+        btn.onclick = () => {
+            navigator.clipboard.writeText(pre.textContent);
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+        };
+        wrap.appendChild(btn);
+    });
+</script>
+
+</body>
+</html>
