@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BroadcastAuthController;
 use App\Http\Controllers\Api\DailyReportController;
@@ -28,9 +29,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
+    Route::patch('auth/me', [AuthController::class, 'updateProfile']);
 
     // Legacy alias — kept for any existing callers
     Route::get('user', [AuthController::class, 'me']);
+
+    // Activity feed (unified — moves, comments, submitted reports)
+    Route::get('activities', [ActivityController::class, 'index']);
 
     // Projects
     Route::get('projects', [ProjectController::class, 'index']);

@@ -47,7 +47,24 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return response()->json([
-            'user' => new UserResource($request->user()),
+            'user' => new UserResource($request->user()->load(['department', 'position'])),
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'status_message' => 'sometimes|nullable|string|max:255',
+        ]);
+
+        $user->update($validated);
+        $user->load(['department', 'position']);
+
+        return response()->json([
+            'user' => new UserResource($user),
         ]);
     }
 }
