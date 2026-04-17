@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Events\TicketMoved;
 use App\Helpers\KanbanScrumHelper;
 use App\Models\Project;
 use Filament\Facades\Filament;
@@ -206,6 +207,16 @@ class Kanban extends Page implements HasForms
                 $this->updateTicketOrder($oldStatusId);
                 // Activity logging + notifications handled by Ticket model boot().
             }
+
+            // Broadcast so other viewers of this project's kanban see the update live
+            broadcast(new TicketMoved(
+                projectId: $this->project->id,
+                ticketId: $ticket->id,
+                oldStatusId: $oldStatusId,
+                newStatusId: (int) $newStatusId,
+                newIndex: (int) $newIndex,
+                movedByUserId: (int) auth()->id(),
+            ))->toOthers();
 
             // Return success response
             return [

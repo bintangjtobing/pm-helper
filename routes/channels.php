@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\MessengerConversation;
+use App\Models\Project;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -31,6 +32,15 @@ Broadcast::channel('messenger.conversation.{conversation}', function ($user, Mes
  * Returning a payload (not a bool) is required for presence channels.
  * Includes manual status fields so clients can render the right indicator.
  */
+/*
+ * Kanban: private channel per project.
+ * Only project owner or members can subscribe to receive ticket move events.
+ */
+Broadcast::channel('project.{project}.kanban', function ($user, Project $project) {
+    return (int) $project->owner_id === (int) $user->id
+        || $project->users()->where('users.id', $user->id)->exists();
+});
+
 Broadcast::channel('messenger.online', function ($user) {
     return [
         'id' => (int) $user->id,

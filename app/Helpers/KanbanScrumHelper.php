@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use App\Events\TicketMoved;
 use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\TicketPriority;
@@ -202,9 +203,22 @@ trait KanbanScrumHelper
             return;
         }
 
+        $oldStatusId = (int) $ticket->status_id;
         $ticket->order = $newIndex;
         $ticket->status_id = $newStatus;
         $ticket->save();
+
+        if ($this->project) {
+            broadcast(new TicketMoved(
+                projectId: (int) $this->project->id,
+                ticketId: (int) $ticket->id,
+                oldStatusId: $oldStatusId,
+                newStatusId: (int) $newStatus,
+                newIndex: (int) $newIndex,
+                movedByUserId: (int) auth()->id(),
+            ))->toOthers();
+        }
+
         Filament::notify('success', __('Ticket updated'));
     }
 

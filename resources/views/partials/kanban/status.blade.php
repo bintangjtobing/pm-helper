@@ -1,4 +1,4 @@
-<div class="kanban-statuses">
+<div class="kanban-statuses" data-status-id="{{ $status['id'] }}">
     <!-- Column Header -->
     <div class="status-header" style="border-color: {{ $status['color'] }};">
         <div class="flex items-center justify-between">
