@@ -1,114 +1,84 @@
 <?php
 
-use App\Models\Project;
-use App\Models\Ticket;
-use App\Models\TicketPriority;
-use App\Models\TicketStatus;
-use App\Models\TicketType;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DailyReportController;
+use App\Http\Controllers\Api\DiscussionController;
+use App\Http\Controllers\Api\DiscussionReplyController;
+use App\Http\Controllers\Api\ProjectController;
+use App\Http\Controllers\Api\TicketCommentController;
+use App\Http\Controllers\Api\TicketController;
+use App\Http\Controllers\Api\TicketLookupController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WeeklyReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| API Routes — Mobile App
 |--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
+| Consumed by the PMHelper mobile app (Expo/React Native). Web dashboard
+| continues to use Filament/Livewire — these routes are additive.
 */
 
+// Public
+Route::post('auth/login', [AuthController::class, 'login']);
+
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
+    // Auth
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::get('auth/me', [AuthController::class, 'me']);
 
-    // Projects API
-    Route::get('/projects', function (Request $request) {
-        $user = $request->user();
-        $projects = Project::where('owner_id', $user->id)
-            ->orWhereHas('users', function ($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })
-            ->with('owner', 'status')
-            ->withCount('tickets')
-            ->get();
+    // Legacy alias — kept for any existing callers
+    Route::get('user', [AuthController::class, 'me']);
 
-        return response()->json($projects);
-    });
+    // Projects
+    Route::get('projects', [ProjectController::class, 'index']);
+    Route::get('projects/{project}', [ProjectController::class, 'show']);
+    Route::get('projects/{project}/tickets', [TicketController::class, 'indexByProject']);
 
-    Route::get('/projects/{project}/tickets', function (Request $request, Project $project) {
-        $user = $request->user();
+    // Tickets
+    Route::post('tickets', [TicketController::class, 'store']);
+    Route::get('tickets/{ticket}', [TicketController::class, 'show']);
+    Route::patch('tickets/{ticket}', [TicketController::class, 'update']);
+    Route::delete('tickets/{ticket}', [TicketController::class, 'destroy']);
+    Route::post('tickets/{ticket}/move', [TicketController::class, 'move']);
 
-        // Verify access
-        if ($project->owner_id !== $user->id && !$project->users()->where('users.id', $user->id)->exists()) {
-            abort(403);
-        }
+    // Ticket comments
+    Route::get('tickets/{ticket}/comments', [TicketCommentController::class, 'index']);
+    Route::post('tickets/{ticket}/comments', [TicketCommentController::class, 'store']);
+    Route::delete('ticket-comments/{comment}', [TicketCommentController::class, 'destroy']);
 
-        $tickets = $project->tickets()
-            ->with(['owner', 'responsible', 'status', 'type', 'priority'])
-            ->orderByDesc('created_at')
-            ->paginate($request->get('per_page', 25));
+    // Ticket lookups (for form dropdowns)
+    Route::get('ticket-statuses', [TicketLookupController::class, 'statuses']);
+    Route::get('ticket-types', [TicketLookupController::class, 'types']);
+    Route::get('ticket-priorities', [TicketLookupController::class, 'priorities']);
 
-        return response()->json($tickets);
-    });
+    // Daily Reports
+    Route::get('daily-reports', [DailyReportController::class, 'index']);
+    Route::post('daily-reports', [DailyReportController::class, 'store']);
+    Route::get('daily-reports/{dailyReport}', [DailyReportController::class, 'show']);
+    Route::patch('daily-reports/{dailyReport}', [DailyReportController::class, 'update']);
+    Route::delete('daily-reports/{dailyReport}', [DailyReportController::class, 'destroy']);
 
-    // Tickets API
-    Route::get('/tickets/{ticket}', function (Request $request, Ticket $ticket) {
-        $user = $request->user();
+    // Weekly Reports
+    Route::get('weekly-reports', [WeeklyReportController::class, 'index']);
+    Route::post('weekly-reports', [WeeklyReportController::class, 'store']);
+    Route::get('weekly-reports/{weeklyReport}', [WeeklyReportController::class, 'show']);
+    Route::patch('weekly-reports/{weeklyReport}', [WeeklyReportController::class, 'update']);
+    Route::delete('weekly-reports/{weeklyReport}', [WeeklyReportController::class, 'destroy']);
 
-        if (!$user->can('view', $ticket)) {
-            abort(403);
-        }
+    // Discussions
+    Route::get('discussions', [DiscussionController::class, 'index']);
+    Route::post('discussions', [DiscussionController::class, 'store']);
+    Route::get('discussions/{discussion}', [DiscussionController::class, 'show']);
+    Route::patch('discussions/{discussion}', [DiscussionController::class, 'update']);
+    Route::delete('discussions/{discussion}', [DiscussionController::class, 'destroy']);
 
-        $ticket->load(['owner', 'responsible', 'status', 'type', 'priority', 'project', 'epic', 'sprint']);
+    // Discussion replies
+    Route::post('discussions/{discussion}/replies', [DiscussionReplyController::class, 'store']);
+    Route::delete('discussion-replies/{reply}', [DiscussionReplyController::class, 'destroy']);
 
-        return response()->json($ticket);
-    });
-
-    Route::post('/tickets', function (Request $request) {
-        $user = $request->user();
-
-        if (!$user->can('Create ticket')) {
-            abort(403);
-        }
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'content' => 'required|string',
-            'project_id' => 'required|exists:projects,id',
-            'responsible_id' => 'nullable|exists:users,id',
-            'type_id' => 'nullable|exists:ticket_types,id',
-            'priority_id' => 'nullable|exists:ticket_priorities,id',
-            'status_id' => 'nullable|exists:ticket_statuses,id',
-            'epic_id' => 'nullable|exists:epics,id',
-            'sprint_id' => 'nullable|exists:sprints,id',
-            'estimation' => 'nullable|numeric|min:0',
-            'due_date' => 'nullable|date',
-        ]);
-
-        // Verify project access
-        $project = Project::findOrFail($validated['project_id']);
-        if ($project->owner_id !== $user->id && !$project->users()->where('users.id', $user->id)->exists()) {
-            abort(403);
-        }
-
-        // Set defaults
-        $validated['owner_id'] = $user->id;
-        if (!isset($validated['status_id'])) {
-            $validated['status_id'] = TicketStatus::where('is_default', true)->first()?->id;
-        }
-        if (!isset($validated['type_id'])) {
-            $validated['type_id'] = TicketType::where('is_default', true)->first()?->id;
-        }
-        if (!isset($validated['priority_id'])) {
-            $validated['priority_id'] = TicketPriority::where('is_default', true)->first()?->id;
-        }
-
-        $ticket = Ticket::create($validated);
-        $ticket->load(['owner', 'responsible', 'status', 'type', 'priority', 'project']);
-
-        return response()->json($ticket, 201);
-    });
+    // Users
+    Route::get('users', [UserController::class, 'index']);
+    Route::get('users/{user}', [UserController::class, 'show']);
 });
