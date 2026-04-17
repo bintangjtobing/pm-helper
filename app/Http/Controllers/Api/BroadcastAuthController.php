@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Broadcasting\Broadcasters\PusherBroadcaster;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -18,19 +16,13 @@ use Illuminate\Support\Facades\Broadcast;
  */
 class BroadcastAuthController extends Controller
 {
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(Request $request)
     {
         // Broadcast::auth() inspects channel_name + socket_id in the request,
         // runs our callbacks in routes/channels.php against the authenticated
-        // user, and returns the signed payload Pusher expects.
-        $response = Broadcast::auth($request);
-
-        // If the response is already a proper JsonResponse (success), return it.
-        if ($response instanceof JsonResponse) {
-            return $response;
-        }
-
-        // For string payloads, wrap in JsonResponse.
-        return response()->json(json_decode($response, true));
+        // user, and returns the signed payload Pusher expects. It can return
+        // a JsonResponse, Response, array, or JSON string depending on channel
+        // type — so pass it through untouched.
+        return Broadcast::auth($request);
     }
 }
