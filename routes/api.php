@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BroadcastAuthController;
 use App\Http\Controllers\Api\DailyReportController;
 use App\Http\Controllers\Api\DiscussionController;
 use App\Http\Controllers\Api\DiscussionReplyController;
@@ -81,4 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Users
     Route::get('users', [UserController::class, 'index']);
     Route::get('users/{user}', [UserController::class, 'show']);
+
+    // Pusher channel authentication for private/presence subscriptions
+    Route::post('broadcasting/auth', BroadcastAuthController::class);
 });
