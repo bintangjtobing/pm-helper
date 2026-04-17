@@ -7,6 +7,7 @@ use App\Http\Resources\DailyReportResource;
 use App\Models\DailyReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class DailyReportController extends Controller
 {
@@ -63,7 +64,12 @@ class DailyReportController extends Controller
 
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
-            'report_date' => 'required|date',
+            'report_date' => [
+                'required', 'date',
+                Rule::unique('daily_reports')->where(fn($q) => $q
+                    ->where('user_id', $user->id)
+                    ->where('project_id', $request->input('project_id'))),
+            ],
             'accomplished' => 'nullable|string',
             'plans' => 'nullable|string',
             'blockers' => 'nullable|string',

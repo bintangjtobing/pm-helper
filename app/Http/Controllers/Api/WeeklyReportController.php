@@ -7,6 +7,7 @@ use App\Http\Resources\WeeklyReportResource;
 use App\Models\WeeklyReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class WeeklyReportController extends Controller
 {
@@ -56,7 +57,10 @@ class WeeklyReportController extends Controller
 
         $validated = $request->validate([
             'project_id' => 'required|exists:projects,id',
-            'week_start' => 'required|date',
+            'week_start' => [
+                'required', 'date',
+                Rule::unique('weekly_reports')->where(fn($q) => $q->where('user_id', $user->id)),
+            ],
             'week_end' => 'required|date|after_or_equal:week_start',
             'content' => 'nullable|string',
             'status' => 'nullable|in:draft,submitted',
