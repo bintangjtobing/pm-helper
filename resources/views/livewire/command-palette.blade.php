@@ -14,12 +14,11 @@
          This component only owns the modal + keyboard wiring. The button dispatches a
          'cmd-palette:toggle' CustomEvent that our init() handler listens for. --}}
 
-    {{-- Backdrop + Modal --}}
-    <template x-teleport="body">
-        <div x-show="open" x-cloak
-             class="fixed inset-0 z-[60] flex items-start justify-center pt-20 px-4 bg-slate-900/70 backdrop-blur-sm"
-             @click.self="close()"
-             x-transition.opacity.duration.150ms>
+    {{-- Backdrop + Modal (NOT teleported — keeps wire:model bindings alive) --}}
+    <div x-show="open" x-cloak
+         class="fixed inset-0 z-[60] flex items-start justify-center pt-20 px-4 bg-slate-900/70 backdrop-blur-sm"
+         @click.self="close()"
+         x-transition.opacity.duration.150ms>
 
             <div class="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 overflow-hidden"
                  @click.stop
@@ -33,8 +32,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     <input x-ref="searchInput"
-                           x-model="localQuery"
-                           @input.debounce.250ms="$wire.set('query', localQuery)"
+                           wire:model.debounce.250ms="query"
                            @keydown.down.prevent="moveDown()"
                            @keydown.up.prevent="moveUp()"
                            @keydown.enter.prevent="selectCurrent()"
@@ -42,6 +40,12 @@
                            placeholder="Search menus, tickets, projects, people, goals…"
                            class="flex-1 bg-transparent text-[14px] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none border-0 p-0" />
                     <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-[10px] font-mono text-gray-500 dark:text-gray-400 shrink-0">Esc</kbd>
+                </div>
+
+                {{-- Loading indicator (visible while Livewire processes the search) --}}
+                <div wire:loading wire:target="query" class="px-4 py-2 text-[11.5px] text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                    <svg class="inline-block w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"/><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Searching…
                 </div>
 
                 {{-- Results --}}
@@ -108,8 +112,7 @@
                     <div class="opacity-70">PM Helper · Command Palette</div>
                 </div>
             </div>
-        </div>
-    </template>
+    </div>
 </div>
 
 @once
@@ -123,7 +126,6 @@
             return {
                 open: false,
                 selectedIndex: 0,
-                localQuery: '',
                 flatUrls: flatUrls || [],
                 isMac: /Mac|iPod|iPhone|iPad/.test(navigator.platform),
 
@@ -158,7 +160,6 @@
                 close() {
                     this.open = false;
                     this.selectedIndex = 0;
-                    this.localQuery = '';
                     this.$wire.set('query', '');
                 },
 
