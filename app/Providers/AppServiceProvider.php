@@ -319,6 +319,7 @@ class AppServiceProvider extends ServiceProvider
         Filament::registerNavigationGroups([
             __('Management'),
             __('Reports'),
+            __('Performance'),
             __('Organization'),
             __('Referential'),
             __('Security'),
@@ -345,6 +346,21 @@ class AppServiceProvider extends ServiceProvider
             'body.end',
             fn (): string => auth()->check()
                 ? Blade::render('@livewire("messenger")')
+                : '',
+        );
+
+        // Development banner - OKR/KPI module in progress (disable when user confirms complete)
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => auth()->check() && (bool) env('DEV_BANNER_OKR', true)
+                ? '<div id="dev-banner-okr" style="position:fixed;bottom:16px;left:16px;z-index:9999;max-width:360px;background:#fef3c7;border:1px solid #f59e0b;border-left:4px solid #d97706;border-radius:8px;padding:10px 14px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:Inter,system-ui,sans-serif;font-size:12.5px;line-height:1.45;color:#78350f;display:flex;gap:10px;align-items:flex-start;">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="#d97706" style="flex-shrink:0;margin-top:1px;" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                    <div>
+                        <div style="font-weight:600;color:#78350f;margin-bottom:2px;">Development in progress</div>
+                        <div style="color:#92400e;">The <strong>OKR &amp; KPI</strong> module is being built — minor disruptions possible.</div>
+                    </div>
+                    <button onclick="document.getElementById(\'dev-banner-okr\').style.display=\'none\'" style="background:none;border:none;color:#92400e;cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 4px;flex-shrink:0;" title="Dismiss">&times;</button>
+                </div>'
                 : '',
         );
 
