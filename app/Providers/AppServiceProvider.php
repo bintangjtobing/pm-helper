@@ -383,6 +383,14 @@ class AppServiceProvider extends ServiceProvider
                 : '',
         );
 
+        // Command palette - Ctrl+K / Cmd+K search, trigger button near topbar
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => auth()->check()
+                ? Blade::render('@livewire("command-palette")')
+                : '',
+        );
+
         // Development banner - OKR/KPI module in progress (disable when user confirms complete)
         Filament::registerRenderHook(
             'body.end',
