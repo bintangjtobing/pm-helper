@@ -77,14 +77,14 @@
     {{-- Backdrop + Modal --}}
     <template x-teleport="body">
         <div x-show="open" x-cloak
-             class="fixed inset-0 z-[60] flex items-start justify-center pt-20 px-4"
+             class="fixed inset-0 z-[60] flex items-start justify-center pt-20 px-4 bg-slate-900/70 backdrop-blur-sm"
+             @click.self="close()"
+             @keydown.escape.window="close()"
              x-transition.opacity.duration.150ms>
 
-            {{-- Backdrop --}}
-            <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" @click="close()"></div>
-
-            {{-- Dialog --}}
+            {{-- Dialog (stop propagation so clicks inside don't close) --}}
             <div class="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 overflow-hidden"
+                 @click.stop
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 scale-95 translate-y-2"
                  x-transition:enter-end="opacity-100 scale-100 translate-y-0">
