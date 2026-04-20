@@ -114,7 +114,7 @@ class CommandPalette extends Component
             return [
                 'label' => '[' . ($t->code ?? $t->id) . '] ' . $t->name,
                 'group' => $t->project?->name ?? 'Ticket',
-                'url' => route('filament.resources.tickets.edit', $t),
+                'url' => \App\Filament\Resources\TicketResource::getUrl('view', ['record' => $t]),
                 'icon' => 'heroicon-o-ticket',
                 'type' => 'ticket',
             ];
@@ -134,7 +134,7 @@ class CommandPalette extends Component
         $projects = $projectsQuery->limit(5)->get()->map(fn ($p) => [
             'label' => $p->name,
             'group' => 'Project',
-            'url' => route('filament.resources.projects.edit', $p),
+            'url' => \App\Filament\Resources\ProjectResource::getUrl('view', ['record' => $p]),
             'icon' => 'heroicon-o-archive',
             'type' => 'project',
         ])->all();
@@ -149,7 +149,7 @@ class CommandPalette extends Component
             ->map(fn ($u) => [
                 'label' => $u->name,
                 'group' => $u->email . ($u->department ? ' · ' . $u->department->name : ''),
-                'url' => route('filament.resources.users.edit', $u),
+                'url' => \App\Filament\Resources\UserResource::getUrl('view', ['record' => $u]),
                 'icon' => 'heroicon-o-user',
                 'type' => 'user',
             ])
