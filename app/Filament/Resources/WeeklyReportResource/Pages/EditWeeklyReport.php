@@ -3,14 +3,19 @@
 namespace App\Filament\Resources\WeeklyReportResource\Pages;
 
 use App\Filament\Resources\WeeklyReportResource;
+use App\Models\GoalPeriod;
+use App\Models\KeyResult;
 use App\Models\User;
 use App\Notifications\WeeklyReportSubmitted;
 use App\Services\PdfExtractorService;
 use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Pages\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\HtmlString;
 
 class EditWeeklyReport extends EditRecord
 {
@@ -20,6 +25,16 @@ class EditWeeklyReport extends EditRecord
     {
         return [
             Actions\ViewAction::make(),
+
+            Actions\Action::make('updateOkrProgress')
+                ->label(__('Update OKR Progress'))
+                ->icon('heroicon-o-trending-up')
+                ->color('success')
+                ->visible(fn () => $this->activeKeyResults()->isNotEmpty() && $this->record->user_id === auth()->id())
+                ->form(fn () => $this->buildOkrUpdateForm())
+                ->action(function (array $data) {
+                    $this->applyOkrUpdates($data);
+                }),
 
             Actions\Action::make('generateFromAttachments')
                 ->label(__('Generate Report from Attachments (AI)'))
@@ -240,5 +255,129 @@ Extract real numbers from the documents. If a metric is not mentioned, use 0. Fo
     protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('view', ['record' => $this->record]);
+    }
+
+    /**
+     * Key Results the report owner owns in an active quarterly period.
+     * Basis for the OKR Progress action — hidden entirely if none exist.
+     */
+    protected function activeKeyResults()
+    {
+        $activePeriod = GoalPeriod::query()
+            ->where('type', 'quarterly')
+            ->where('status', 'active')
+            ->orderByDesc('start_date')
+            ->first();
+
+        if (! $activePeriod) {
+            return collect();
+        }
+
+        return KeyResult::query()
+            ->with('goal')
+            ->whereHas('goal', fn ($q) => $q
+                ->where('period_id', $activePeriod->id)
+                ->where('owner_id', $this->record->user_id)
+                ->where('type', 'objective')
+                ->whereNotIn('status', ['cancelled']))
+            ->orderBy('sort_order')
+            ->get();
+    }
+
+    /**
+     * Build the modal form schema dynamically, one field-group per active KR.
+     */
+    protected function buildOkrUpdateForm(): array
+    {
+        $krs = $this->activeKeyResults();
+        $schema = [
+            Forms\Components\Placeholder::make('okr_intro')
+                ->label('')
+                ->content(new HtmlString(
+                    '<div style="font-size:12.5px; color:#6b7280; line-height:1.55;">'
+                    . 'Update progress on your Key Results for <strong>week of '
+                    . $this->record->week_start->format('d M Y')
+                    . '</strong>. Leave the value unchanged if a KR had no movement this week.'
+                    . '</div>'
+                )),
+        ];
+
+        foreach ($krs as $kr) {
+            $mode = $kr->progress_mode;
+            $modeLabel = $mode === 'auto' ? 'Auto (read-only)' : ucfirst($mode);
+            $valueDisabled = $mode === 'auto';
+            $unit = $kr->unit ? ' ' . $kr->unit : '';
+            $code = $kr->code ? "{$kr->code} — " : '';
+
+            $schema[] = Forms\Components\Fieldset::make("{$code}{$kr->title}")
+                ->schema([
+                    Forms\Components\Placeholder::make("okr_meta_{$kr->id}")
+                        ->label('')
+                        ->content(new HtmlString(
+                            '<div style="font-size:11.5px; color:#6b7280;">'
+                            . "Target: <strong>" . ($kr->target_value !== null ? number_format((float) $kr->target_value, 2) : '—') . "{$unit}</strong>"
+                            . " • Current: <strong>" . number_format((float) $kr->current_value, 2) . "{$unit}</strong>"
+                            . " • Mode: <strong>{$modeLabel}</strong>"
+                            . '</div>'
+                        ))
+                        ->columnSpan('full'),
+
+                    Forms\Components\TextInput::make("kr_{$kr->id}_value")
+                        ->label('New value')
+                        ->numeric()
+                        ->step(0.01)
+                        ->default($kr->current_value)
+                        ->disabled($valueDisabled)
+                        ->dehydrated(! $valueDisabled),
+
+                    Forms\Components\TextInput::make("kr_{$kr->id}_note")
+                        ->label('Note (optional)')
+                        ->maxLength(500)
+                        ->disabled($valueDisabled)
+                        ->dehydrated(! $valueDisabled),
+                ])
+                ->columns(2);
+        }
+
+        return $schema;
+    }
+
+    /**
+     * Persist the form submissions as KeyResultUpdate rows with source=weekly_report.
+     */
+    protected function applyOkrUpdates(array $data): void
+    {
+        $krs = $this->activeKeyResults();
+        $userId = auth()->id();
+        $weekStart = $this->record->week_start?->format('Y-m-d');
+        $count = 0;
+
+        foreach ($krs as $kr) {
+            $valueKey = "kr_{$kr->id}_value";
+            if (! array_key_exists($valueKey, $data)) {
+                continue; // auto KR or field skipped
+            }
+
+            $newValue = (float) $data[$valueKey];
+            if ((float) $kr->current_value === $newValue) {
+                continue;
+            }
+
+            $kr->recordUpdate(
+                value: $newValue,
+                source: 'weekly_report',
+                userId: $userId,
+                note: $data["kr_{$kr->id}_note"] ?? null,
+                weekStart: $weekStart,
+            );
+            $count++;
+        }
+
+        Notification::make()
+            ->title($count > 0
+                ? "Updated {$count} Key Result" . ($count === 1 ? '' : 's')
+                : 'No changes recorded.')
+            ->success()
+            ->send();
     }
 }
