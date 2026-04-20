@@ -112,9 +112,9 @@
                     <div class="rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4">
                         <div class="flex items-start gap-2 flex-wrap">
                             @if($goal?->code)
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 text-[10.5px] font-bold tabular-nums tracking-wide shrink-0 mt-0.5 whitespace-nowrap">{{ $goal->code }}{{ $kr?->code ? '.' . $kr->code : '' }}</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-700 dark:bg-slate-600 text-slate-100 text-[10.5px] font-bold tabular-nums tracking-wide shadow-sm shrink-0 mt-0.5 whitespace-nowrap">{{ $goal->code }}{{ $kr?->code ? '.' . $kr->code : '' }}</span>
                             @elseif($kr?->code)
-                                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 text-[10.5px] font-bold tabular-nums tracking-wide shrink-0 mt-0.5 whitespace-nowrap">{{ $kr->code }}</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-700 dark:bg-slate-600 text-slate-100 text-[10.5px] font-bold tabular-nums tracking-wide shadow-sm shrink-0 mt-0.5 whitespace-nowrap">{{ $kr->code }}</span>
                             @endif
                             <div class="flex-1 min-w-[180px] text-[13px] font-medium text-gray-900 dark:text-gray-100">{{ $kr?->title ?? 'Key Result #' . $krReview->key_result_id }}</div>
                             <span class="text-[11px] text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">Weight {{ $kr ? number_format((float) $kr->weight, 1) : '0' }}%</span>
