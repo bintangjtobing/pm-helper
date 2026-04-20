@@ -5,66 +5,17 @@
             $flat[] = $item;
         }
     }
+    $flatUrlsJson = json_encode(array_column($flat, 'url'));
 @endphp
 
-<div x-data="{
-        open: @entangle('open'),
-        selectedIndex: 0,
-        flatUrls: @js(array_column($flat, 'url')),
-        isMac: /Mac|iPod|iPhone|iPad/.test(navigator.platform),
-
-        init() {
-            window.addEventListener('keydown', (e) => {
-                const cmd = e.metaKey || e.ctrlKey;
-                if (cmd && e.key === 'k') {
-                    e.preventDefault();
-                    this.toggle();
-                }
-                if (e.key === 'Escape' && this.open) {
-                    e.preventDefault();
-                    this.close();
-                }
-            });
-        },
-
-        toggle() {
-            this.open = !this.open;
-            this.selectedIndex = 0;
-            if (this.open) {
-                this.$nextTick(() => this.$refs.searchInput?.focus());
-            }
-        },
-        close() {
-            this.open = false;
-            this.selectedIndex = 0;
-            $wire.close();
-        },
-        moveDown() {
-            if (this.selectedIndex < this.flatUrls.length - 1) this.selectedIndex++;
-            this.$nextTick(() => this.scrollSelectedIntoView());
-        },
-        moveUp() {
-            if (this.selectedIndex > 0) this.selectedIndex--;
-            this.$nextTick(() => this.scrollSelectedIntoView());
-        },
-        scrollSelectedIntoView() {
-            const el = document.querySelector('[data-cmd-idx=\\'' + this.selectedIndex + '\\']');
-            el?.scrollIntoView({ block: 'nearest' });
-        },
-        selectCurrent() {
-            const url = this.flatUrls[this.selectedIndex];
-            if (url) window.location.href = url;
-        }
-    }"
-    x-init="$watch('open', v => { if (!v) $wire.close() })"
-    wire:ignore.self>
+<div x-data="commandPalette({{ $flatUrlsJson }})" wire:ignore.self>
 
     {{-- Trigger button (fixed near topbar-right) --}}
     <button type="button"
             @click="toggle()"
             class="fixed top-3 right-5 z-40 group inline-flex items-center gap-2 pl-2.5 pr-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 backdrop-blur hover:bg-white dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            aria-label="Search (Cmd+K)"
-            title="Search anything (⌘K)">
+            aria-label="Search"
+            title="Search anything (Cmd+K / Ctrl+K)">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
@@ -79,10 +30,8 @@
         <div x-show="open" x-cloak
              class="fixed inset-0 z-[60] flex items-start justify-center pt-20 px-4 bg-slate-900/70 backdrop-blur-sm"
              @click.self="close()"
-             @keydown.escape.window="close()"
              x-transition.opacity.duration.150ms>
 
-            {{-- Dialog (stop propagation so clicks inside don't close) --}}
             <div class="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-gray-900 shadow-2xl ring-1 ring-black/5 overflow-hidden"
                  @click.stop
                  x-transition:enter="transition ease-out duration-200"
@@ -121,12 +70,17 @@
                                 </div>
                                 @foreach($items as $item)
                                     <a href="{{ $item['url'] }}"
+                                       @click="close()"
                                        data-cmd-idx="{{ $globalIdx }}"
-                                       :class="selectedIndex === {{ $globalIdx }} ? 'bg-indigo-50 dark:bg-indigo-500/15 text-gray-900 dark:text-gray-100' : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'"
+                                       :data-selected="selectedIndex === {{ $globalIdx }}"
                                        @mouseenter="selectedIndex = {{ $globalIdx }}"
-                                       class="flex items-center gap-3 px-4 py-2 transition-colors">
-                                        <span class="shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-                                            @svg($item['icon'], 'w-4 h-4 text-gray-500 dark:text-gray-400')
+                                       class="group/item flex items-center gap-3 px-4 py-2 transition-colors text-gray-700 dark:text-gray-300
+                                              hover:bg-indigo-50 hover:text-gray-900 dark:hover:bg-indigo-500/15 dark:hover:text-gray-100
+                                              data-[selected=true]:bg-indigo-100 data-[selected=true]:text-gray-900
+                                              dark:data-[selected=true]:bg-indigo-500/25 dark:data-[selected=true]:text-gray-50
+                                              data-[selected=true]:border-l-2 data-[selected=true]:border-indigo-500">
+                                        <span class="shrink-0 w-7 h-7 rounded-md flex items-center justify-center bg-gray-100 dark:bg-gray-800 group-hover/item:bg-indigo-100 dark:group-hover/item:bg-indigo-500/25">
+                                            @svg($item['icon'], 'w-4 h-4 text-gray-500 dark:text-gray-400 group-hover/item:text-indigo-600 dark:group-hover/item:text-indigo-300')
                                         </span>
                                         <div class="flex-1 min-w-0">
                                             <div class="text-[13px] font-medium truncate">{{ $item['label'] }}</div>
@@ -134,8 +88,7 @@
                                                 <div class="text-[11px] text-gray-500 dark:text-gray-400 truncate">{{ $item['group'] }}</div>
                                             @endif
                                         </div>
-                                        <span :class="selectedIndex === {{ $globalIdx }} ? 'opacity-100' : 'opacity-0'"
-                                              class="text-[10px] font-mono text-gray-400 dark:text-gray-500 transition-opacity shrink-0">
+                                        <span class="text-[10px] font-mono text-gray-400 dark:text-gray-500 shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity">
                                             ↵ open
                                         </span>
                                     </a>
@@ -168,3 +121,78 @@
         </div>
     </template>
 </div>
+
+@once
+    @push('scripts')
+    @endpush
+@endonce
+
+<script>
+    if (! window.commandPalette) {
+        window.commandPalette = function (flatUrls) {
+            return {
+                open: false,
+                selectedIndex: 0,
+                flatUrls: flatUrls || [],
+                isMac: /Mac|iPod|iPhone|iPad/.test(navigator.platform),
+
+                init() {
+                    // Ensure modal starts closed on every page load
+                    this.open = false;
+
+                    window.addEventListener('keydown', (e) => {
+                        const cmd = e.metaKey || e.ctrlKey;
+                        if (cmd && (e.key === 'k' || e.key === 'K')) {
+                            e.preventDefault();
+                            this.toggle();
+                        }
+                        if (e.key === 'Escape' && this.open) {
+                            e.preventDefault();
+                            this.close();
+                        }
+                    });
+                },
+
+                toggle() {
+                    this.open = !this.open;
+                    this.selectedIndex = 0;
+                    if (this.open) {
+                        this.$nextTick(() => this.$refs.searchInput && this.$refs.searchInput.focus());
+                    }
+                },
+
+                close() {
+                    this.open = false;
+                    this.selectedIndex = 0;
+                },
+
+                moveDown() {
+                    if (this.selectedIndex < this.flatUrls.length - 1) {
+                        this.selectedIndex++;
+                    }
+                    this.$nextTick(() => this.scrollSelectedIntoView());
+                },
+
+                moveUp() {
+                    if (this.selectedIndex > 0) {
+                        this.selectedIndex--;
+                    }
+                    this.$nextTick(() => this.scrollSelectedIntoView());
+                },
+
+                scrollSelectedIntoView() {
+                    const el = document.querySelector('[data-cmd-idx="' + this.selectedIndex + '"]');
+                    if (el) el.scrollIntoView({ block: 'nearest' });
+                },
+
+                selectCurrent() {
+                    const url = this.flatUrls[this.selectedIndex];
+                    if (url) {
+                        this.close();
+                        window.location.href = url;
+                    }
+                }
+            };
+        };
+    }
+</script>
