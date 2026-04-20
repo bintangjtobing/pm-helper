@@ -38,8 +38,9 @@ class CommandPalette extends Component
     }
 
     /**
-     * Walk all registered Filament resources + pages and return nav items.
-     * Cached per-user for 5 minutes since role-gated visibility is per-user.
+     * Use Filament's own resolved navigation — it already filters by
+     * shouldRegisterNavigation() and handles both resources + pages
+     * uniformly, giving us NavigationItem objects we can just ask.
      */
     protected function navigationItems(): array
     {
@@ -48,40 +49,22 @@ class CommandPalette extends Component
         return Cache::remember($cacheKey, 300, function () {
             $items = [];
 
-            foreach (Filament::getResources() as $resource) {
-                try {
-                    if (! $resource::shouldRegisterNavigation()) {
+            foreach (Filament::getNavigation() as $group) {
+                $groupLabel = $group->getLabel();
+
+                foreach ($group->getItems() as $item) {
+                    if (! $item instanceof \Filament\Navigation\NavigationItem) {
                         continue;
                     }
-                } catch (\Throwable $e) {
-                    continue;
+
+                    $items[] = [
+                        'label' => $item->getLabel(),
+                        'group' => $groupLabel,
+                        'url' => $item->getUrl(),
+                        'icon' => $item->getIcon() ?: 'heroicon-o-cube',
+                        'type' => 'nav',
+                    ];
                 }
-
-                $items[] = [
-                    'label' => $resource::getNavigationLabel() ?? class_basename($resource),
-                    'group' => $resource::getNavigationGroup(),
-                    'url' => $resource::getUrl('index'),
-                    'icon' => $resource::getNavigationIcon() ?: 'heroicon-o-cube',
-                    'type' => 'nav',
-                ];
-            }
-
-            foreach (Filament::getPages() as $page) {
-                try {
-                    if (! $page::shouldRegisterNavigation()) {
-                        continue;
-                    }
-                } catch (\Throwable $e) {
-                    continue;
-                }
-
-                $items[] = [
-                    'label' => $page::getNavigationLabel() ?? class_basename($page),
-                    'group' => $page::getNavigationGroup(),
-                    'url' => $page::getUrl(),
-                    'icon' => $page::getNavigationIcon() ?: 'heroicon-o-document',
-                    'type' => 'nav',
-                ];
             }
 
             return $items;
