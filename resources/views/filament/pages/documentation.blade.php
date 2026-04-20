@@ -50,7 +50,7 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
     <div style="{{ $card }}">
         <h2 style="font-size:15px;font-weight:700;color:#f3f4f6;margin:0 0 14px 0;">Table of Contents</h2>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;">
-            @php $toc = [['getting-started','Getting Started'],['dashboard','Dashboard'],['projects','Projects'],['tickets','Tickets & Request System'],['kanban','Kanban Board'],['comments','Comments & Mentions'],['reports','Daily & Weekly Reports'],['discussions','Discussions'],['timesheet','Timesheet & Time Logging'],['notifications','Notifications'],['roles','Roles & Permissions'],['organization','Organization & Departments'],['profile','Profile Settings'],['feedback','Customer Feedback'],['writing-rules','Writing Guidelines'],['dos-donts',"Do's & Don'ts"],['faq','FAQ']]; @endphp
+            @php $toc = [['getting-started','Getting Started'],['dashboard','Dashboard'],['projects','Projects'],['tickets','Tickets & Request System'],['kanban','Kanban Board'],['comments','Comments & Mentions'],['reports','Daily & Weekly Reports'],['discussions','Discussions'],['timesheet','Timesheet & Time Logging'],['notifications','Notifications'],['roles','Roles & Permissions'],['organization','Organization & Departments'],['profile','Profile Settings'],['feedback','Customer Feedback'],['performance','Performance (OKR & KPI)'],['writing-rules','Writing Guidelines'],['dos-donts',"Do's & Don'ts"],['faq','FAQ']]; @endphp
             @foreach($toc as $i => $item)
             <a href="#{{ $item[0] }}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;text-decoration:none;font-size:13px;color:#9ca3af;" onmouseover="this.style.background='#374151';this.style.color='#f3f4f6'" onmouseout="this.style.background='transparent';this.style.color='#9ca3af'">
                 <span style="min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#374151;color:#6b7280;font-size:10px;font-weight:700;">{{ $i + 1 }}</span>
@@ -400,9 +400,143 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         </ul>
     </div>
 
-    {{-- 15. WRITING GUIDELINES --}}
+    {{-- 15. PERFORMANCE (OKR & KPI) --}}
+    <div style="{{ $card }}" id="performance" data-doc-section="Performance OKR KPI Goals Objectives Key Results Review Self Supervisor">
+        <h2 style="{{ $h2 }}">15. Performance (OKR &amp; KPI)</h2>
+
+        <h3 style="{{ $h3 }}">What are OKR and KPI?</h3>
+        <p style="{{ $p }}">PM Helper has a unified <strong style="color:#e5e7eb;">Performance</strong> module for tracking goals across the company. Two goal types share the same data model:</p>
+        <ul style="padding-left:20px;margin:0 0 14px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">OKR (Objective &amp; Key Results)</strong> — qualitative Objectives broken into 3–5 measurable Key Results. Time-boxed per quarter. Answers <em style="color:#d1d5db;">"what are we trying to achieve, and how will we know we succeeded?"</em></li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">KPI (Key Performance Indicator)</strong> — ongoing quantitative metrics, usually monthly. Answers <em style="color:#d1d5db;">"what numbers should stay healthy?"</em></li>
+        </ul>
+        <p style="{{ $p }}">Both are transparent by default (any signed-in user can view Company + Department OKRs) and support cascade hierarchy: Company &rarr; Department &rarr; Individual.</p>
+
+        <h3 style="{{ $h3 }}">Who can create and review?</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Role</th><th style="{{ $th }}">Can do</th></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Super Admin</strong></td><td style="{{ $td }}">Create / edit / delete any Goal at any level (Company, Department, Individual). Create Periods. Generate Reviews. See every review.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Supervisor</strong> (anyone with direct reports via <span style="{{ $code }}">users.supervisor_id</span>)</td><td style="{{ $td }}">See Team OKR + Team Reviews for their direct reports. Finalize submitted reviews. Add per-KR notes + overall feedback.</td></tr>
+            <tr><td style="{{ $td }}"><strong style="color:#e5e7eb;">Individual contributor</strong></td><td style="{{ $td }}">See My OKR + My Review. Update KR progress manually or through Weekly Reports. Submit self-review, acknowledge or dispute the final result.</td></tr>
+        </table>
+        <div style="{{ $flow }}"><strong style="color:#fcd34d;">Current policy:</strong> only Super Admin creates Goals in the admin panel. Individual contributors do not directly author their own OKRs in the system; instead they discuss their proposed OKRs with their supervisor, and a Super Admin (or the supervisor when they also hold Super Admin) records them under the correct owner. This keeps weights auditable and prevents unbudgeted self-inflation. If you need a looser model later, tell us.</div>
+
+        <h3 style="{{ $h3 }}">The goal hierarchy</h3>
+        <div style="{{ $flow }}">
+            <strong style="color:#e5e7eb;">Company</strong> (e.g. "Reach $1M ARR")<br>
+            &nbsp;&nbsp;&darr; cascades to &rarr;<br>
+            <strong style="color:#e5e7eb;">Department</strong> (e.g. Marketing: "Drive 50% of pipeline")<br>
+            &nbsp;&nbsp;&darr; cascades to &rarr;<br>
+            <strong style="color:#e5e7eb;">Individual</strong> (e.g. Bintang: "Ship GA4 migration")
+        </div>
+        <p style="{{ $p }}">Each Individual Objective optionally links to a parent Company or Department Objective through the <span style="{{ $code }}">parent_id</span> field. The cascade is for visibility — weights and scoring are still computed per level.</p>
+
+        <h3 style="{{ $h3 }}">Weight rules (critical)</h3>
+        <p style="{{ $p }}">Weights exist at two levels, and both must sum to exactly 100%:</p>
+        <ul style="padding-left:20px;margin:0 0 14px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Per user, per period:</strong> the sum of all your Individual Objectives' weights = 100%. Example: 4 Objectives at 25% each, or 5 Objectives at 25% / 25% / 20% / 20% / 10%.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Per Objective:</strong> the sum of all its Key Results' weights = 100%. Example: 4 KRs at 30% / 25% / 25% / 20%.</li>
+        </ul>
+        <p style="{{ $p }}">The weight budget indicator in the form shows the current total and flags over- or under-allocation. Under-allocated drafts are allowed, but a save that exceeds 100% is rejected at the database level.</p>
+
+        <h3 style="{{ $h3 }}">How to write a good Objective</h3>
+        <ul style="padding-left:20px;margin:0 0 14px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Qualitative + aspirational.</strong> "Strengthen organic conversion tracking" — not "Implement GA4 event X".</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Time-boxed to the period.</strong> Quarterly for OKR Objectives. Don't carry the same Objective across three quarters without rewording.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">3–5 KRs per Objective.</strong> Fewer and it's underspecified; more and it's a todo list.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Align upward.</strong> Every Individual Objective should trace back to a Department or Company Objective.</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">How to write a good Key Result</h3>
+        <p style="{{ $p }}">KRs are <strong style="color:#e5e7eb;">measurable outcomes</strong>, not tasks. Use the fields:</p>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Field</th><th style="{{ $th }}">Purpose</th><th style="{{ $th }}">Example</th></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $code }}">title</span></td><td style="{{ $td }}">One-sentence outcome</td><td style="{{ $td }}">"Achieve ≥95% event tracking accuracy"</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $code }}">how_to_measure</span></td><td style="{{ $td }}">Plain-language method</td><td style="{{ $td }}">"QA audit cross-referencing GA4 vs backend DB; ≤5% variance"</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $code }}">target_value</span>, <span style="{{ $code }}">current_value</span>, <span style="{{ $code }}">unit</span></td><td style="{{ $td }}">Numeric target + progress</td><td style="{{ $td }}">95, 92, %</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $code }}">direction</span></td><td style="{{ $td }}">How progress is scored</td><td style="{{ $td }}">Increase (default), Decrease (e.g. bug count), Maintain (e.g. uptime)</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $code }}">progress_mode</span></td><td style="{{ $td }}">Who updates the number</td><td style="{{ $td }}">Manual, Auto (system-calculated), Hybrid</td></tr>
+            <tr><td style="{{ $td }}"><span style="{{ $code }}">alignment_note</span></td><td style="{{ $td }}">Cross-team link</td><td style="{{ $td }}">"Amber O2-KR1"</td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">Auto-calculated KRs</h3>
+        <p style="{{ $p }}">Set <span style="{{ $code }}">progress_mode = Auto</span> or <span style="{{ $code }}">Hybrid</span> and pick a source. The scheduler runs <span style="{{ $code }}">goals:recalculate</span> every hour and updates <span style="{{ $code }}">current_value</span> from live data:</p>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Source</th><th style="{{ $th }}">What it counts</th><th style="{{ $th }}">Typical use</th></tr>
+            <tr><td style="{{ $td }}">Tickets</td><td style="{{ $td }}">Ticket count filtered by assignee (owner), statuses, and optional project</td><td style="{{ $td }}">"Ship 20 features this quarter"</td></tr>
+            <tr><td style="{{ $td }}">Daily Reports</td><td style="{{ $td }}">Submitted daily reports by the goal owner</td><td style="{{ $td }}">"Submit daily reports 60+ days this quarter"</td></tr>
+            <tr><td style="{{ $td }}">Weekly Reports</td><td style="{{ $td }}">Submitted weekly reports by the goal owner</td><td style="{{ $td }}">"Submit 12 weekly reports on time"</td></tr>
+            <tr><td style="{{ $td }}">Custom</td><td style="{{ $td }}">Manual number (no auto-calc)</td><td style="{{ $td }}">Revenue, NPS, anything external</td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">The lifecycle of a period</h3>
+        <div style="{{ $flow }}">
+            <strong style="color:#60a5fa;">Draft</strong> period created by Super Admin &rarr; Objectives &amp; KRs defined &rarr;
+            <strong style="color:#22c55e;">Active</strong> (goal updates visible everywhere) &rarr;
+            <strong style="color:#9ca3af;">Closed</strong> (reviews auto-generated, scores frozen)
+        </div>
+        <p style="{{ $p }}">Changing a period's status to <strong style="color:#e5e7eb;">Closed</strong> automatically creates a <strong style="color:#e5e7eb;">Goal Review</strong> for every user who owns at least one Objective in that period, with per-KR snapshots and a computed system score. The admin can also trigger this manually via the <strong style="color:#e5e7eb;">Generate Reviews</strong> button on the period edit page.</p>
+
+        <h3 style="{{ $h3 }}">Progress updates during a period</h3>
+        <ul style="padding-left:20px;margin:0 0 14px 0;">
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Update Progress button</strong> on each KR row (in the goal edit page) — opens a modal for a new value + note. Logged to <span style="{{ $code }}">key_result_updates</span> with <span style="{{ $code }}">source = manual</span>.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Weekly Report integration</strong> — when editing your weekly report, click <strong style="color:#e5e7eb;">Update OKR Progress</strong>. A modal lists every active KR you own; submitted values are logged with <span style="{{ $code }}">source = weekly_report</span> and <span style="{{ $code }}">week_start</span> set to the report's week.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Auto scheduler</strong> — runs hourly, updates Auto/Hybrid KRs from their configured source. Logged with <span style="{{ $code }}">source = auto</span>.</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">The review workflow</h3>
+        <div style="{{ $flow }}">
+            Period closes &rarr; system generates <strong style="color:#60a5fa;">Goal Review</strong> per user<br>
+            &darr;<br>
+            <strong style="color:#fcd34d;">Pending self-review</strong> — employee opens <em style="color:#d1d5db;">My Review</em>, reviews each KR's system score, adjusts the Self column, writes a narrative, submits &rarr; supervisor notified<br>
+            &darr;<br>
+            <strong style="color:#60a5fa;">Pending supervisor</strong> — supervisor opens <em style="color:#d1d5db;">Team Reviews</em>, reads system + self scores side by side, enters Final column values + overall feedback, submits &rarr; employee notified<br>
+            &darr;<br>
+            <strong style="color:#22c55e;">Completed</strong> — employee can Acknowledge (normal case) or Dispute (supervisor re-notified)<br>
+        </div>
+        <p style="{{ $p }}"><strong style="color:#e5e7eb;">C-level users</strong> (no supervisor assigned) will still get a review generated — they can self-submit, but their Final score needs to be entered by an admin since there is no supervisor chain above them.</p>
+
+        <h3 style="{{ $h3 }}">Scoring — how the final number is calculated</h3>
+        <p style="{{ $p }}">Three numbers are stored for every review:</p>
+        <ul style="padding-left:20px;margin:0 0 14px 0;">
+            <li style="{{ $li }}"><strong style="color:#60a5fa;">System score</strong> — computed automatically from the KR <span style="{{ $code }}">current_value / target_value</span> at the moment the review was generated. This is the raw "what the data says" baseline.</li>
+            <li style="{{ $li }}"><strong style="color:#fcd34d;">Self score</strong> — what the employee claims per KR, based on the recommended system score. They can adjust up or down with context.</li>
+            <li style="{{ $li }}"><strong style="color:#22c55e;">Final score</strong> — what the supervisor records per KR after reading system + self. This is the score of record.</li>
+        </ul>
+        <p style="{{ $p }}">The <strong style="color:#e5e7eb;">overall review score</strong> is a weighted average:</p>
+        <div style="{{ $flow }}">
+            Per Objective: sum over its KRs of <span style="{{ $code }}">(kr_weight / 100) × kr_final_score</span><br>
+            Overall: sum over your Objectives of <span style="{{ $code }}">(objective_weight / 100) × objective_score</span>
+        </div>
+        <p style="{{ $p }}">Result is a 0–100% figure. Colour bands used across the UI: <span style="padding:1px 6px;border-radius:3px;background:#064e3b;color:#6ee7b7;font-weight:600;">≥70 on track</span> <span style="padding:1px 6px;border-radius:3px;background:#78350f;color:#fcd34d;font-weight:600;">40–69 at risk</span> <span style="padding:1px 6px;border-radius:3px;background:#7f1d1d;color:#fca5a5;font-weight:600;">&lt;40 missed</span></p>
+
+        <h3 style="{{ $h3 }}">Best practices</h3>
+        <ul style="padding-left:20px;margin:0 0 14px 0;">
+            <li style="{{ $li }}">Write OKRs at the start of the quarter — don't backfill at the end. Targets should be <strong style="color:#e5e7eb;">uncomfortable but plausible</strong>.</li>
+            <li style="{{ $li }}">Review progress at least weekly — integrate with your Weekly Report submission.</li>
+            <li style="{{ $li }}">Keep KRs measurable. If you can't put a number on it, it doesn't belong.</li>
+            <li style="{{ $li }}">Self-review honestly — the supervisor sees the gap between system, self, and final. A self that's far from system without narrative context looks suspicious.</li>
+            <li style="{{ $li }}">Supervisor feedback should explain the Final number, especially when it deviates from the self score. "This is the score of record" is not enough context.</li>
+            <li style="{{ $li }}">OKRs are for <strong style="color:#e5e7eb;">growth and clarity</strong>, not punishment. A 60% final on an ambitious OKR is often healthier than a 100% on a sandbagged one.</li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Where to find what (quick reference)</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">I want to…</th><th style="{{ $th }}">Go to</th></tr>
+            <tr><td style="{{ $td }}">See my own progress</td><td style="{{ $td }}">Performance &rarr; My OKR</td></tr>
+            <tr><td style="{{ $td }}">See company-wide goals (transparent)</td><td style="{{ $td }}">Performance &rarr; Company OKR</td></tr>
+            <tr><td style="{{ $td }}">See my direct reports' progress</td><td style="{{ $td }}">Performance &rarr; Team OKR <em style="color:#6b7280;">(visible if you have reports)</em></td></tr>
+            <tr><td style="{{ $td }}">Update a KR's value manually</td><td style="{{ $td }}">Performance &rarr; Goals &rarr; edit your goal &rarr; KR row &rarr; <strong style="color:#e5e7eb;">Update Progress</strong></td></tr>
+            <tr><td style="{{ $td }}">Update KR values for the current week</td><td style="{{ $td }}">Weekly Reports &rarr; edit current week's report &rarr; <strong style="color:#e5e7eb;">Update OKR Progress</strong> button</td></tr>
+            <tr><td style="{{ $td }}">Submit my self-review</td><td style="{{ $td }}">Performance &rarr; My Review <em style="color:#6b7280;">(appears when a review exists)</em></td></tr>
+            <tr><td style="{{ $td }}">Finalize reviews for my team</td><td style="{{ $td }}">Performance &rarr; Team Reviews</td></tr>
+            <tr><td style="{{ $td }}">Create or close a period</td><td style="{{ $td }}">Performance &rarr; Periods <em style="color:#6b7280;">(Super Admin)</em></td></tr>
+        </table>
+    </div>
+
+    {{-- 16. WRITING GUIDELINES --}}
     <div style="{{ $card }}" id="writing-rules" data-doc-section="Writing Guidelines">
-        <h2 style="{{ $h2 }}">15. Writing Guidelines</h2>
+        <h2 style="{{ $h2 }}">16. Writing Guidelines</h2>
 
         <h3 style="{{ $h3 }}">Ticket Names</h3>
         <table style="{{ $tbl }}">
@@ -440,7 +574,7 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
 
     {{-- 16. DO'S AND DON'TS --}}
     <div style="{{ $card }}" id="dos-donts" data-doc-section="Do's and Don'ts">
-        <h2 style="{{ $h2 }}">16. Do's & Don'ts</h2>
+        <h2 style="{{ $h2 }}">17. Do's & Don'ts</h2>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div>
@@ -466,9 +600,9 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         </div>
     </div>
 
-    {{-- 17. FAQ --}}
+    {{-- 18. FAQ --}}
     <div style="{{ $card }}" id="faq" data-doc-section="Frequently Asked Questions">
-        <h2 style="{{ $h2 }}">17. FAQ</h2>
+        <h2 style="{{ $h2 }}">18. FAQ</h2>
 
         @php
         $faqs = [
@@ -484,6 +618,13 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
             ['How do I export my timesheet data?', 'On any ticket that has logged hours, click the three-dot menu and select "Export time logged" to download a CSV file.'],
             ['What\'s the difference between Role and Position?', 'Role = system permissions (what you can do in the app). Position = organizational title (displayed in org chart and profile). They are completely independent.'],
             ['How do I subscribe to a ticket for updates?', 'On any ticket detail page, click the "Subscribe" bell button. You\'ll receive notifications for all status changes and new comments on that ticket.'],
+            ['Who writes my OKRs — me or my manager?', 'Currently only Super Admin authors Goals in the admin panel. You discuss proposed OKRs with your supervisor first, and the admin enters them under your ownership. You have full control over updating KR progress during the period and filling in your self-review at period close.'],
+            ['Do my OKR weights have to add up to 100%?', 'Yes — twice. The sum of all your Individual Objective weights per period must equal 100%, and the sum of Key Result weights within each Objective must also equal 100%. The form blocks saves that would exceed 100%; under-allocated drafts are allowed but can\'t be activated.'],
+            ['What\'s the difference between System, Self, and Final score?', 'System is computed automatically from KR current/target values at review time. Self is what you claim when filling your self-review. Final is what your supervisor records after reading both. Final is the score of record. All three are stored so gaps are visible.'],
+            ['How is the overall review score calculated?', 'For each Objective: Σ (kr_weight / 100) × kr_final_score. Overall: Σ (objective_weight / 100) × objective_score. So a 70% on a high-weight Objective counts for more than a 100% on a 5% Objective.'],
+            ['Can a KR update itself automatically?', 'Yes. Set its progress_mode to Auto or Hybrid and pick a source (Tickets, Daily Reports, Weekly Reports, or Custom). The goals:recalculate command runs hourly and writes new values to the KR\'s history. Hybrid means auto-calculated but the supervisor/owner can still override.'],
+            ['What happens when a period closes?', 'Reviews are auto-generated for every user who owns at least one Objective in that period. KR progress is snapshotted, system scores are computed, and the review moves to pending_self status. Employees fill self-review; supervisors finalize; employees acknowledge or dispute.'],
+            ['I don\'t have a supervisor — how does my review work?', 'C-Level users can self-submit, but since there\'s no supervisor above them, a Super Admin finalizes their review. Contact admin to arrange this — typically a board/leadership-level review.'],
         ];
         @endphp
 

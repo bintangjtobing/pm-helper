@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\CustomerFeedback;
+use App\Models\Goal;
+use App\Models\GoalPeriod;
+use App\Models\GoalReview;
 use App\Models\Project;
 use App\Models\Ticket;
 use App\Models\WeeklyReport;
@@ -524,6 +527,76 @@ class ChatBotService
             if ($user->supervisor) $orgContext .= "\n  Reports to: {$user->supervisor->name}";
         }
 
+        // User's OKR / Performance context
+        $okrContext = '';
+        $activePeriod = GoalPeriod::where('status', 'active')->orderByDesc('start_date')->first();
+        if ($activePeriod) {
+            $okrContext .= "\n\n===== OKR / PERFORMANCE (current active period: {$activePeriod->name}, {$activePeriod->start_date->format('Y-m-d')} to {$activePeriod->end_date->format('Y-m-d')}) =====";
+
+            $myGoals = Goal::with('keyResults')
+                ->where('period_id', $activePeriod->id)
+                ->where('owner_id', $user->id)
+                ->whereNotIn('status', ['cancelled'])
+                ->orderBy('sort_order')
+                ->orderBy('code')
+                ->get();
+
+            if ($myGoals->count() > 0) {
+                $totalWeight = (float) $myGoals->sum('weight');
+                $overall = 0.0;
+                foreach ($myGoals as $g) {
+                    $overall += ((float) $g->weight / 100) * $g->achievement;
+                }
+                $okrContext .= "\n\nYour Goals (weight total: " . number_format($totalWeight, 1) . '%, overall achievement: ' . number_format(round($overall, 2), 1) . '%):';
+
+                foreach ($myGoals as $goal) {
+                    $code = $goal->code ? "[{$goal->code}] " : '';
+                    $okrContext .= "\n  {$code}{$goal->title} — weight " . number_format((float) $goal->weight, 1) . '%, achievement ' . number_format($goal->achievement, 1) . '%, status ' . $goal->status;
+                    if ($goal->description) {
+                        $okrContext .= "\n    " . Str::limit(strip_tags($goal->description), 200);
+                    }
+                    foreach ($goal->keyResults as $kr) {
+                        $krCode = $kr->code ? "[{$kr->code}] " : '';
+                        $unit = $kr->unit ? ' ' . $kr->unit : '';
+                        $okrContext .= "\n    - {$krCode}{$kr->title}";
+                        $okrContext .= "\n      Progress: " . number_format((float) $kr->current_value, 2) . "{$unit} / " . ($kr->target_value !== null ? number_format((float) $kr->target_value, 2) : '—') . "{$unit} ({$kr->progress_percent}%)";
+                        $okrContext .= "\n      Weight: " . number_format((float) $kr->weight, 1) . '%, Mode: ' . $kr->progress_mode . ($kr->how_to_measure ? ', How: ' . Str::limit($kr->how_to_measure, 150) : '');
+                    }
+                }
+            } else {
+                $okrContext .= "\n\nNo Objectives assigned to you for this period yet. Talk to your manager to set them up.";
+            }
+
+            // Company + Department level (transparent view — everyone sees these)
+            $companyGoals = Goal::with('keyResults')
+                ->where('period_id', $activePeriod->id)
+                ->whereIn('level', ['company', 'department'])
+                ->where('visibility', 'public')
+                ->whereNotIn('status', ['cancelled'])
+                ->orderBy('level')
+                ->orderBy('sort_order')
+                ->get();
+            if ($companyGoals->count() > 0) {
+                $okrContext .= "\n\nCompany + Department OKRs (public):";
+                foreach ($companyGoals as $goal) {
+                    $code = $goal->code ? "[{$goal->code}] " : '';
+                    $lvl = ucfirst($goal->level);
+                    $okrContext .= "\n  {$lvl} · {$code}{$goal->title} (weight " . number_format((float) $goal->weight, 1) . '%, achievement ' . number_format($goal->achievement, 1) . '%)';
+                }
+            }
+
+            // Pending review for this user
+            $pendingReview = GoalReview::where('user_id', $user->id)
+                ->whereIn('status', [GoalReview::STATUS_PENDING_SELF, GoalReview::STATUS_PENDING_SUPERVISOR])
+                ->with('period')
+                ->orderByDesc('created_at')
+                ->first();
+            if ($pendingReview) {
+                $okrContext .= "\n\nPending Review: {$pendingReview->period?->name} — status: " . str_replace('_', ' ', $pendingReview->status)
+                    . ", system score: " . number_format((float) $pendingReview->system_score, 1) . '%';
+            }
+        }
+
         return <<<PROMPT
 You are a helpful, knowledgeable assistant for PM Helper - a project management platform by Capella Digicrats ID.
 You MUST respond in {$lang}.
@@ -543,6 +616,7 @@ Role: {$roles}
 {$weeklyContext}
 {$dailyContext}
 {$discussionContext}
+{$okrContext}
 
 ===== PM HELPER APPLICATION KNOWLEDGE =====
 
@@ -563,7 +637,26 @@ FEATURES YOU KNOW ABOUT:
 14. **Greeting Widget** - Time-based greeting with random motivational quote.
 15. **Notifications** - 12 types via email + bell (Pusher real-time). Toast popup with 5s progress bar.
 16. **Profile** - Photo (gender-based default), username, secondary CC email, gender, birthday, department, position, supervisor, timezone (auto-detected).
-17. **Documentation** - Full help center at /docs with search, 17 sections, FAQ.
+17. **Documentation** - Full help center at /docs with search, 18 sections, FAQ.
+18. **Performance (OKR & KPI)** - Unified goal tracking with Company / Department / Individual cascade. Quarterly OKRs + monthly KPIs share the same data model.
+
+OKR / KPI — HOW IT WORKS:
+- **Creation**: Currently only Super Admin authors Goals in the admin panel. Users don't create their own OKRs directly; they discuss with their supervisor and the admin records them under the user's ownership.
+- **Hierarchy**: Company Objectives cascade to Department Objectives cascade to Individual Objectives (linked via parent_id).
+- **Weight rules**: Sum of all Objective weights per user per period = 100%. Sum of all KR weights within each Objective = 100%. Both enforced; saves that exceed 100% are rejected at the database level.
+- **KR fields**: title, how_to_measure (plain-language success criteria), target_value, current_value, unit, direction (increase/decrease/maintain), weight, progress_mode (manual/auto/hybrid), auto_source (tickets/daily_reports/weekly_reports/custom).
+- **Progress updates**: Three paths — (a) "Update Progress" action on each KR row, (b) "Update OKR Progress" button on Weekly Report edit page (logs as source=weekly_report), (c) hourly auto-scheduler for Auto/Hybrid mode KRs.
+- **Period lifecycle**: Draft → Active → Closed. Closing a period auto-generates reviews.
+- **Review workflow**: system_score auto-computed at period close → employee fills self_score + narrative in My Review → supervisor fills final_score + feedback in Team Reviews → employee acknowledges or disputes.
+- **Scoring formula**: Per Objective = Σ (kr_weight/100 × kr_final_score). Overall = Σ (objective_weight/100 × objective_score). Result 0–100%. Bands: ≥70 on track (green), 40–69 at risk (amber), <40 missed (red).
+- **Transparency**: Company + Department Objectives are public by default — every signed-in user sees them at Performance → Company OKR. Individual Objectives respect the visibility flag (public or private).
+- **Pages**: Performance → My OKR, Company OKR, Team OKR (supervisors only), Periods (admin), Goals (admin), My Review (when reviews exist), Team Reviews (supervisors).
+
+OKR WRITING ADVICE (give this when users ask how to write):
+- Objectives should be qualitative + aspirational, time-boxed to the period, 3–5 KRs each, and should align upward to a parent Company/Department Objective.
+- Key Results must be measurable outcomes, not tasks. Use how_to_measure to describe the validation method.
+- Prefer auto-calculated KRs where possible (count of tickets, report submissions, etc.) — removes self-reporting bias.
+- Targets should be uncomfortable but plausible. A 60% final on an ambitious OKR is healthier than 100% on a sandbagged one.
 
 ROLES (16 total):
 - **Super Admin** - Full system access
