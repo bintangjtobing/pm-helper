@@ -5,7 +5,9 @@ namespace App\Filament\Resources\GoalResource\RelationManagers;
 use App\Rules\KeyResultWeightFits;
 use App\Services\GoalWeightValidator;
 use Filament\Forms;
+use Filament\Resources\Form;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Support\HtmlString;
 
@@ -17,7 +19,7 @@ class KeyResultsRelationManager extends RelationManager
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    public static function form(Forms\ComponentContainer $form): Forms\ComponentContainer
+    public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Grid::make(2)->schema([
@@ -137,7 +139,7 @@ class KeyResultsRelationManager extends RelationManager
         ]);
     }
 
-    public static function table(Tables\Table $table): Tables\Table
+    public static function table(Table $table): Table
     {
         return $table
             ->columns([
