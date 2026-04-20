@@ -33,7 +33,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     <input x-ref="searchInput"
-                           wire:model.debounce.200ms="query"
+                           x-model="localQuery"
+                           @input.debounce.250ms="$wire.set('query', localQuery)"
                            @keydown.down.prevent="moveDown()"
                            @keydown.up.prevent="moveUp()"
                            @keydown.enter.prevent="selectCurrent()"
@@ -122,6 +123,7 @@
             return {
                 open: false,
                 selectedIndex: 0,
+                localQuery: '',
                 flatUrls: flatUrls || [],
                 isMac: /Mac|iPod|iPhone|iPad/.test(navigator.platform),
 
@@ -156,6 +158,8 @@
                 close() {
                     this.open = false;
                     this.selectedIndex = 0;
+                    this.localQuery = '';
+                    this.$wire.set('query', '');
                 },
 
                 moveDown() {
