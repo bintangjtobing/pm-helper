@@ -10,6 +10,7 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         Commands\AutoCompleteTickets::class,
         Commands\MessengerClearExpiredStatuses::class,
+        Commands\RecalculateGoals::class,
     ];
     /**
      * Define the application's command schedule.
@@ -30,6 +31,13 @@ class Kernel extends ConsoleKernel
         $schedule->command('messenger:clear-expired-statuses')
             ->everyFiveMinutes()
             ->withoutOverlapping();
+
+        // Recalculate KR progress for auto/hybrid KRs in active periods
+        $schedule->command('goals:recalculate')
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground()
+            ->appendOutputTo(storage_path('logs/goals-recalculate.log'));
     }
 
     /**

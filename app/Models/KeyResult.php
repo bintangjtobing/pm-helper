@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class KeyResult extends Model
 {
@@ -37,6 +38,36 @@ class KeyResult extends Model
     public function goal(): BelongsTo
     {
         return $this->belongsTo(Goal::class);
+    }
+
+    public function updates(): HasMany
+    {
+        return $this->hasMany(KeyResultUpdate::class)->orderByDesc('created_at');
+    }
+
+    public function isAuto(): bool
+    {
+        return in_array($this->progress_mode, ['auto', 'hybrid']);
+    }
+
+    /**
+     * Record a new progress value and return the created update row.
+     * Also mutates current_value on the KR itself.
+     */
+    public function recordUpdate(float $value, string $source = 'manual', ?int $userId = null, ?string $note = null, ?string $weekStart = null): KeyResultUpdate
+    {
+        $previous = $this->current_value;
+        $this->current_value = $value;
+        $this->save();
+
+        return $this->updates()->create([
+            'user_id' => $userId,
+            'value' => $value,
+            'previous_value' => $previous,
+            'note' => $note,
+            'source' => $source,
+            'week_start' => $weekStart,
+        ]);
     }
 
     /**

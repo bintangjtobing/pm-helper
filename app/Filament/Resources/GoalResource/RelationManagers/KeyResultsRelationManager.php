@@ -2,9 +2,13 @@
 
 namespace App\Filament\Resources\GoalResource\RelationManagers;
 
+use App\Models\Project;
+use App\Models\TicketStatus;
 use App\Rules\KeyResultWeightFits;
 use App\Services\GoalWeightValidator;
+use App\Services\Goals\GoalProgressCalculator;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Table;
@@ -102,8 +106,69 @@ class KeyResultsRelationManager extends RelationManager
                         'weekly_reports' => 'Weekly Reports',
                         'custom' => 'Custom',
                     ])
+                    ->reactive()
                     ->visible(fn (callable $get) => in_array($get('progress_mode'), ['auto', 'hybrid'])),
             ]),
+
+            // Tickets formula builder
+            Forms\Components\Fieldset::make('Tickets Filter')
+                ->visible(fn (callable $get) => in_array($get('progress_mode'), ['auto', 'hybrid']) && $get('auto_source') === 'tickets')
+                ->schema([
+                    Forms\Components\Select::make('auto_formula.filter.assignee')
+                        ->label('Assignee')
+                        ->options([
+                            'owner' => 'Goal Owner (responsible_id)',
+                            'any' => 'Any',
+                        ])
+                        ->default('owner'),
+
+                    Forms\Components\MultiSelect::make('auto_formula.filter.status_ids')
+                        ->label('Ticket Statuses (count these)')
+                        ->options(fn () => TicketStatus::orderBy('order')->pluck('name', 'id'))
+                        ->placeholder('Leave empty to count all statuses'),
+
+                    Forms\Components\Select::make('auto_formula.filter.project_id')
+                        ->label('Project (optional)')
+                        ->options(fn () => Project::orderBy('name')->pluck('name', 'id'))
+                        ->placeholder('All projects')
+                        ->searchable(),
+
+                    Forms\Components\Select::make('auto_formula.aggregate')
+                        ->label('Aggregate')
+                        ->options(['count' => 'Count'])
+                        ->default('count')
+                        ->required(),
+                ])
+                ->columns(2),
+
+            // Daily / Weekly Reports formula builder
+            Forms\Components\Fieldset::make('Reports Filter')
+                ->visible(fn (callable $get) => in_array($get('progress_mode'), ['auto', 'hybrid']) && in_array($get('auto_source'), ['daily_reports', 'weekly_reports']))
+                ->schema([
+                    Forms\Components\Select::make('auto_formula.filter.user')
+                        ->label('User')
+                        ->options([
+                            'owner' => 'Goal Owner',
+                            'any' => 'Any',
+                        ])
+                        ->default('owner'),
+
+                    Forms\Components\Select::make('auto_formula.filter.status')
+                        ->label('Status')
+                        ->options([
+                            'submitted' => 'Submitted',
+                            'acknowledged' => 'Acknowledged',
+                            'any' => 'Any status',
+                        ])
+                        ->default('submitted'),
+
+                    Forms\Components\Select::make('auto_formula.aggregate')
+                        ->label('Aggregate')
+                        ->options(['count' => 'Count'])
+                        ->default('count')
+                        ->required(),
+                ])
+                ->columns(2),
 
             Forms\Components\TextInput::make('alignment_note')
                 ->label('Alignment Note')
@@ -156,6 +221,15 @@ class KeyResultsRelationManager extends RelationManager
                     ->label('Weight')
                     ->formatStateUsing(fn ($state) => number_format((float) $state, 2) . '%'),
 
+                Tables\Columns\TextColumn::make('progress_value')
+                    ->label('Current / Target')
+                    ->getStateUsing(function ($record) {
+                        $unit = $record->unit ? ' ' . $record->unit : '';
+                        $current = number_format((float) $record->current_value, 2);
+                        $target = $record->target_value !== null ? number_format((float) $record->target_value, 2) : '—';
+                        return "{$current}{$unit} / {$target}{$unit}";
+                    }),
+
                 Tables\Columns\TextColumn::make('progress')
                     ->label('Progress')
                     ->getStateUsing(fn ($record) => $record->progress_percent)
@@ -174,7 +248,11 @@ class KeyResultsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('progress_mode')
                     ->label('Mode')
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->formatStateUsing(fn ($state) => new HtmlString(match ($state) {
+                        'auto' => '<span class="px-2 py-0.5 text-xs font-medium rounded bg-blue-500/10 text-blue-500">Auto</span>',
+                        'hybrid' => '<span class="px-2 py-0.5 text-xs font-medium rounded bg-purple-500/10 text-purple-500">Hybrid</span>',
+                        default => '<span class="px-2 py-0.5 text-xs font-medium rounded bg-gray-500/10 text-gray-500">Manual</span>',
+                    })),
 
                 Tables\Columns\TextColumn::make('alignment_note')
                     ->label('Alignment')
@@ -185,6 +263,68 @@ class KeyResultsRelationManager extends RelationManager
                 Tables\Actions\CreateAction::make(),
             ])
             ->actions([
+                Tables\Actions\Action::make('update_progress')
+                    ->label('Update Progress')
+                    ->icon('heroicon-o-trending-up')
+                    ->color('success')
+                    ->form(fn ($record) => [
+                        Forms\Components\Placeholder::make('info')
+                            ->label('')
+                            ->content(new HtmlString(
+                                '<div style="font-size:12.5px;color:#6b7280;">Current: <strong>'
+                                . number_format((float) $record->current_value, 2)
+                                . ($record->unit ? ' ' . e($record->unit) : '')
+                                . '</strong> — Target: <strong>'
+                                . ($record->target_value !== null ? number_format((float) $record->target_value, 2) : '—')
+                                . ($record->unit ? ' ' . e($record->unit) : '')
+                                . '</strong></div>'
+                            )),
+
+                        Forms\Components\TextInput::make('value')
+                            ->label('New Value')
+                            ->numeric()
+                            ->step(0.01)
+                            ->required()
+                            ->default(fn () => $record->current_value),
+
+                        Forms\Components\Textarea::make('note')
+                            ->label('Note (optional)')
+                            ->rows(2)
+                            ->placeholder('What changed? Why?'),
+                    ])
+                    ->action(function ($record, array $data) {
+                        $record->recordUpdate(
+                            value: (float) $data['value'],
+                            source: 'manual',
+                            userId: auth()->id(),
+                            note: $data['note'] ?? null,
+                        );
+
+                        Notification::make()
+                            ->title('Progress updated')
+                            ->success()
+                            ->send();
+                    })
+                    ->modalHeading(fn ($record) => 'Update Progress — ' . $record->title)
+                    ->modalWidth('md'),
+
+                Tables\Actions\Action::make('recalculate')
+                    ->label('Recalculate')
+                    ->icon('heroicon-o-refresh')
+                    ->color('primary')
+                    ->visible(fn ($record) => $record->isAuto())
+                    ->action(function ($record) {
+                        $update = app(GoalProgressCalculator::class)->recalculate($record);
+
+                        Notification::make()
+                            ->title($update
+                                ? "Recalculated: {$update->previous_value} → {$update->value}"
+                                : 'Recalculated — no change.')
+                            ->success()
+                            ->send();
+                    })
+                    ->requiresConfirmation(false),
+
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
