@@ -4,7 +4,6 @@ namespace App\Filament\Resources\GoalResource\RelationManagers;
 
 use App\Models\Project;
 use App\Models\TicketStatus;
-use App\Rules\KeyResultWeightFits;
 use App\Services\GoalWeightValidator;
 use App\Services\Goals\GoalProgressCalculator;
 use Filament\Forms;
@@ -40,11 +39,7 @@ class KeyResultsRelationManager extends RelationManager
                     ->step(0.01)
                     ->default(0)
                     ->required()
-                    ->reactive()
-                    ->rules(function ($livewire, $record) {
-                        $goalId = $livewire->ownerRecord->id;
-                        return [new KeyResultWeightFits((int) $goalId, $record?->id)];
-                    }),
+                    ->reactive(),
             ]),
 
             Forms\Components\TextInput::make('title')

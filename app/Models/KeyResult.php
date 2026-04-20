@@ -2,14 +2,38 @@
 
 namespace App\Models;
 
+use App\Services\GoalWeightValidator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class KeyResult extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saving(function (KeyResult $kr) {
+            if (! $kr->goal_id) {
+                return;
+            }
+
+            $other = GoalWeightValidator::goalKeyResultsTotal(
+                (int) $kr->goal_id,
+                $kr->exists ? (int) $kr->id : null,
+            );
+
+            $total = $other + (float) $kr->weight;
+            if ($total > 100.0 + GoalWeightValidator::TOLERANCE) {
+                $remaining = max(0, 100.0 - $other);
+                throw ValidationException::withMessages([
+                    'weight' => "Only {$remaining}% KR weight budget left under this objective (already allocated: {$other}%).",
+                ]);
+            }
+        });
+    }
 
     protected $fillable = [
         'goal_id',

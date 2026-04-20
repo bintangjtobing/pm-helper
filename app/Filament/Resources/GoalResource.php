@@ -8,9 +8,7 @@ use App\Models\Department;
 use App\Models\Goal;
 use App\Models\GoalPeriod;
 use App\Models\User;
-use App\Rules\ObjectiveWeightFits;
 use App\Services\GoalWeightValidator;
-use Closure;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -152,23 +150,7 @@ class GoalResource extends Resource
                         ->step(0.01)
                         ->default(0)
                         ->required()
-                        ->reactive()
-                        ->rules(function (callable $get, $record) {
-                            $ownerId = $get('owner_id');
-                            $periodId = $get('period_id');
-                            $level = $get('level');
-                            $type = $get('type');
-
-                            if ($type !== 'objective' || $level !== 'individual' || ! $ownerId || ! $periodId) {
-                                return [];
-                            }
-
-                            return [new ObjectiveWeightFits(
-                                (int) $ownerId,
-                                (int) $periodId,
-                                $record?->id,
-                            )];
-                        }),
+                        ->reactive(),
 
                     Forms\Components\Select::make('status')
                         ->label(__('Status'))

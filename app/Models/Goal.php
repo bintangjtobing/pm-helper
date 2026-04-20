@@ -2,14 +2,43 @@
 
 namespace App\Models;
 
+use App\Services\GoalWeightValidator;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class Goal extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::saving(function (Goal $goal) {
+            // Only enforce the per-user budget for Individual Objectives.
+            if ($goal->type !== 'objective' || $goal->level !== 'individual') {
+                return;
+            }
+            if (! $goal->owner_id || ! $goal->period_id) {
+                return;
+            }
+
+            $other = GoalWeightValidator::userObjectivesTotal(
+                (int) $goal->owner_id,
+                (int) $goal->period_id,
+                $goal->exists ? (int) $goal->id : null,
+            );
+
+            $total = $other + (float) $goal->weight;
+            if ($total > 100.0 + GoalWeightValidator::TOLERANCE) {
+                $remaining = max(0, 100.0 - $other);
+                throw ValidationException::withMessages([
+                    'weight' => "Only {$remaining}% weight budget left for this owner in this period (already allocated: {$other}%).",
+                ]);
+            }
+        });
+    }
 
     protected $fillable = [
         'period_id',
