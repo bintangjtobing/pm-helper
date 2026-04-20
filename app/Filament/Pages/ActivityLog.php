@@ -35,7 +35,7 @@ class ActivityLog extends Page
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Management');
+        return __('Workspace');
     }
 
     protected static function shouldRegisterNavigation(): bool

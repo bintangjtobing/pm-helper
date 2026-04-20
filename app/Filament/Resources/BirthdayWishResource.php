@@ -19,7 +19,7 @@ class BirthdayWishResource extends Resource
     protected static ?string $slug = 'birthday-wishes';
 
     protected static function getNavigationLabel(): string { return __('Birthday Wishes'); }
-    protected static function getNavigationGroup(): ?string { return __('Settings'); }
+    protected static function getNavigationGroup(): ?string { return __('Admin'); }
 
     public static function shouldRegisterNavigation(): bool
     {

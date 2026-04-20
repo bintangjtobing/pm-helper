@@ -315,15 +315,13 @@ class AppServiceProvider extends ServiceProvider
             new HtmlString('<meta name="any-birthday-today" content="' . (\App\Models\User::whereMonth('birthday', now()->month)->whereDay('birthday', now()->day)->exists() ? '1' : '0') . '">'),
         ]);
 
-        // Register navigation groups
+        // Register navigation groups (ordered by persona: daily work → self → collaborative → admin)
         Filament::registerNavigationGroups([
-            __('Management'),
+            __('Workspace'),
             __('Reports'),
             __('Performance'),
-            __('Organization'),
-            __('Referential'),
-            __('Security'),
-            __('Settings'),
+            __('Team'),
+            __('Admin'),
         ]);
 
         // Force HTTPS over HTTP

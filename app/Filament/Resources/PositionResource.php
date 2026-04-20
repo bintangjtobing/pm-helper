@@ -29,7 +29,7 @@ class PositionResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Organization');
+        return __('Team');
     }
 
     public static function shouldRegisterNavigation(): bool

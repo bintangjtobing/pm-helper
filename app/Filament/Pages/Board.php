@@ -41,7 +41,7 @@ class Board extends Page
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Management');
+        return __('Workspace');
     }
 
     public function selectProject($projectId): void

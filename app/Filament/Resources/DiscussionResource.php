@@ -38,7 +38,7 @@ class DiscussionResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Reports');
+        return __('Workspace');
     }
 
     public static function shouldRegisterNavigation(): bool

@@ -32,7 +32,7 @@ class TimesheetExport extends Page implements HasForms, HasTable
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Timesheet');
+        return __('Reports');
     }
 
     public bool $showPreview = false;

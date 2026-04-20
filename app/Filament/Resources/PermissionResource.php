@@ -21,7 +21,7 @@ class PermissionResource extends Resource
 
     protected static function getNavigationLabel(): string
     {
-        return __('Permissions');
+        return __('Team');
     }
 
     public static function getPluralLabel(): ?string

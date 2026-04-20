@@ -33,7 +33,7 @@ class GoalResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Performance');
+        return __('Admin');
     }
 
     public static function shouldRegisterNavigation(): bool

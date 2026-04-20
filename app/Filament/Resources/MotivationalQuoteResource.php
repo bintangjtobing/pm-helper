@@ -28,7 +28,7 @@ class MotivationalQuoteResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Settings');
+        return __('Admin');
     }
 
     public static function shouldRegisterNavigation(): bool

@@ -32,7 +32,7 @@ class RoleResource extends Resource
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Permissions');
+        return __('Team');
     }
 
     public static function form(Form $form): Form

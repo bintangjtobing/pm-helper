@@ -20,7 +20,7 @@ class OrganizationTree extends Page
 
     protected static function getNavigationGroup(): ?string
     {
-        return __('Organization');
+        return __('Team');
     }
 
     public function getViewData(): array
