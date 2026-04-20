@@ -43,7 +43,7 @@
     {{-- Title row --}}
     <div class="flex items-start gap-2">
         @if($goal->code)
-            <span class="text-sm font-bold text-gray-500 dark:text-gray-400 tabular-nums shrink-0 mt-0.5">{{ $goal->code }}</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300 text-[11px] font-bold tabular-nums tracking-wide ring-1 ring-indigo-200 dark:ring-indigo-500/25 shrink-0 mt-0.5 whitespace-nowrap">{{ $goal->code }}</span>
         @endif
         <h3 class="flex-1 text-base md:text-[15px] font-semibold text-gray-900 dark:text-gray-50 leading-snug">{{ $goal->title }}</h3>
         <span class="text-xs font-medium text-gray-500 dark:text-gray-400 shrink-0 tabular-nums whitespace-nowrap">{{ number_format((float) $goal->weight, 1) }}%w</span>
@@ -107,7 +107,7 @@
                     <div class="bg-gray-50 dark:bg-gray-900/40 rounded-lg p-3 border-l-4 {{ $krBorder }}">
                         <div class="flex items-start gap-2">
                             @if($kr->code)
-                                <span class="text-[11.5px] font-bold text-gray-600 dark:text-gray-300 shrink-0 mt-0.5">{{ $kr->code }}</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 text-[10.5px] font-bold tabular-nums tracking-wide shrink-0 mt-0.5 whitespace-nowrap">{{ $kr->code }}</span>
                             @endif
                             <p class="flex-1 text-[13px] text-gray-800 dark:text-gray-100 leading-snug">{{ $kr->title }}</p>
                             <span class="px-1.5 py-0.5 text-[10px] font-semibold rounded {{ $modeClasses }} shrink-0 whitespace-nowrap">{{ $modeLabel }}</span>
