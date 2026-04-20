@@ -29,7 +29,7 @@
     [$statusLabel, $statusClasses] = $statusMap[$goal->status] ?? ['Draft', 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300'];
 @endphp
 
-<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-5 mb-3 shadow-sm hover:shadow-md transition-shadow">
+<div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-5 mb-5 md:mb-6 shadow-sm hover:shadow-md transition-shadow">
     {{-- Badges row --}}
     <div class="flex flex-wrap items-center gap-1.5 mb-2">
         <span class="px-2 py-0.5 text-[11px] font-semibold rounded {{ $levelClasses }}">{{ $levelLabel }}</span>
