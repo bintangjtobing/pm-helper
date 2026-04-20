@@ -138,6 +138,47 @@
                                 Aligned: {{ $kr->alignment_note }}
                             </div>
                         @endif
+
+                        {{-- Inline "Update Progress" (only on My OKR, only for KRs the viewer owns, only manual/hybrid) --}}
+                        @if(($updatable ?? false) && $kr->progress_mode !== 'auto' && $goal->owner_id === auth()->id())
+                            <div class="mt-3" x-data="{ open: false, value: {{ (float) $kr->current_value }}, note: '', saving: false }">
+                                <button type="button" x-show="!open" @click="open = true"
+                                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[11.5px] font-semibold shadow-sm transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                    Update progress
+                                </button>
+
+                                <div x-show="open" x-cloak class="rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 p-3 space-y-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <label class="text-[10.5px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 whitespace-nowrap">New value</label>
+                                        <input type="number" step="0.01" x-model="value"
+                                               class="flex-1 min-w-[100px] max-w-[220px] px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[13px] font-semibold text-gray-900 dark:text-gray-100 tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                                        @if($kr->unit)
+                                            <span class="text-[11.5px] text-gray-500 dark:text-gray-400">{{ $kr->unit }}</span>
+                                        @endif
+                                        <span class="text-[11px] text-gray-400 dark:text-gray-500 tabular-nums">Target: {{ $kr->target_value !== null ? number_format((float) $kr->target_value, 2) : '—' }}{{ $kr->unit ? ' ' . $kr->unit : '' }}</span>
+                                    </div>
+
+                                    <input type="text" x-model="note" placeholder="Note (optional) — what changed this week?"
+                                           class="w-full px-2.5 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[12px] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+
+                                    <div class="flex items-center gap-2">
+                                        <button type="button"
+                                                :disabled="saving"
+                                                @click="saving = true; $wire.updateKrProgress({{ $kr->id }}, value, note).then(() => { saving = false; open = false; note = ''; })"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[12px] font-semibold shadow-sm transition">
+                                            <svg x-show="!saving" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                            <svg x-show="saving" x-cloak class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-25"/><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                            <span x-text="saving ? 'Saving…' : 'Save'"></span>
+                                        </button>
+                                        <button type="button" @click="open = false; value = {{ (float) $kr->current_value }}; note = ''"
+                                                class="px-3 py-1.5 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 text-[12px] font-medium transition">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

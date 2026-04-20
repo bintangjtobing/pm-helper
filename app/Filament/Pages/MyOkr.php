@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Models\Goal;
 use App\Models\GoalPeriod;
+use App\Models\KeyResult;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Livewire\Attributes\Url;
 
@@ -29,6 +31,44 @@ class MyOkr extends Page
     public function updatedPeriodId(): void
     {
         // Livewire auto re-renders the page on property update.
+    }
+
+    /**
+     * Inline "Update Progress" handler for Manual/Hybrid KRs owned by the current user.
+     * Rejects auto-mode KRs (they come from the scheduler) and any KR not owned by auth().
+     */
+    public function updateKrProgress(int $krId, $value, ?string $note = null): void
+    {
+        $kr = KeyResult::with('goal')->find($krId);
+
+        if (! $kr || ! $kr->goal || (int) $kr->goal->owner_id !== (int) auth()->id()) {
+            Notification::make()->title('Not your KR.')->danger()->send();
+            return;
+        }
+
+        if ($kr->progress_mode === 'auto') {
+            Notification::make()->title('This KR is auto-calculated. Switch to Hybrid or Manual to edit.')->warning()->send();
+            return;
+        }
+
+        $newValue = (float) $value;
+        if ((float) $kr->current_value === $newValue) {
+            Notification::make()->title('No change — value is the same.')->send();
+            return;
+        }
+
+        $kr->recordUpdate(
+            value: $newValue,
+            source: 'manual',
+            userId: (int) auth()->id(),
+            note: $note ?: null,
+        );
+
+        Notification::make()
+            ->title('Progress updated')
+            ->body("New value saved: " . number_format($newValue, 2) . ($kr->unit ? ' ' . $kr->unit : ''))
+            ->success()
+            ->send();
     }
 
     protected static function getNavigationLabel(): string

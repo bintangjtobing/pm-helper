@@ -37,7 +37,7 @@
     @else
         <div class="space-y-0">
             @foreach($goals as $goal)
-                @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => false])
+                @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => false, 'updatable' => true])
             @endforeach
         </div>
 
