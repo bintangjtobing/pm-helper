@@ -1,6 +1,8 @@
 <x-filament::page>
     @include('filament.pages.partials.okr-hero', [
-        'label' => $isSuperAdmin ? 'Team OKR — All users (Super Admin)' : 'Team OKR — Your direct reports',
+        'label' => ($hasFullAccess ?? $isSuperAdmin)
+            ? ('Team OKR — All users (' . ($viewerRoleLabel ?? 'Leadership') . ' view)')
+            : 'Team OKR — Your direct reports',
         'title' => $period?->name ?? 'No active period',
         'subtitle' => $period
             ? $period->start_date->format('d M Y') . ' — ' . $period->end_date->format('d M Y') . ' · ' . ucfirst($period->type)

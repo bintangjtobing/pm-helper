@@ -35,6 +35,21 @@ class TeamOkr extends Page
         return __('Performance');
     }
 
+    /**
+     * Roles that can see EVERY user's OKR (read-only transparency).
+     * Executive and Stakeholder sit at leadership / investor level and
+     * get full visibility by design.
+     */
+    protected static array $fullAccessRoles = ['Super Admin', 'Executive', 'Stakeholder'];
+
+    protected static function userHasFullAccess($user): bool
+    {
+        if (! $user || ! method_exists($user, 'hasAnyRole')) {
+            return false;
+        }
+        return $user->hasAnyRole(self::$fullAccessRoles);
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         $user = auth()->user();
@@ -42,11 +57,12 @@ class TeamOkr extends Page
             return false;
         }
 
-        // Super Admin always sees it; everyone else only if they have direct reports.
-        if (method_exists($user, 'hasRole') && $user->hasRole('Super Admin')) {
+        // Leadership / stakeholder roles see every user's OKR.
+        if (self::userHasFullAccess($user)) {
             return true;
         }
 
+        // Otherwise only show the page to supervisors who have direct reports.
         return User::where('supervisor_id', $user->id)->exists();
     }
 
@@ -57,8 +73,9 @@ class TeamOkr extends Page
         $periods = GoalPeriod::orderByDesc('start_date')->get();
 
         $isSuperAdmin = method_exists($user, 'hasRole') && $user->hasRole('Super Admin');
+        $hasFullAccess = self::userHasFullAccess($user);
 
-        $subordinatesQuery = $isSuperAdmin
+        $subordinatesQuery = $hasFullAccess
             ? User::query()
             : User::where('supervisor_id', $user->id);
 
@@ -96,6 +113,12 @@ class TeamOkr extends Page
             'periods' => $periods,
             'summaries' => $summaries,
             'isSuperAdmin' => $isSuperAdmin,
+            'hasFullAccess' => $hasFullAccess,
+            'viewerRoleLabel' => $isSuperAdmin
+                ? 'Super Admin'
+                : ($hasFullAccess
+                    ? ($user->roles->pluck('name')->first() ?? 'Leadership')
+                    : 'Supervisor'),
         ];
     }
 }
