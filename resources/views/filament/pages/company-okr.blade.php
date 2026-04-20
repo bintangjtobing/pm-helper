@@ -1,52 +1,38 @@
 <x-filament::page>
     @php
-        $companyColor = $companyAchievement >= 70 ? '#059669' : ($companyAchievement >= 40 ? '#d97706' : '#dc2626');
+        $primaryTone = $companyAchievement >= 70 ? 'emerald' : ($companyAchievement >= 40 ? 'amber' : 'rose');
     @endphp
 
-    {{-- Hero card --}}
-    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:linear-gradient(135deg,#0f766e,#059669); color:white; padding:18px 22px; border-radius:12px; margin-bottom:18px;">
-        <div style="flex:1; min-width:220px;">
-            <div style="font-size:13px; opacity:0.85;">Company OKR — transparent view</div>
-            <div style="font-size:22px; font-weight:700; line-height:1.2; margin-top:2px;">
-                {{ $period?->name ?? 'No period selected' }}
-                @if($period)
-                    <span style="font-size:13px; font-weight:400; opacity:0.85; margin-left:8px;">· {{ ucfirst($period->type) }}</span>
-                @endif
-            </div>
-            @if($period)
-                <div style="font-size:12.5px; opacity:0.85; margin-top:2px;">
-                    {{ $period->start_date->format('d M Y') }} — {{ $period->end_date->format('d M Y') }}
-                </div>
-            @endif
-        </div>
+    @include('filament.pages.partials.okr-hero', [
+        'label' => 'Company OKR — Transparent View',
+        'title' => $period?->name ?? 'No active period',
+        'subtitle' => $period
+            ? $period->start_date->format('d M Y') . ' — ' . $period->end_date->format('d M Y') . ' · ' . ucfirst($period->type)
+            : 'Company OKR data will appear here once a period is configured.',
+        'accent' => 'emerald',
+        'primary' => [
+            'label' => 'Company Achievement',
+            'value' => number_format($companyAchievement, 1) . '%',
+            'tone' => $primaryTone,
+        ],
+        'secondary' => [
+            'label' => 'Company Objectives',
+            'value' => $companyGoals->count(),
+        ],
+    ])
 
-        <div style="text-align:right;">
-            <div style="font-size:12px; opacity:0.85;">Company-level Achievement</div>
-            <div style="font-size:30px; font-weight:800; line-height:1;">{{ number_format($companyAchievement, 1) }}%</div>
-            <div style="font-size:11.5px; opacity:0.85;">Weighted across {{ $companyGoals->count() }} Objective{{ $companyGoals->count() === 1 ? '' : 's' }}</div>
-        </div>
-    </div>
-
-    {{-- Period selector --}}
-    <div style="margin-bottom:18px; display:flex; align-items:center; gap:12px;">
-        <label style="font-size:13px; color:#6b7280; font-weight:500;">Period:</label>
-        <select wire:model="periodId"
-                style="font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid #d1d5db; background:white; min-width:200px;"
-                class="dark:!bg-gray-800 dark:!border-gray-700 dark:!text-gray-200">
-            @foreach($periods as $p)
-                <option value="{{ $p->id }}">{{ $p->name }} ({{ ucfirst($p->status) }})</option>
-            @endforeach
-        </select>
-    </div>
+    @include('filament.pages.partials.okr-period-selector', ['periods' => $periods, 'periodId' => $periodId])
 
     {{-- Company-level --}}
-    <div style="margin-bottom:28px;">
-        <h2 style="font-size:15px; font-weight:700; color:#374151; margin-bottom:10px; display:flex; align-items:center; gap:8px;" class="dark:!text-gray-200">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#8b5cf6;"></span>
-            Company Objectives ({{ $companyGoals->count() }})
-        </h2>
+    <section class="mb-8">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="h-2 w-2 rounded-full bg-violet-500"></span>
+            <h2 class="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Company Objectives</h2>
+            <span class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 tabular-nums">· {{ $companyGoals->count() }}</span>
+        </div>
+
         @if($companyGoals->isEmpty())
-            <div style="padding:16px; background:#f9fafb; border-radius:8px; font-size:12.5px; color:#6b7280; text-align:center;" class="dark:!bg-gray-800 dark:!text-gray-400">
+            <div class="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5 text-center text-[12.5px] text-gray-500 dark:text-gray-400">
                 No Company-level Objectives for this period yet.
             </div>
         @else
@@ -54,26 +40,31 @@
                 @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => true])
             @endforeach
         @endif
-    </div>
+    </section>
 
     {{-- Department-level --}}
-    <div style="margin-bottom:28px;">
-        <h2 style="font-size:15px; font-weight:700; color:#374151; margin-bottom:10px; display:flex; align-items:center; gap:8px;" class="dark:!text-gray-200">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#3b82f6;"></span>
-            Department Objectives ({{ $deptGoals->flatten()->count() }})
-        </h2>
+    <section class="mb-8">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+            <h2 class="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Department Objectives</h2>
+            <span class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 tabular-nums">· {{ $deptGoals->flatten()->count() }}</span>
+        </div>
+
         @if($deptGoals->isEmpty())
-            <div style="padding:16px; background:#f9fafb; border-radius:8px; font-size:12.5px; color:#6b7280; text-align:center;" class="dark:!bg-gray-800 dark:!text-gray-400">
+            <div class="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5 text-center text-[12.5px] text-gray-500 dark:text-gray-400">
                 No Department-level Objectives for this period yet.
             </div>
         @else
             @foreach($deptGoals as $deptId => $group)
                 @php $deptName = $group->first()?->department?->name ?? 'Unassigned Department'; @endphp
-                <details open style="margin-bottom:12px; background:#f9fafb; border-radius:8px; padding:8px 14px;" class="dark:!bg-gray-900/30">
-                    <summary style="cursor:pointer; font-weight:600; font-size:13.5px; color:#3b82f6; padding:6px 0; user-select:none;">
-                        🏢 {{ $deptName }} — {{ $group->count() }} Objective{{ $group->count() === 1 ? '' : 's' }}
+                <details open class="mb-3 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <summary class="cursor-pointer select-none px-4 py-3 flex items-center gap-2 text-[13px] font-semibold text-sky-700 dark:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>
+                        <span class="flex-1">{{ $deptName }}</span>
+                        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 tabular-nums">{{ $group->count() }} Objective{{ $group->count() === 1 ? '' : 's' }}</span>
+                        <svg class="w-4 h-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </summary>
-                    <div style="margin-top:10px;">
+                    <div class="px-4 pb-4 pt-2">
                         @foreach($group as $goal)
                             @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => true])
                         @endforeach
@@ -81,26 +72,31 @@
                 </details>
             @endforeach
         @endif
-    </div>
+    </section>
 
-    {{-- Individual-level (public only) --}}
-    <div>
-        <h2 style="font-size:15px; font-weight:700; color:#374151; margin-bottom:10px; display:flex; align-items:center; gap:8px;" class="dark:!text-gray-200">
-            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#6b7280;"></span>
-            Individual Objectives — Public ({{ $individualGoals->flatten()->count() }})
-        </h2>
+    {{-- Individual-level (public) --}}
+    <section>
+        <div class="flex items-center gap-2 mb-3">
+            <span class="h-2 w-2 rounded-full bg-slate-500"></span>
+            <h2 class="text-[11px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">Individual Objectives — Public</h2>
+            <span class="text-[11px] font-semibold text-gray-400 dark:text-gray-500 tabular-nums">· {{ $individualGoals->flatten()->count() }}</span>
+        </div>
+
         @if($individualGoals->isEmpty())
-            <div style="padding:16px; background:#f9fafb; border-radius:8px; font-size:12.5px; color:#6b7280; text-align:center;" class="dark:!bg-gray-800 dark:!text-gray-400">
+            <div class="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-5 text-center text-[12.5px] text-gray-500 dark:text-gray-400">
                 No public Individual Objectives for this period.
             </div>
         @else
             @foreach($individualGoals as $ownerId => $group)
                 @php $ownerName = $group->first()?->owner?->name ?? 'Unassigned'; @endphp
-                <details style="margin-bottom:12px; background:#f9fafb; border-radius:8px; padding:8px 14px;" class="dark:!bg-gray-900/30">
-                    <summary style="cursor:pointer; font-weight:600; font-size:13.5px; color:#6b7280; padding:6px 0; user-select:none;">
-                        👤 {{ $ownerName }} — {{ $group->count() }} Objective{{ $group->count() === 1 ? '' : 's' }}
+                <details class="mb-3 rounded-xl bg-white dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <summary class="cursor-pointer select-none px-4 py-3 flex items-center gap-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-slate-500/10 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span class="flex-1">{{ $ownerName }}</span>
+                        <span class="text-[11px] font-medium text-gray-500 dark:text-gray-400 tabular-nums">{{ $group->count() }} Objective{{ $group->count() === 1 ? '' : 's' }}</span>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </summary>
-                    <div style="margin-top:10px;">
+                    <div class="px-4 pb-4 pt-2">
                         @foreach($group as $goal)
                             @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => false])
                         @endforeach
@@ -108,5 +104,5 @@
                 </details>
             @endforeach
         @endif
-    </div>
+    </section>
 </x-filament::page>

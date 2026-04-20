@@ -1,60 +1,50 @@
 <x-filament::page>
     @php
         $user = auth()->user();
-        $overallColor = $overallAchievement >= 70 ? '#059669' : ($overallAchievement >= 40 ? '#d97706' : '#dc2626');
+        $primaryTone = $overallAchievement >= 70 ? 'emerald' : ($overallAchievement >= 40 ? 'amber' : 'rose');
     @endphp
 
-    {{-- Header card: summary + period selector --}}
-    <div style="display:flex; flex-wrap:wrap; align-items:center; gap:16px; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; padding:18px 22px; border-radius:12px; margin-bottom:18px;">
-        <div style="flex:1; min-width:220px;">
-            <div style="font-size:13px; opacity:0.8;">Good to see you, {{ $user->name }}</div>
-            <div style="font-size:22px; font-weight:700; line-height:1.2; margin-top:2px;">
-                {{ $period?->name ?? 'No period selected' }}
-                @if($period)
-                    <span style="font-size:13px; font-weight:400; opacity:0.8; margin-left:8px;">· {{ ucfirst($period->type) }}</span>
-                @endif
-            </div>
-            @if($period)
-                <div style="font-size:12.5px; opacity:0.85; margin-top:2px;">
-                    {{ $period->start_date->format('d M Y') }} — {{ $period->end_date->format('d M Y') }}
-                </div>
-            @endif
-        </div>
+    @include('filament.pages.partials.okr-hero', [
+        'label' => 'My OKR — ' . $user->name,
+        'title' => $period?->name ?? 'No active period',
+        'subtitle' => $period
+            ? $period->start_date->format('d M Y') . ' — ' . $period->end_date->format('d M Y') . ' · ' . ucfirst($period->type)
+            : 'Set up a period to start tracking your Objectives.',
+        'accent' => 'indigo',
+        'primary' => [
+            'label' => 'Overall Achievement',
+            'value' => number_format($overallAchievement, 1) . '%',
+            'tone' => $primaryTone,
+        ],
+        'secondary' => [
+            'label' => 'Weight allocated',
+            'value' => number_format($totalWeight, 1) . '%',
+        ],
+    ])
 
-        <div style="text-align:right;">
-            <div style="font-size:12px; opacity:0.8;">Your Overall Achievement</div>
-            <div style="font-size:30px; font-weight:800; line-height:1;">{{ number_format($overallAchievement, 1) }}%</div>
-            <div style="font-size:11.5px; opacity:0.85;">Total weight allocated: {{ number_format($totalWeight, 1) }}%</div>
-        </div>
-    </div>
+    @include('filament.pages.partials.okr-period-selector', ['periods' => $periods, 'periodId' => $periodId])
 
-    {{-- Period selector --}}
-    <div style="margin-bottom:18px; display:flex; align-items:center; gap:12px;">
-        <label style="font-size:13px; color:#6b7280; font-weight:500;">Period:</label>
-        <select wire:model="periodId"
-                style="font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid #d1d5db; background:white; min-width:200px;"
-                class="dark:!bg-gray-800 dark:!border-gray-700 dark:!text-gray-200">
-            @foreach($periods as $p)
-                <option value="{{ $p->id }}">{{ $p->name }} ({{ ucfirst($p->status) }})</option>
-            @endforeach
-        </select>
-    </div>
-
-    {{-- Goals tree --}}
     @if($goals->isEmpty())
-        <div style="padding:28px; text-align:center; background:#fef3c7; border:1px solid #fde68a; border-radius:10px;">
-            <div style="font-size:32px; margin-bottom:6px;">🎯</div>
-            <div style="font-size:14px; font-weight:600; color:#78350f;">No Objectives assigned for this period</div>
-            <div style="font-size:12.5px; color:#92400e; margin-top:6px;">Talk to your manager to set up your OKRs, or wait until {{ $period?->name ?? 'the next period' }} opens.</div>
+        <div class="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-8 text-center">
+            <div class="mx-auto w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center mb-3">
+                <svg class="w-6 h-6 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <h3 class="text-[14px] font-semibold text-gray-900 dark:text-gray-100">No Objectives assigned for this period</h3>
+            <p class="text-[12.5px] text-gray-500 dark:text-gray-400 mt-1.5 max-w-md mx-auto leading-relaxed">Talk to your manager to set up your OKRs for {{ $period?->name ?? 'the next period' }}, or wait until a new period opens.</p>
         </div>
     @else
-        @foreach($goals as $goal)
-            @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => false])
-        @endforeach
+        <div class="space-y-0">
+            @foreach($goals as $goal)
+                @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => false])
+            @endforeach
+        </div>
 
         @if(abs($totalWeight - 100) > 0.01)
-            <div style="padding:10px 14px; background:#fef3c7; border-left:4px solid #d97706; border-radius:6px; margin-top:12px; font-size:12.5px; color:#92400e;">
-                ⚠️ Total Objective weight is <strong>{{ number_format($totalWeight, 2) }}%</strong> — should equal 100% for a fully allocated period. Ask your manager to adjust.
+            <div class="mt-3 rounded-lg border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-[12.5px] text-amber-800 dark:text-amber-200">
+                <strong class="font-semibold">Weight allocation: {{ number_format($totalWeight, 2) }}% / 100%</strong>
+                — should equal 100% for a fully allocated period. Ask your manager to adjust.
             </div>
         @endif
     @endif

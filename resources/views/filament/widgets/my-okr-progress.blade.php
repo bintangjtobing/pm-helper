@@ -1,53 +1,59 @@
 <x-filament::widget>
     <x-filament::card>
         @php
-            $headlineColor = $totalAchievement >= 70 ? '#059669' : ($totalAchievement >= 40 ? '#d97706' : '#dc2626');
+            $pctText = $totalAchievement >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ($totalAchievement >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400');
+            $barClass = $totalAchievement >= 70 ? 'bg-emerald-500' : ($totalAchievement >= 40 ? 'bg-amber-500' : 'bg-rose-500');
         @endphp
 
-        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:10px;">
+        <div class="flex items-start justify-between gap-3 mb-3">
             <div>
-                <div style="font-size:11px; color:#6b7280; text-transform:uppercase; letter-spacing:0.05em; font-weight:600;">My OKR Progress</div>
-                <div style="font-size:13.5px; font-weight:600; color:#111827; margin-top:2px;" class="dark:!text-gray-100">{{ $period?->name ?? 'No active period' }}</div>
+                <div class="text-[10.5px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">My OKR Progress</div>
+                <div class="text-[13.5px] font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{{ $period?->name ?? 'No active period' }}</div>
             </div>
-            <a href="{{ \App\Filament\Pages\MyOkr::getUrl() }}" style="font-size:11.5px; color:#6366f1; text-decoration:none; white-space:nowrap;">View all →</a>
+            <a href="{{ \App\Filament\Pages\MyOkr::getUrl() }}"
+               class="text-[11.5px] font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 no-underline whitespace-nowrap">View all →</a>
         </div>
 
-        <div style="display:flex; align-items:center; gap:14px; padding:10px 12px; background:#f9fafb; border-radius:8px; margin-bottom:12px;" class="dark:!bg-gray-900/50">
+        {{-- Overall card --}}
+        <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/40 mb-3">
             <div>
-                <div style="font-size:11px; color:#6b7280;">Overall</div>
-                <div style="font-size:22px; font-weight:800; line-height:1; color:{{ $headlineColor }};">{{ number_format($totalAchievement, 1) }}%</div>
+                <div class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold">Overall</div>
+                <div class="text-[22px] font-extrabold tabular-nums leading-none mt-0.5 {{ $pctText }}">{{ number_format($totalAchievement, 1) }}%</div>
             </div>
-            <div style="flex:1; height:8px; background:#e5e7eb; border-radius:4px; overflow:hidden;" class="dark:!bg-gray-700">
-                <div style="width:{{ $totalAchievement }}%; height:100%; background:{{ $headlineColor }}; border-radius:4px;"></div>
+            <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div class="h-full {{ $barClass }} rounded-full" style="width: {{ $totalAchievement }}%"></div>
             </div>
         </div>
 
         @if($pendingKrs > 0)
-            <div style="padding:8px 12px; background:#fef3c7; border-left:3px solid #d97706; border-radius:4px; font-size:12px; color:#92400e; margin-bottom:10px;">
-                ⚠️ {{ $pendingKrs }} Key Result{{ $pendingKrs === 1 ? '' : 's' }} not updated in the past week.
+            <div class="rounded-md border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-500/10 px-3 py-2 text-[11.5px] text-amber-800 dark:text-amber-200 mb-3">
+                <strong class="font-semibold">{{ $pendingKrs }}</strong> Key Result{{ $pendingKrs === 1 ? '' : 's' }} not updated in the past week.
             </div>
         @endif
 
         @if($goals->isEmpty())
-            <div style="font-size:12.5px; color:#6b7280; text-align:center; padding:14px;">No Objectives for this period.</div>
+            <div class="text-[12.5px] text-gray-500 dark:text-gray-400 text-center py-3">No Objectives for this period.</div>
         @else
-            @foreach($goals as $goal)
-                @php
-                    $pct = (float) $goal->achievement;
-                    $color = $pct >= 70 ? '#059669' : ($pct >= 40 ? '#d97706' : '#dc2626');
-                @endphp
-                <div style="margin-bottom:10px;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:12px; margin-bottom:4px;">
-                        <div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#374151;" class="dark:!text-gray-300">
-                            @if($goal->code)<strong>{{ $goal->code }}</strong> · @endif{{ $goal->title }}
+            <div class="space-y-2.5">
+                @foreach($goals as $goal)
+                    @php
+                        $gpct = (float) $goal->achievement;
+                        $gbar = $gpct >= 70 ? 'bg-emerald-500' : ($gpct >= 40 ? 'bg-amber-500' : 'bg-rose-500');
+                        $gtxt = $gpct >= 70 ? 'text-emerald-600 dark:text-emerald-400' : ($gpct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400');
+                    @endphp
+                    <div>
+                        <div class="flex items-center justify-between gap-2 mb-1 text-[12px]">
+                            <div class="flex-1 min-w-0 truncate text-gray-700 dark:text-gray-200">
+                                @if($goal->code)<strong class="font-semibold">{{ $goal->code }}</strong> · @endif{{ $goal->title }}
+                            </div>
+                            <div class="text-[11.5px] font-bold tabular-nums {{ $gtxt }} whitespace-nowrap">{{ number_format($gpct, 1) }}%</div>
                         </div>
-                        <div style="font-size:11.5px; font-weight:600; color:{{ $color }}; white-space:nowrap;">{{ number_format($pct, 1) }}%</div>
+                        <div class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full {{ $gbar }} rounded-full" style="width: {{ $gpct }}%"></div>
+                        </div>
                     </div>
-                    <div style="width:100%; height:5px; background:#e5e7eb; border-radius:3px; overflow:hidden;" class="dark:!bg-gray-700">
-                        <div style="width:{{ $pct }}%; height:100%; background:{{ $color }}; border-radius:3px;"></div>
-                    </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
         @endif
     </x-filament::card>
 </x-filament::widget>
