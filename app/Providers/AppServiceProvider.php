@@ -324,6 +324,42 @@ class AppServiceProvider extends ServiceProvider
             __('Admin'),
         ]);
 
+        // Accordion-style sidebar groups: collapsed by default, only one open at a time.
+        // Patches Filament v2's native $store.sidebar.toggleCollapsedGroup.
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => auth()->check() ? <<<'HTML'
+            <script>
+            document.addEventListener('alpine:initialized', () => {
+                const store = Alpine.store('sidebar');
+                if (!store) return;
+
+                const getAllLabels = () => Array.from(document.querySelectorAll('.filament-sidebar-group'))
+                    .map(el => Alpine.$data(el)?.label)
+                    .filter(l => typeof l === 'string' && l.length > 0);
+
+                // On first visit (or if user manually cleared state), collapse everything.
+                const labels = getAllLabels();
+                if (labels.length > 0 && store.collapsedGroups.length === 0) {
+                    store.collapsedGroups = labels;
+                }
+
+                // Override toggle: opening a group closes all its siblings.
+                store.toggleCollapsedGroup = function (group) {
+                    const all = getAllLabels();
+                    if (this.collapsedGroups.includes(group)) {
+                        // Opening this one → collapse all others
+                        this.collapsedGroups = all.filter(l => l !== group);
+                    } else {
+                        // Closing this one → everything collapsed
+                        this.collapsedGroups = Array.from(new Set([...this.collapsedGroups, group]));
+                    }
+                };
+            });
+            </script>
+            HTML : '',
+        );
+
         // Force HTTPS over HTTP
         if (env('APP_FORCE_HTTPS') ?? false) {
             URL::forceScheme('https');
