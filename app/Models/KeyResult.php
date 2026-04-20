@@ -109,8 +109,17 @@ class KeyResult extends Model
             return 0.0;
         }
 
+        // Unmeasured convention: current == 0 means no data recorded yet,
+        // not "achieved". If you want to record an actual zero for a
+        // decrease metric (e.g. "zero bugs"), use a small non-zero value
+        // or set target = 0 and let the progress remain at 0 until an
+        // explicit review flips it.
+        if ($current == 0.0) {
+            return 0.0;
+        }
+
         $pct = match ($this->direction) {
-            'decrease' => $current == 0.0 ? 100.0 : ($target / $current) * 100,
+            'decrease' => ($target / $current) * 100,
             'maintain' => $current >= $target ? 100.0 : ($current / $target) * 100,
             default => ($current / $target) * 100, // increase
         };
