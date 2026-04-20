@@ -91,13 +91,12 @@ class CommandPalette extends Component
 
         $user = auth()->user();
 
-        // Tickets — filter by assignee/owner/project membership for non-super-admins
+        // Tickets — match on name OR code (code is a stored column like QOS-32)
         $ticketsQuery = Ticket::query()
             ->with(['status', 'project'])
             ->where(function ($inner) use ($q) {
-                $inner->where('name', 'like', "%{$q}%");
-                // Ticket codes are computed via accessor in model (project prefix-N); we can't LIKE the accessor.
-                // Fall back to substring match on name; users normally paste "QOS-123" so match by project+number would need split.
+                $inner->where('name', 'like', "%{$q}%")
+                      ->orWhere('code', 'like', "%{$q}%");
             });
 
         if ($user && ! ($user->hasRole('Super Admin') ?? false)) {
@@ -121,8 +120,11 @@ class CommandPalette extends Component
             ];
         })->all();
 
-        // Projects — filter by owned/member for non-super-admin
-        $projectsQuery = Project::query()->where('name', 'like', "%{$q}%");
+        // Projects — match name or ticket prefix (users often search by prefix like "qos")
+        $projectsQuery = Project::query()->where(function ($inner) use ($q) {
+            $inner->where('name', 'like', "%{$q}%")
+                  ->orWhere('ticket_prefix', 'like', "%{$q}%");
+        });
         if ($user && ! ($user->hasRole('Super Admin') ?? false)) {
             $projectsQuery->where(function ($inner) use ($user) {
                 $inner->where('owner_id', $user->id)
@@ -153,10 +155,13 @@ class CommandPalette extends Component
             ])
             ->all();
 
-        // Goals
+        // Goals — match on title, code, or description
         $goals = Goal::query()
-            ->where('title', 'like', "%{$q}%")
-            ->orWhere('code', 'like', "%{$q}%")
+            ->where(function ($inner) use ($q) {
+                $inner->where('title', 'like', "%{$q}%")
+                      ->orWhere('code', 'like', "%{$q}%")
+                      ->orWhere('description', 'like', "%{$q}%");
+            })
             ->latest('updated_at')
             ->limit(5)
             ->get()

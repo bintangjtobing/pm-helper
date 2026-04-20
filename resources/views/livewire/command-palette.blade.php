@@ -10,20 +10,9 @@
 
 <div x-data="commandPalette({{ $flatUrlsJson }})" wire:ignore.self>
 
-    {{-- Trigger button (fixed near topbar-right) --}}
-    <button type="button"
-            @click="toggle()"
-            class="fixed top-3 right-5 z-40 group inline-flex items-center gap-2 pl-2.5 pr-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-gray-800/90 backdrop-blur hover:bg-white dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 shadow-sm transition-all text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            aria-label="Search"
-            title="Search anything (Cmd+K / Ctrl+K)">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        <span class="hidden sm:inline text-[12.5px] font-medium">Search</span>
-        <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 text-[10px] font-mono text-gray-500 dark:text-gray-400">
-            <span x-text="isMac ? '⌘' : 'Ctrl'"></span>K
-        </kbd>
-    </button>
+    {{-- Trigger button now lives inside the sidebar (registered via sidebar.start render hook).
+         This component only owns the modal + keyboard wiring. The button dispatches a
+         'cmd-palette:toggle' CustomEvent that our init() handler listens for. --}}
 
     {{-- Backdrop + Modal --}}
     <template x-teleport="body">
@@ -151,6 +140,9 @@
                             this.close();
                         }
                     });
+
+                    // Listen for the sidebar search button (dispatched from sidebar.start render hook)
+                    window.addEventListener('cmd-palette:toggle', () => this.toggle());
                 },
 
                 toggle() {

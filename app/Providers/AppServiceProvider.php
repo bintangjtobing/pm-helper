@@ -383,12 +383,33 @@ class AppServiceProvider extends ServiceProvider
                 : '',
         );
 
-        // Command palette - Ctrl+K / Cmd+K search, trigger button near topbar
+        // Command palette - modal + ⌘K/Ctrl+K keyboard handler (body.end)
         Filament::registerRenderHook(
             'body.end',
             fn (): string => auth()->check()
                 ? Blade::render('@livewire("command-palette")')
                 : '',
+        );
+
+        // Command palette trigger button - lives in the sidebar nav area so it doesn't
+        // overlap the user menu. Dispatches a CustomEvent the modal component listens for.
+        Filament::registerRenderHook(
+            'sidebar.start',
+            fn (): string => auth()->check() ? <<<'HTML'
+            <div class="px-6 mb-4" x-data="{ isMac: /Mac|iPod|iPhone|iPad/.test(navigator.platform) }">
+                <button type="button"
+                        @click="window.dispatchEvent(new CustomEvent('cmd-palette:toggle'))"
+                        class="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/40 hover:bg-white dark:hover:bg-gray-800 hover:border-indigo-400 dark:hover:border-indigo-500 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition text-sm">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <span class="flex-1 text-left text-[12.5px] font-medium">Search…</span>
+                    <kbd class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950 text-[10px] font-mono text-gray-500 dark:text-gray-400">
+                        <span x-text="isMac ? '⌘' : 'Ctrl'"></span>K
+                    </kbd>
+                </button>
+            </div>
+            HTML : '',
         );
 
         // Development banner - OKR/KPI module in progress (disable when user confirms complete)
