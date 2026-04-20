@@ -35,7 +35,7 @@
             <p class="text-[12.5px] text-gray-500 dark:text-gray-400 mt-1.5 max-w-md mx-auto leading-relaxed">Talk to your manager to set up your OKRs for {{ $period?->name ?? 'the next period' }}, or wait until a new period opens.</p>
         </div>
     @else
-        <div class="space-y-0">
+        <div class="space-y-6 md:space-y-8">
             @foreach($goals as $goal)
                 @include('filament.pages.partials.okr-objective-card', ['goal' => $goal, 'showOwner' => false, 'updatable' => true])
             @endforeach
