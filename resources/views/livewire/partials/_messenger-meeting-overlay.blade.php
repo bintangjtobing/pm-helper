@@ -9,18 +9,26 @@
         if (window.__pmhelperMeetBridgeBound) return;
         window.__pmhelperMeetBridgeBound = true;
 
-        function findMessengerComponentId() {
-            // Any Livewire component on the page whose wire:id lives under a
-            // messenger root. Simplest: nearest element with wire:id.
-            const el = document.querySelector('[wire\\:id]');
-            return el?.getAttribute('wire:id') || null;
+        function findMessengerComponent() {
+            // Explicitly target the messenger Livewire component. Using
+            // Livewire.all() avoids hitting chat-widget / command-palette /
+            // other components that are also registered via body.end hooks.
+            if (! window.Livewire || typeof window.Livewire.all !== 'function') return null;
+            try {
+                return window.Livewire.all().find((c) => c.name === 'messenger') || null;
+            } catch (e) {
+                return null;
+            }
         }
 
         function callMessenger(method, ...args) {
-            const id = findMessengerComponentId();
-            if (! id || ! window.Livewire) return;
+            const comp = findMessengerComponent();
+            if (! comp) {
+                console.warn('[meet-bridge] messenger component not found, skipping ' + method);
+                return;
+            }
             try {
-                window.Livewire.find(id)?.call(method, ...args);
+                comp.call(method, ...args);
             } catch (e) {
                 console.warn('[meet-bridge] call ' + method + ' failed', e);
             }
@@ -54,11 +62,10 @@
             const m = href.match(/pmhelper-[a-z0-9]+/i);
             if (! m) { window.open(href, '_blank', 'noopener,noreferrer'); return; }
 
-            // Figure out the current conversation id from Livewire state
-            const id = findMessengerComponentId();
+            // Figure out the current conversation id from the messenger Livewire state
             let convoId = 0;
             try {
-                const comp = window.Livewire?.find(id);
+                const comp = findMessengerComponent();
                 convoId = parseInt(comp?.get?.('activeConversationId') || 0, 10) || 0;
             } catch (err) {}
 
