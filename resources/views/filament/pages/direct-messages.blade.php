@@ -1,10 +1,17 @@
 <x-filament::page>
     <style>
-        /* Tighten the default filament page container for the fullpage messenger */
-        body.messenger-fullpage .filament-main { background: #0b0f17; }
-        .filament-page .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin: 0 !important; }
+        /* Kill Filament page chrome so messenger fills edge-to-edge
+           under the topbar, flush with the sidebar. */
+        .filament-main { gap: 0 !important; }
+        .filament-main-content {
+            padding: 0 !important;
+            max-width: none !important;
+            margin: 0 !important;
+        }
+        .filament-main-footer { display: none !important; }
+        .filament-page { padding: 0 !important; }
+        .filament-page > .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin: 0 !important; }
+        .filament-page > .space-y-6 { gap: 0 !important; }
     </style>
-    <div class="-m-4 sm:-m-6 md:-m-8">
-        @livewire('messenger', ['mode' => 'fullpage'])
-    </div>
+    @livewire('messenger', ['mode' => 'fullpage'])
 </x-filament::page>

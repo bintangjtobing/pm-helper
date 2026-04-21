@@ -14,6 +14,8 @@ class DirectMessages extends Page
 
     protected static ?int $navigationSort = 1;
 
+    protected ?string $maxContentWidth = 'full';
+
     protected static function getNavigationLabel(): string
     {
         return __('Messenger');
