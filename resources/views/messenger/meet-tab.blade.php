@@ -51,15 +51,19 @@
 
 <script src="https://meet.digicrats.com/external_api.js"></script>
 <script>
-    const MEET_CONFIG = @json([
-        'slug' => $slug,
-        'role' => in_array($role, ['starter', 'joiner'], true) ? $role : 'joiner',
-        'conversationId' => $conversationId,
-        'meetingMessageId' => $meetingMessageId,
-        'userName' => $meetUser->name,
-        'userEmail' => $meetUser->email,
-        'userAvatar' => $meetUser->avatar_url,
-    ]);
+    @php
+        $safeRole = in_array($role, ['starter', 'joiner'], true) ? $role : 'joiner';
+        $meetConfig = [
+            'slug' => $slug,
+            'role' => $safeRole,
+            'conversationId' => $conversationId,
+            'meetingMessageId' => $meetingMessageId,
+            'userName' => $meetUser->name,
+            'userEmail' => $meetUser->email,
+            'userAvatar' => $meetUser->avatar_url,
+        ];
+    @endphp
+    const MEET_CONFIG = {!! json_encode($meetConfig, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!};
 
     function meetTab() {
         return {

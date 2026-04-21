@@ -283,26 +283,23 @@ class MessengerService
             return null;
         }
 
-        $existing = MessengerMessageReadModel::where('message_id', $message->id)
-            ->where('user_id', $reader->id)
-            ->first();
+        // firstOrCreate is race-safe and avoids 1062 duplicate-entry errors
+        // that happened when two concurrent markAsRead calls raced on the same
+        // (message_id, user_id) unique constraint.
+        $row = MessengerMessageReadModel::firstOrCreate(
+            ['message_id' => $message->id, 'user_id' => $reader->id],
+            ['read_at' => now()]
+        );
 
-        if ($existing) {
-            return $existing;
+        // Only broadcast if THIS call actually inserted the row (not a pre-existing one).
+        if ($row->wasRecentlyCreated) {
+            event(new MessengerMessageRead(
+                (int) $conversation->id,
+                (int) $message->id,
+                (int) $reader->id,
+                $row->read_at->toIso8601String()
+            ));
         }
-
-        $row = MessengerMessageReadModel::create([
-            'message_id' => $message->id,
-            'user_id'    => $reader->id,
-            'read_at'    => now(),
-        ]);
-
-        event(new MessengerMessageRead(
-            (int) $conversation->id,
-            (int) $message->id,
-            (int) $reader->id,
-            $row->read_at->toIso8601String()
-        ));
 
         return $row;
     }

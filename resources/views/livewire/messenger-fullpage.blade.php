@@ -730,8 +730,8 @@
                         @else
                             {{-- Shared files --}}
                             @php
-                                $sharedAttachments = \App\Models\MessengerMessageAttachment::whereHas('message', function($q) {
-                                    $q->where('messenger_conversation_id', $activeConversationId)
+                                $sharedAttachments = \App\Models\MessengerMessageAttachment::whereHas('message', function($q) use ($activeConversationId) {
+                                    $q->where('conversation_id', $activeConversationId)
                                       ->whereNull('deleted_for_everyone_at');
                                 })->orderByDesc('id')->limit(40)->get();
                             @endphp
