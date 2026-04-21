@@ -621,8 +621,150 @@ class Messenger extends Component
         $this->loadMessages(initial: true);
         $this->loadConversations();
 
-        // Open the Meet in a new tab for the starter.
-        $this->dispatchBrowserEvent('messenger:open-meeting', ['url' => $meetingUrl]);
+        // Embed the Meet inside the page overlay (IFrame API).
+        // Starter captures transcript and triggers auto-summary on leave.
+        $this->dispatchBrowserEvent('jitsi:open', [
+            'url'               => $meetingUrl,
+            'slug'              => $slug,
+            'role'              => 'starter',
+            'conversation_id'   => (int) $conversation->id,
+            'user_name'         => auth()->user()->name,
+            'user_email'        => auth()->user()->email,
+            'user_avatar'       => auth()->user()->avatar_url,
+        ]);
+        $this->dispatchBrowserEvent('messenger:message-sent');
+    }
+
+    public function joinJitsiMeeting(string $url): void
+    {
+        if (! $this->activeConversationId) {
+            return;
+        }
+        $conversation = MessengerConversation::find($this->activeConversationId);
+        if (! $conversation || ! $conversation->hasParticipant((int) auth()->id())) {
+            return;
+        }
+
+        // Only accept our own meet.jit.si/pmhelper-* URLs
+        if (! preg_match('~^https://meet\.jit\.si/(pmhelper-[a-z0-9]+)$~i', $url, $m)) {
+            return;
+        }
+        $slug = $m[1];
+
+        $this->dispatchBrowserEvent('jitsi:open', [
+            'url'               => $url,
+            'slug'              => $slug,
+            'role'              => 'joiner',
+            'conversation_id'   => (int) $conversation->id,
+            'user_name'         => auth()->user()->name,
+            'user_email'        => auth()->user()->email,
+            'user_avatar'       => auth()->user()->avatar_url,
+        ]);
+    }
+
+    public function finalizeMeeting(int $conversationId, string $slug, string $transcript, int $durationSec, int $participantCount): void
+    {
+        $conversation = MessengerConversation::find($conversationId);
+        if (! $conversation || ! $conversation->hasParticipant((int) auth()->id())) {
+            return;
+        }
+
+        $minutes = (int) round($durationSec / 60);
+        $durationLabel = $minutes <= 0
+            ? ($durationSec . ' sec')
+            : ($minutes . ' min');
+
+        // Always post the "meeting ended" marker, even if transcript is empty
+        $endBody = "📹 Meeting ended · {$durationLabel} · {$participantCount} participant" . ($participantCount === 1 ? '' : 's');
+
+        try {
+            $this->service()->sendMessage(
+                $conversation,
+                auth()->user(),
+                $endBody,
+                [],
+                null
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Messenger meeting-ended post failed', ['msg' => $e->getMessage()]);
+        }
+
+        // Transcript → GPT-4o summary (only if we have something to summarize)
+        $transcript = trim($transcript);
+        if ($transcript === '' || str_word_count($transcript) < 20) {
+            // Too short to summarize meaningfully
+            $this->loadMessages(initial: true);
+            $this->loadConversations();
+            $this->dispatchBrowserEvent('messenger:message-sent');
+            return;
+        }
+
+        $apiKey = config('services.openai.key');
+        if (empty($apiKey)) {
+            $this->loadMessages(initial: true);
+            $this->loadConversations();
+            return;
+        }
+
+        // Cap transcript at ~120 KB (~30k tokens) to stay under GPT-4o context
+        if (strlen($transcript) > 120000) {
+            $transcript = substr($transcript, 0, 120000);
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+            ])->timeout(120)->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-4o',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => "You are a meeting note-taker. Summarize the transcript into three concise sections:\n\n"
+                            . "📌 **Key points** — 3-6 bullets of the main topics discussed.\n"
+                            . "✅ **Decisions** — concrete decisions made (if any).\n"
+                            . "🎯 **Action items** — who does what by when (if mentioned).\n\n"
+                            . "Rules:\n"
+                            . "- Match the language of the transcript (Indonesian → summary in Indonesian, English → English).\n"
+                            . "- Keep the whole summary under 300 words.\n"
+                            . "- Skip sections that have no content — don't write 'None'.\n"
+                            . "- Do NOT invent names, numbers, or commitments not in the transcript.",
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => "Here is the meeting transcript:\n\n---\n" . $transcript . "\n---",
+                    ],
+                ],
+                'temperature' => 0.3,
+                'max_tokens' => 800,
+            ]);
+
+            if ($response->failed()) {
+                \Illuminate\Support\Facades\Log::error('Messenger auto-summarize error', [
+                    'status' => $response->status(),
+                ]);
+                return;
+            }
+
+            $summary = trim($response->json('choices.0.message.content', ''));
+            if ($summary === '') {
+                return;
+            }
+
+            $summaryBody = "📝 **Meeting summary** (AI-generated)\n\n" . $summary;
+
+            $this->service()->sendMessage(
+                $conversation,
+                auth()->user(),
+                $summaryBody,
+                [],
+                null
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Messenger auto-summarize exception', ['msg' => $e->getMessage()]);
+        }
+
+        $this->loadMessages(initial: true);
+        $this->loadConversations();
         $this->dispatchBrowserEvent('messenger:message-sent');
     }
 

@@ -768,4 +768,7 @@
     </div>
 
     @include('livewire.partials._messenger-script')
+
+    {{-- Jitsi Meet embedded overlay (opens when user starts/joins a meet link) --}}
+    @include('livewire.partials._messenger-meeting-overlay')
 </div>

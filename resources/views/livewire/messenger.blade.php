@@ -521,4 +521,7 @@
 
     {{-- Alpine widget script — Echo wiring, presence channel, sound, browser notif --}}
     @include('livewire.partials._messenger-script')
+
+    {{-- Jitsi Meet embedded overlay (opens when user starts/joins a meet link) --}}
+    @include('livewire.partials._messenger-meeting-overlay')
 </div>
