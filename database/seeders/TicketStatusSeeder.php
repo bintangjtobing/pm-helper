@@ -21,8 +21,10 @@ class TicketStatusSeeder extends Seeder
         ['name' => 'Fixing',         'color' => '#EC4899', 'is_default' => false, 'order' => 8,  'role_group' => 'dev'],
         ['name' => 'Retest',         'color' => '#F59E0B', 'is_default' => false, 'order' => 9,  'role_group' => 'qa'],
         ['name' => 'QA Passed',      'color' => '#10B981', 'is_default' => false, 'order' => 10, 'role_group' => 'qa'],
-        // Business Layer — PM, DevOps, Super Admin can set these
-        ['name' => 'Waiting Approval',  'color' => '#6366F1', 'is_default' => false, 'order' => 11, 'role_group' => 'business'],
+        // Waiting Approval is OPEN to everyone — moving a ticket here is an
+        // ACT OF REQUESTING approval, not granting it. Only Approved/Rejected
+        // below are locked to the business group (the people who decide).
+        ['name' => 'Waiting Approval',  'color' => '#6366F1', 'is_default' => false, 'order' => 11, 'role_group' => 'any'],
         ['name' => 'Approved',          'color' => '#22C55E', 'is_default' => false, 'order' => 12, 'role_group' => 'business'],
         ['name' => 'Rejected',          'color' => '#EF4444', 'is_default' => false, 'order' => 13, 'role_group' => 'business'],
         ['name' => 'Ready for Release', 'color' => '#0EA5E9', 'is_default' => false, 'order' => 14, 'role_group' => 'business'],
