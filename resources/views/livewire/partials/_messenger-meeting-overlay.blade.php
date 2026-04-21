@@ -10,13 +10,15 @@
         window.__pmhelperMeetBridgeBound = true;
 
         function findMessengerComponent() {
-            // Explicitly target the messenger Livewire component. Using
-            // Livewire.all() avoids hitting chat-widget / command-palette /
-            // other components that are also registered via body.end hooks.
+            // Explicitly target the messenger Livewire component. Livewire 2's
+            // $wire proxy does NOT expose .name directly — it forwards unknown
+            // properties to either the data bag or a call() invocation. So use
+            // $wire.__instance.name which is the Component class's name getter.
             if (! window.Livewire || typeof window.Livewire.all !== 'function') return null;
             try {
-                return window.Livewire.all().find((c) => c.name === 'messenger') || null;
+                return window.Livewire.all().find((c) => c?.__instance?.name === 'messenger') || null;
             } catch (e) {
+                console.warn('[meet-bridge] findMessengerComponent error', e);
                 return null;
             }
         }
@@ -79,16 +81,17 @@
 
         bc.addEventListener('message', function (e) {
             const msg = e.data || {};
+            console.log('[meet-bridge] received broadcast', msg);
             if (! msg.type) return;
 
             if (msg.type === 'meeting:started') {
-                // Flip user's status to "in a meeting" so teammates see red pulsing dot
                 callMessenger('setMyStatus', 'in_meeting', 'In a meeting');
                 return;
             }
 
             if (msg.type === 'meeting:ended') {
                 const p = msg.payload || {};
+                console.log('[meet-bridge] calling finalizeMeeting', p);
                 callMessenger('finalizeMeeting',
                     parseInt(p.conversation_id, 10) || 0,
                     p.slug || '',
@@ -106,6 +109,7 @@
                 return;
             }
         });
+        console.log('[meet-bridge] listening on BroadcastChannel pmhelper-meet');
     })();
 </script>
 </div>
