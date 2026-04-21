@@ -443,6 +443,83 @@ class AppServiceProvider extends ServiceProvider
             HTML : '',
         );
 
+        // Version pill at the bottom of the sidebar. Click opens a modal that
+        // shows the current version's changelog highlights with a link to
+        // /changelog for the full history.
+        Filament::registerRenderHook(
+            'sidebar.end',
+            function (): string {
+                if (! auth()->check()) return '';
+                $current = config('changelog.0', null);
+                if (! $current) return '';
+                $version = $current['version'] ?? '1.0.0';
+                $title = $current['title'] ?? '';
+                $date = !empty($current['released_at']) ? \Carbon\Carbon::parse($current['released_at'])->format('d M Y') : '';
+                $highlights = $current['highlights'] ?? [];
+                $bullets = collect($highlights)
+                    ->map(fn ($h) => '<li style="position:relative;padding-left:20px;margin-bottom:6px;font-size:12.5px;line-height:1.5;color:#374151;"><span style="position:absolute;left:0;top:2px;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;background:rgba(59,130,246,0.12);color:#2563eb;border-radius:50%;font-size:10px;font-weight:700;">✓</span>'.e($h).'</li>')
+                    ->implode('');
+                $fullUrl = url('/changelog');
+                $escTitle = e($title);
+
+                return <<<HTML
+                <div style="padding: 14px 20px 16px; border-top: 1px solid rgba(148,163,184,0.15); margin-top: auto;"
+                     x-data="{ open: false }">
+                    <button type="button"
+                            x-on:click="open = true"
+                            style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:8px; color:#93c5fd; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.15s;"
+                            onmouseover="this.style.background='rgba(59,130,246,0.18)'"
+                            onmouseout="this.style.background='rgba(59,130,246,0.08)'"
+                            title="View changelog">
+                        <span style="display:inline-flex; align-items:center; gap:6px;">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#34d399;"></span>
+                            <span>PMHelper v{$version}</span>
+                        </span>
+                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </button>
+
+                    <div x-show="open"
+                         x-transition.opacity
+                         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9998; align-items:center; justify-content:center; padding:24px;"
+                         x-bind:style="open ? 'display:flex' : 'display:none'"
+                         x-on:click="open = false"
+                         x-on:keydown.escape.window="open = false">
+                        <div x-on:click.stop
+                             style="background:#fff; color:#111827; border-radius:12px; max-width:640px; width:100%; max-height:85vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.4);"
+                             class="dark:bg-gray-800 dark:text-gray-100">
+                            <div style="padding:20px 24px; border-bottom:1px solid rgba(148,163,184,0.2); display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                                <div>
+                                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                        <span style="font-size:20px; font-weight:700;">v{$version}</span>
+                                        <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:#dbeafe; color:#1d4ed8;">What's new</span>
+                                        <span style="font-size:12px; color:#6b7280;">{$date}</span>
+                                    </div>
+                                    <div style="font-size:14px; font-weight:600; margin-top:6px; color:#111827;" class="dark:text-gray-100">{$escTitle}</div>
+                                </div>
+                                <button type="button" x-on:click="open = false"
+                                        style="background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:22px; line-height:1; padding:4px;">&times;</button>
+                            </div>
+                            <div style="padding:16px 24px 20px;">
+                                <ul style="list-style:none; padding:0; margin:0;">
+                                    {$bullets}
+                                </ul>
+                                <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.2); text-align:right;">
+                                    <a href="{$fullUrl}"
+                                       style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2563eb; text-decoration:none;"
+                                       onmouseover="this.style.textDecoration='underline'"
+                                       onmouseout="this.style.textDecoration='none'">
+                                        View full changelog
+                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                HTML;
+            },
+        );
+
         // Development banner - OKR/KPI module in progress (disable when user confirms complete)
         Filament::registerRenderHook(
             'body.end',
