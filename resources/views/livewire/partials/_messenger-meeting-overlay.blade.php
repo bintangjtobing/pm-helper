@@ -87,7 +87,18 @@
             <span x-show="! isRecordingTranscript" style="font-size:11px;color:#6b7280;">Meeting in progress</span>
             <span class="msgr-meet-overlay-timer" x-text="timerLabel"></span>
         </div>
-        <button type="button" class="msgr-meet-overlay-end" x-on:click="endMeeting()">End meeting</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <label style="font-size:11px;color:#9ca3af;">Language:</label>
+            <select
+                x-model="transcriptLanguage"
+                x-on:change="applyLanguage()"
+                style="background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;"
+            >
+                <option value="en-US">English</option>
+                <option value="id-ID">Bahasa Indonesia</option>
+            </select>
+            <button type="button" class="msgr-meet-overlay-end" x-on:click="endMeeting()">End meeting</button>
+        </div>
     </div>
     <div class="msgr-meet-overlay-iframe" x-ref="container"></div>
 </div>
@@ -102,6 +113,8 @@
             slug: null,
             meetingMessageId: null,    // original "started a meeting" message id
             startTime: null,
+            // Remembered across meetings via localStorage so each user keeps their pref
+            transcriptLanguage: localStorage.getItem('msgr.meetLang') || 'en-US',
             timerLabel: '00:00',
             timerHandle: null,
             transcriptChunks: [],      // raw chunks with speaker + text + timestamp
@@ -209,6 +222,9 @@
 
                 this.wireEvents();
 
+                // Apply the remembered language once the conference has bound.
+                setTimeout(() => this.applyLanguage(), 2000);
+
                 // Only the starter requests transcription be enabled for the room
                 // (once it's on, it's on for everyone).
                 if (this.role === 'starter') {
@@ -219,6 +235,19 @@
                             console.warn('[jitsi] startTranscription failed', e);
                         }
                     }, 3000); // give the conference a moment to fully join
+                }
+            },
+
+            applyLanguage() {
+                if (! this.api) return;
+                try {
+                    // setSubtitles(enabled, displayInRoom, language)
+                    // We only want captions shown when user opens the CC panel, not forced,
+                    // so displayInRoom = false. Language is what we're really setting.
+                    this.api.executeCommand('setSubtitles', true, false, this.transcriptLanguage);
+                    localStorage.setItem('msgr.meetLang', this.transcriptLanguage);
+                } catch (e) {
+                    console.warn('[jitsi] applyLanguage failed', e);
                 }
             },
 
