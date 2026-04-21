@@ -86,7 +86,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     /**
      * Allowed manual status values. Online/Away come from Pusher presence.
      */
-    public const ALLOWED_STATUSES = ['busy', 'in_meeting', 'on_leave'];
+    public const ALLOWED_STATUSES = ['busy', 'in_meeting', 'lunch_break', 'on_leave'];
 
     /**
      * Compute the effective status of this user, considering expiry rules.

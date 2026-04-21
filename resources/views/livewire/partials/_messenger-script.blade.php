@@ -138,6 +138,7 @@
                     if (manual === 'on_leave') return 'is-on-leave';
                     if (manual === 'busy') return 'is-busy';
                     if (manual === 'in_meeting') return 'is-in-meeting';
+                    if (manual === 'lunch_break') return 'is-lunch-break';
                     if (this.onlineUserIds.includes(id)) return 'is-online';
                     return '';
                 },
@@ -148,6 +149,7 @@
                     if (manual === 'on_leave') return 'On leave';
                     if (manual === 'busy') return 'Do not disturb';
                     if (manual === 'in_meeting') return 'In a meeting';
+                    if (manual === 'lunch_break') return 'On lunch break';
                     if (this.onlineUserIds.includes(id)) return 'Online';
                     return 'Offline';
                 },

@@ -76,6 +76,11 @@
                         <span>In a meeting</span><span class="msgr-status-option-meta">auto-clear 2h</span>
                     </button>
 
+                    <button type="button" class="msgr-status-option" x-on:click="$wire.setMyStatus('lunch_break', statusMessage || null); showStatusMenu = false">
+                        <span class="msgr-status-dot msgr-status-dot-inline is-lunch-break"></span>
+                        <span>On lunch break</span><span class="msgr-status-option-meta">auto-clear 1h</span>
+                    </button>
+
                     <button type="button" class="msgr-status-option" x-on:click="showLeaveForm = ! showLeaveForm">
                         <span class="msgr-status-dot msgr-status-dot-inline is-on-leave"></span>
                         <span>On leave…</span>

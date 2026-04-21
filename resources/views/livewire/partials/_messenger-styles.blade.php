@@ -119,6 +119,7 @@
         .msgr-status-dot.is-online    { background: #22c55e; }
         .msgr-status-dot.is-busy      { background: #dc2626; }
         .msgr-status-dot.is-in-meeting { background: #ef4444; }
+        .msgr-status-dot.is-lunch-break { background: #f59e0b; }
         /* Pulsing animation on in_meeting dot to visually indicate an active call */
         .msgr-status-dot.is-in-meeting {
             animation: msgrMeetDotPulse 1.6s ease-in-out infinite;

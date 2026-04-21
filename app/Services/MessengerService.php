@@ -527,6 +527,7 @@ class MessengerService
      * Default in-meeting auto-clear duration in hours.
      */
     public const IN_MEETING_AUTO_CLEAR_HOURS = 2;
+    public const LUNCH_BREAK_AUTO_CLEAR_HOURS = 1;
 
     /**
      * Set the user's manual status. Validates allowed values and applies
@@ -563,6 +564,10 @@ class MessengerService
 
         if ($status === 'in_meeting') {
             $updates['status_until'] = now()->addHours(self::IN_MEETING_AUTO_CLEAR_HOURS);
+        }
+
+        if ($status === 'lunch_break') {
+            $updates['status_until'] = now()->addHours(self::LUNCH_BREAK_AUTO_CLEAR_HOURS);
         }
 
         if ($status === 'on_leave') {
