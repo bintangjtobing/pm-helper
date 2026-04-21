@@ -421,6 +421,20 @@
                                  if (!dt || !dt.files.length) return;
                                  const input = $el.querySelector('.msgr-hidden-input');
                                  if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                             "
+                             x-on:paste="
+                                 const items = $event.clipboardData?.items;
+                                 if (! items) return;
+                                 const files = [];
+                                 for (const item of items) {
+                                     if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
+                                 }
+                                 if (! files.length) return;
+                                 $event.preventDefault();
+                                 const dt = new DataTransfer();
+                                 files.forEach(f => dt.items.add(f));
+                                 const input = $el.querySelector('.msgr-hidden-input');
+                                 if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
                              ">
                             @if($replyToMessageId)
                                 @php

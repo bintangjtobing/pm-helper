@@ -225,14 +225,29 @@ class Kanban extends Page implements HasForms
             ];
 
         } catch (\Exception $e) {
-            // Log error for debugging
-            \Log::error('Kanban update failed', [
+            // Log for debugging but don't bubble to a 500 — permission denials
+            // (e.g. "You do not have permission to set tickets to 'Waiting
+            // Approval' status") are expected outcomes, not server crashes.
+            \Log::warning('Kanban update refused', [
                 'ticketId' => $ticketId,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'userId'   => auth()->id(),
+                'error'    => $e->getMessage(),
             ]);
 
-            throw $e;
+            // Toast the reason to the dragging user and tell the front-end to
+            // snap the card back to its original column.
+            \Filament\Notifications\Notification::make()
+                ->title(__('Ticket could not be moved'))
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $this->dispatchBrowserEvent('kanban:revert-ticket', ['ticketId' => $ticketId]);
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
         }
     }
 
