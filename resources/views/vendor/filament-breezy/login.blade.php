@@ -158,4 +158,13 @@
 
     {{ $this->modal }}
     @livewire('notifications')
+
+    @php $changelogVersion = config('changelog.0.version', '1.0.0'); @endphp
+    <div style="position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); z-index: 50;">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(17,24,39,0.55);color:#e5e7eb;border:1px solid rgba(255,255,255,0.08);border-radius:999px;font-size:11px;font-weight:500;backdrop-filter:blur(6px);">
+            <span style="width:6px;height:6px;border-radius:50%;background:#34d399;"></span>
+            PMHelper
+            <span style="font-weight:600;color:#93c5fd;">v{{ $changelogVersion }}</span>
+        </span>
+    </div>
 </div>
