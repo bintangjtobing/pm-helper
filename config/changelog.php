@@ -17,6 +17,24 @@
 return [
 
     [
+        'version' => '1.1.0',
+        'released_at' => '2026-04-21',
+        'type' => 'minor',
+        'title' => 'Meeting polish + Kanban project switcher + paste uploads',
+        'highlights' => [
+            '🎥 Meetings now open in a new browser tab (via /dm/meet/{slug}) and auto-close when the call ends — main PMHelper tab posts the "Meeting ended" marker and AI summary over a BroadcastChannel bridge',
+            '🔄 Kanban & Scrum page headers now have a project-switcher dropdown — jump straight to any other project\'s board without going back to the list',
+            '📋 Messenger composer now accepts screenshot paste (Cmd/Ctrl+V) and drag-drop anywhere in the composer area, not just inside the text field',
+            '🚦 Moving a Kanban card to a status you do not have permission for now shows a toast and snaps the card back instead of crashing with a 500',
+            '👍 "Waiting Approval" is now open to every role — it\'s a request, not an approval. Only Approved / Rejected stay locked to the business group',
+            '🐛 Fix: meeting end flow was silently failing because the bridge was dispatching to the wrong Livewire component (chat-widget instead of messenger). Status and summary updates now reliably run',
+            '🐛 Fix: Jitsi iframe overflowing upward and covering the language selector + End button — iframe now pinned inside its container',
+            '🐛 Fix: shared-files paperclip on /dm used a wrong column name — no more 500 when opening the side panel',
+            '🐛 Fix: duplicate message-read race condition that intermittently 500\'d the messenger',
+        ],
+    ],
+
+    [
         'version' => '1.0.0',
         'released_at' => '2026-04-21',
         'type' => 'major',
