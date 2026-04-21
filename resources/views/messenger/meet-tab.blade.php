@@ -19,7 +19,24 @@
         .meet-lang-select { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
         .meet-end-btn { background: #ef4444; color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
         .meet-end-btn:hover { background: #dc2626; }
-        .meet-iframe-wrap { flex: 1; width: 100%; min-height: 0; }
+        .meet-iframe-wrap {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
+        /* Jitsi's external_api.js inserts an <iframe width="100%" height="100%">
+           but percentage height inside a flex:1 parent without an explicit
+           height can collapse or overflow. Absolute-pin the iframe to the wrap
+           bounds so it never rides up and covers our header. */
+        .meet-iframe-wrap iframe {
+            position: absolute !important;
+            top: 0; left: 0; right: 0; bottom: 0;
+            width: 100% !important;
+            height: 100% !important;
+            border: 0 !important;
+        }
     </style>
 </head>
 <body>
