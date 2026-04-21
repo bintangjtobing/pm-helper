@@ -600,13 +600,13 @@ class Messenger extends Component
         // Unguessable room slug so the URL can't be joined by random guessers.
         // 18 chars of random alphanumeric = ~107 bits of entropy.
         $slug = 'pmhelper-' . strtolower(\Illuminate\Support\Str::random(18));
-        $meetingUrl = 'https://meet.jit.si/' . $slug;
+        $meetingUrl = 'https://meet.digicrats.com/' . $slug;
 
         $starterName = auth()->user()->name;
         $body = "📹 {$starterName} started a meeting\n{$meetingUrl}";
 
         try {
-            $this->service()->sendMessage(
+            $created = $this->service()->sendMessage(
                 $conversation,
                 auth()->user(),
                 $body,
@@ -624,13 +624,14 @@ class Messenger extends Component
         // Embed the Meet inside the page overlay (IFrame API).
         // Starter captures transcript and triggers auto-summary on leave.
         $this->dispatchBrowserEvent('jitsi:open', [
-            'url'               => $meetingUrl,
-            'slug'              => $slug,
-            'role'              => 'starter',
-            'conversation_id'   => (int) $conversation->id,
-            'user_name'         => auth()->user()->name,
-            'user_email'        => auth()->user()->email,
-            'user_avatar'       => auth()->user()->avatar_url,
+            'url'                 => $meetingUrl,
+            'slug'                => $slug,
+            'role'                => 'starter',
+            'conversation_id'     => (int) $conversation->id,
+            'meeting_message_id'  => (int) $created->id,
+            'user_name'           => auth()->user()->name,
+            'user_email'          => auth()->user()->email,
+            'user_avatar'         => auth()->user()->avatar_url,
         ]);
         $this->dispatchBrowserEvent('messenger:message-sent');
     }
@@ -645,11 +646,11 @@ class Messenger extends Component
             return;
         }
 
-        // Only accept our own meet.jit.si/pmhelper-* URLs
-        if (! preg_match('~^https://meet\.jit\.si/(pmhelper-[a-z0-9]+)$~i', $url, $m)) {
+        // Accept self-hosted meet.digicrats.com AND legacy meet.jit.si URLs
+        if (! preg_match('~^https://meet\.(digicrats\.com|jit\.si)/(pmhelper-[a-z0-9]+)$~i', $url, $m)) {
             return;
         }
-        $slug = $m[1];
+        $slug = $m[2];
 
         $this->dispatchBrowserEvent('jitsi:open', [
             'url'               => $url,
@@ -662,7 +663,7 @@ class Messenger extends Component
         ]);
     }
 
-    public function finalizeMeeting(int $conversationId, string $slug, string $transcript, int $durationSec, int $participantCount): void
+    public function finalizeMeeting(int $conversationId, string $slug, string $transcript, int $durationSec, int $participantCount, ?int $meetingMessageId = null): void
     {
         $conversation = MessengerConversation::find($conversationId);
         if (! $conversation || ! $conversation->hasParticipant((int) auth()->id())) {
@@ -674,19 +675,42 @@ class Messenger extends Component
             ? ($durationSec . ' sec')
             : ($minutes . ' min');
 
-        // Always post the "meeting ended" marker, even if transcript is empty
         $endBody = "📹 Meeting ended · {$durationLabel} · {$participantCount} participant" . ($participantCount === 1 ? '' : 's');
 
-        try {
-            $this->service()->sendMessage(
-                $conversation,
-                auth()->user(),
-                $endBody,
-                [],
-                null
-            );
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Messenger meeting-ended post failed', ['msg' => $e->getMessage()]);
+        // Update the original "started a meeting" message so the Join pill disappears,
+        // instead of posting a brand-new "ended" message below. Bypasses the 15-min
+        // edit window in MessengerService::editMessage because long meetings are fine.
+        $updatedOriginal = false;
+        if ($meetingMessageId) {
+            $original = MessengerMessage::find($meetingMessageId);
+            if ($original
+                && (int) $original->conversation_id === (int) $conversation->id
+                && (int) $original->sender_id === (int) auth()->id()
+            ) {
+                $original->update([
+                    'body' => $endBody,
+                    'edited_at' => now(),
+                    'link_preview' => null,
+                ]);
+                // Broadcast the edit so the other participant sees the updated body live.
+                event(new \App\Events\Messenger\MessengerMessageEdited($original->fresh()));
+                $updatedOriginal = true;
+            }
+        }
+
+        if (! $updatedOriginal) {
+            // Fallback: post as new message if we couldn't find the original
+            try {
+                $this->service()->sendMessage(
+                    $conversation,
+                    auth()->user(),
+                    $endBody,
+                    [],
+                    null
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Messenger meeting-ended post failed', ['msg' => $e->getMessage()]);
+            }
         }
 
         // Transcript → GPT-4o summary (only if we have something to summarize)
@@ -1252,7 +1276,7 @@ class Messenger extends Component
                     // Decode &amp; back to & for href (browser needs real URL), display stays escaped.
                     $hrefUrl = html_entity_decode($url, ENT_QUOTES, 'UTF-8');
                     // Jitsi meeting links get a dedicated "Join meeting" pill
-                    if (preg_match('~^https?://meet\.jit\.si/pmhelper-~i', $hrefUrl)) {
+                    if (preg_match('~^https?://meet\.(digicrats\.com|jit\.si)/pmhelper-~i', $hrefUrl)) {
                         return '<a href="' . e($hrefUrl) . '" target="_blank" rel="noopener noreferrer" class="msgr-meet-join-pill">'
                             . '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
                             . 'Join meeting'

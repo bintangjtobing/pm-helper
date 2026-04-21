@@ -100,6 +100,7 @@
             role: null,                // 'starter' | 'joiner'
             conversationId: null,
             slug: null,
+            meetingMessageId: null,    // original "started a meeting" message id
             startTime: null,
             timerLabel: '00:00',
             timerHandle: null,
@@ -113,7 +114,7 @@
                 if (! window.JitsiMeetExternalAPI && ! window.__jitsiExternalApiLoading) {
                     window.__jitsiExternalApiLoading = true;
                     const s = document.createElement('script');
-                    s.src = 'https://meet.jit.si/external_api.js';
+                    s.src = 'https://meet.digicrats.com/external_api.js';
                     s.async = true;
                     document.head.appendChild(s);
                 }
@@ -125,9 +126,11 @@
                     console.warn('[jitsi] overlay already open, ignoring new open');
                     return;
                 }
+                console.log('[jitsi] open()', detail);
                 this.role = detail.role || 'joiner';
                 this.conversationId = detail.conversation_id;
                 this.slug = detail.slug;
+                this.meetingMessageId = detail.meeting_message_id || null;
                 this.startTime = Date.now();
                 this.timerLabel = '00:00';
                 this.transcriptChunks = [];
@@ -166,7 +169,7 @@
                 if (! container) return;
                 container.innerHTML = ''; // clear any previous iframe
 
-                this.api = new window.JitsiMeetExternalAPI('meet.jit.si', {
+                this.api = new window.JitsiMeetExternalAPI('meet.digicrats.com', {
                     roomName: detail.slug,
                     parentNode: container,
                     width: '100%',
@@ -254,9 +257,10 @@
             },
 
             endMeeting() {
-                if (! this.api) { this.close(); return; }
-                try { this.api.executeCommand('hangup'); } catch (e) { /* noop */ }
-                // finalize will be triggered by readyToClose; also fallback:
+                try { this.api?.executeCommand('hangup'); } catch (e) { /* noop */ }
+                // Always finalize — even if Jitsi API never initialized (e.g. moderator
+                // screen blocked us from ever joining). readyToClose will also call this;
+                // the hasFinalized guard prevents double-post.
                 setTimeout(() => this.finalize(), 1500);
             },
 
@@ -274,13 +278,20 @@
                         .join('\n');
 
                     try {
-                        window.Livewire?.find(this.getMessengerComponentId())
+                        const componentId = this.getMessengerComponentId();
+                        console.log('[jitsi] calling finalizeMeeting', {
+                            componentId, conversationId: this.conversationId, slug: this.slug,
+                            transcriptLen: transcript.length, durationSec, participantCount,
+                            meetingMessageId: this.meetingMessageId,
+                        });
+                        window.Livewire?.find(componentId)
                             ?.call('finalizeMeeting',
                                 this.conversationId,
                                 this.slug,
                                 transcript,
                                 durationSec,
-                                participantCount);
+                                participantCount,
+                                this.meetingMessageId);
                     } catch (e) {
                         console.error('[jitsi] finalizeMeeting call failed', e);
                     }
@@ -321,7 +332,7 @@
         const pill = e.target.closest?.('.msgr-meet-join-pill');
         if (! pill) return;
         const href = pill.getAttribute('href');
-        if (! href || ! /^https:\/\/meet\.jit\.si\/pmhelper-/i.test(href)) return;
+        if (! href || ! /^https:\/\/meet\.(digicrats\.com|jit\.si)\/pmhelper-/i.test(href)) return;
         e.preventDefault();
 
         // Walk up from the pill to find the wrapping messenger Livewire component

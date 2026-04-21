@@ -660,7 +660,7 @@ class MessengerService
 
         // Skip Jitsi meeting URLs — they're rendered as a dedicated pill
         // in the chat bubble, no OG preview card needed.
-        if (preg_match('~^https?://meet\.jit\.si/pmhelper-~i', $url)) {
+        if (preg_match('~^https?://meet\.(digicrats\.com|jit\.si)/pmhelper-~i', $url)) {
             return;
         }
 
