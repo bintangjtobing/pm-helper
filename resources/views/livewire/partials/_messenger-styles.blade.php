@@ -1006,6 +1006,41 @@
             text-decoration-color: rgba(255, 255, 255, 0.9);
         }
 
+        /* ── Jitsi meeting join pill ──────────────────────────────── */
+        .msgr-meet-join-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            padding: 6px 12px;
+            background: #10b981;
+            color: #fff !important;
+            text-decoration: none !important;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.15s, transform 0.15s;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+        }
+        .msgr-meet-join-pill:hover {
+            background: #059669;
+            color: #fff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
+        }
+        .msgr-meet-join-pill svg {
+            flex-shrink: 0;
+        }
+        .msgr-msg-self .msgr-meet-join-pill {
+            background: rgba(255, 255, 255, 0.9);
+            color: #047857 !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+        .msgr-msg-self .msgr-meet-join-pill:hover {
+            background: #fff;
+            color: #065f46 !important;
+        }
+
         /* ── Link preview card ────────────────────────────────────── */
         .msgr-link-preview {
             display: block;

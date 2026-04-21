@@ -465,6 +465,45 @@ class Messenger extends Component
         $this->dispatchBrowserEvent('messenger:message-sent');
     }
 
+    public function startJitsiMeeting(): void
+    {
+        if (! $this->activeConversationId) {
+            return;
+        }
+        $conversation = MessengerConversation::find($this->activeConversationId);
+        if (! $conversation || ! $conversation->hasParticipant((int) auth()->id())) {
+            return;
+        }
+
+        // Unguessable room slug so the URL can't be joined by random guessers.
+        // 18 chars of random alphanumeric = ~107 bits of entropy.
+        $slug = 'pmhelper-' . strtolower(\Illuminate\Support\Str::random(18));
+        $meetingUrl = 'https://meet.jit.si/' . $slug;
+
+        $starterName = auth()->user()->name;
+        $body = "📹 {$starterName} started a meeting\n{$meetingUrl}";
+
+        try {
+            $this->service()->sendMessage(
+                $conversation,
+                auth()->user(),
+                $body,
+                [],
+                null
+            );
+        } catch (\Throwable $e) {
+            $this->addError('newMessage', $e->getMessage());
+            return;
+        }
+
+        $this->loadMessages(initial: true);
+        $this->loadConversations();
+
+        // Open the Meet in a new tab for the starter.
+        $this->dispatchBrowserEvent('messenger:open-meeting', ['url' => $meetingUrl]);
+        $this->dispatchBrowserEvent('messenger:message-sent');
+    }
+
     public function startEdit(int $messageId): void
     {
         $message = MessengerMessage::find($messageId);
@@ -948,6 +987,13 @@ class Messenger extends Component
                     }
                     // Decode &amp; back to & for href (browser needs real URL), display stays escaped.
                     $hrefUrl = html_entity_decode($url, ENT_QUOTES, 'UTF-8');
+                    // Jitsi meeting links get a dedicated "Join meeting" pill
+                    if (preg_match('~^https?://meet\.jit\.si/pmhelper-~i', $hrefUrl)) {
+                        return '<a href="' . e($hrefUrl) . '" target="_blank" rel="noopener noreferrer" class="msgr-meet-join-pill">'
+                            . '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
+                            . 'Join meeting'
+                            . '</a>' . $trailing;
+                    }
                     return '<a href="' . e($hrefUrl) . '" target="_blank" rel="noopener" class="msgr-auto-link">' . $url . '</a>' . $trailing;
                 },
                 $part

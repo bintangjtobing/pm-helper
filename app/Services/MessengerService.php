@@ -658,6 +658,12 @@ class MessengerService
         // Strip trailing punctuation.
         $url = preg_replace('/[.,;:!?\)]+$/', '', $url);
 
+        // Skip Jitsi meeting URLs — they're rendered as a dedicated pill
+        // in the chat bubble, no OG preview card needed.
+        if (preg_match('~^https?://meet\.jit\.si/pmhelper-~i', $url)) {
+            return;
+        }
+
         try {
             $preview = $this->fetchOgMeta($url);
             if ($preview) {

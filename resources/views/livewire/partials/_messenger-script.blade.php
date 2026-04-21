@@ -52,6 +52,14 @@
                         this.$nextTick(() => this.scrollMessagesToBottom());
                     });
 
+                    // Open Jitsi meeting in a new tab when starter clicks the button
+                    window.addEventListener('messenger:open-meeting', (e) => {
+                        const url = e.detail?.url;
+                        if (url) {
+                            window.open(url, '_blank', 'noopener,noreferrer');
+                        }
+                    });
+
                     // Initial scroll
                     this.$nextTick(() => this.scrollMessagesToBottom());
 
