@@ -423,9 +423,11 @@ trait KanbanScrumHelper
         $heading .= __('Back to board');
         $heading .= '</a>';
         $heading .= '<div class="flex flex-col gap-1">';
-        $heading .= '<span class="text-2xl font-bold text-gray-900">' . __('Kanban');
+        $heading .= '<span class="text-2xl font-bold text-gray-900 inline-flex items-center flex-wrap gap-1">' . __('Kanban');
         if ($this->project) {
-            $heading .= ' - ' . e($this->project->name) . '</span>';
+            $heading .= ' - ';
+            $heading .= $this->projectSwitcherDropdown();
+            $heading .= '</span>';
             $description = $this->project->description ?? '';
             if ($description) {
                 $heading .= $this->formatProjectDescription($description);
@@ -465,9 +467,11 @@ trait KanbanScrumHelper
         $heading .= __('Back to board');
         $heading .= '</a>';
         $heading .= '<div class="flex flex-col gap-1">';
-        $heading .= '<span class="text-2xl font-bold text-gray-900">' . __('Scrum');
+        $heading .= '<span class="text-2xl font-bold text-gray-900 inline-flex items-center flex-wrap gap-1">' . __('Scrum');
         if ($this->project) {
-            $heading .= ' - ' . $this->project->name . '</span>';
+            $heading .= ' - ';
+            $heading .= $this->projectSwitcherDropdown();
+            $heading .= '</span>';
             $heading .= '<span class="text-sm text-gray-600">' . __('Manage your sprint tickets') . '</span>';
         } else {
             $heading .= '</span><span class="text-xs text-gray-400">'
@@ -492,6 +496,73 @@ trait KanbanScrumHelper
                     </script>';
 
         return new HtmlString($heading);
+    }
+
+    /**
+     * Clickable dropdown next to the current project name that lets the user
+     * jump straight to another project's board (kanban or scrum depending on
+     * that project's type). Only shows projects the user owns or is a member
+     * of.
+     */
+    protected function projectSwitcherDropdown(): string
+    {
+        $currentId = $this->project?->id;
+        $userId = (int) auth()->id();
+
+        // Projects the user owns OR is a member of. Exclude soft-deleted.
+        $projects = Project::query()
+            ->where(function ($q) use ($userId) {
+                $q->where('owner_id', $userId)
+                  ->orWhereHas('users', fn ($u) => $u->where('users.id', $userId));
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'type', 'ticket_prefix']);
+
+        $currentName = e($this->project->name ?? '');
+
+        $items = '';
+        foreach ($projects as $p) {
+            $isCurrent = ((int) $p->id === (int) $currentId);
+            $routeName = ($p->type === 'scrum') ? 'filament.pages.scrum/{project}' : 'filament.pages.kanban/{project}';
+            $url = e(route($routeName, ['project' => $p]));
+            $badge = '';
+            if ($p->ticket_prefix) {
+                $badge = '<span class="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 mr-2">'.e($p->ticket_prefix).'</span>';
+            }
+            $typeDot = $p->type === 'scrum'
+                ? '<span title="Scrum" class="inline-block w-1.5 h-1.5 rounded-full bg-purple-500 ml-auto"></span>'
+                : '<span title="Kanban" class="inline-block w-1.5 h-1.5 rounded-full bg-blue-500 ml-auto"></span>';
+            $currentMark = $isCurrent ? '<span class="ml-2 text-[10px] text-primary-500 font-semibold">current</span>' : '';
+            $items .= '<a href="'.$url.'" class="flex items-center gap-1 px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 '.($isCurrent ? 'bg-gray-50 dark:bg-gray-700/50' : '').'">'
+                . $badge
+                . '<span class="truncate text-gray-900 dark:text-gray-100 font-normal">'.e($p->name).'</span>'
+                . $currentMark
+                . $typeDot
+                . '</a>';
+        }
+
+        if ($items === '') {
+            $items = '<div class="px-3 py-2 text-sm text-gray-400">No other projects available</div>';
+        }
+
+        return <<<HTML
+        <span x-data="{ open: false }" class="relative inline-flex">
+            <button type="button" x-on:click="open = ! open" x-on:click.outside="open = false"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition text-2xl font-bold text-gray-900 dark:text-gray-100">
+                <span>{$currentName}</span>
+                <svg class="w-5 h-5 text-gray-400" x-bind:class="open ? 'rotate-180' : ''" style="transition: transform 0.15s;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div x-show="open" x-cloak
+                 x-transition.opacity.duration.150ms
+                 class="absolute left-0 top-full mt-1 z-30 w-72 max-h-80 overflow-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-1"
+                 style="font-size: 14px;">
+                <div class="px-3 py-2 text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-100 dark:border-gray-700 mb-1">Switch project</div>
+                {$items}
+            </div>
+        </span>
+        HTML;
     }
 
     protected function scrumSubHeading(): string|Htmlable|null
