@@ -534,14 +534,16 @@ class Messenger extends Component
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => "You are a meeting note-taker. Summarize the transcript into three concise sections:\n\n"
-                            . "📌 **Key points** — 3-6 bullets of the main topics discussed.\n"
-                            . "✅ **Decisions** — concrete decisions made (if any).\n"
-                            . "🎯 **Action items** — who does what by when (if mentioned).\n\n"
-                            . "Rules:\n"
-                            . "- Match the language of the transcript (Indonesian → summary in Indonesian, English → English).\n"
+                        'content' => "You are a meeting note-taker. Summarize the transcript into three concise sections, each with an emoji header followed by a colon and a newline:\n\n"
+                            . "📌 Key points\n- bullet 1\n- bullet 2\n\n"
+                            . "✅ Decisions\n- decision 1\n\n"
+                            . "🎯 Action items\n- person: what\n\n"
+                            . "STRICT formatting rules:\n"
+                            . "- Do NOT use markdown. No asterisks, no underscores, no backticks, no hash symbols, no tables.\n"
+                            . "- Use hyphen-space bullets only.\n"
+                            . "- Match the transcript language (Indonesian → Indonesian, English → English).\n"
                             . "- Keep the whole summary under 300 words.\n"
-                            . "- Skip sections that have no content — don't write 'None'.\n"
+                            . "- Skip a section entirely if it has no real content. Do not print 'None' or 'N/A'.\n"
                             . "- Do NOT invent names, numbers, or commitments not in the transcript.",
                     ],
                     [
@@ -568,7 +570,8 @@ class Messenger extends Component
                 return;
             }
 
-            $body = "📝 **Meeting summary** (AI-generated)\n\n" . $summary;
+            $summary = $this->stripMarkdown($summary);
+            $body = "📝 Meeting summary (AI-generated)\n\n" . $summary;
 
             $this->service()->sendMessage(
                 $conversation,
@@ -743,14 +746,16 @@ class Messenger extends Component
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => "You are a meeting note-taker. Summarize the transcript into three concise sections:\n\n"
-                            . "📌 **Key points** — 3-6 bullets of the main topics discussed.\n"
-                            . "✅ **Decisions** — concrete decisions made (if any).\n"
-                            . "🎯 **Action items** — who does what by when (if mentioned).\n\n"
-                            . "Rules:\n"
-                            . "- Match the language of the transcript (Indonesian → summary in Indonesian, English → English).\n"
+                        'content' => "You are a meeting note-taker. Summarize the transcript into three concise sections, each with an emoji header followed by a colon and a newline:\n\n"
+                            . "📌 Key points\n- bullet 1\n- bullet 2\n\n"
+                            . "✅ Decisions\n- decision 1\n\n"
+                            . "🎯 Action items\n- person: what\n\n"
+                            . "STRICT formatting rules:\n"
+                            . "- Do NOT use markdown. No asterisks, no underscores, no backticks, no hash symbols, no tables.\n"
+                            . "- Use hyphen-space bullets only.\n"
+                            . "- Match the transcript language (Indonesian → Indonesian, English → English).\n"
                             . "- Keep the whole summary under 300 words.\n"
-                            . "- Skip sections that have no content — don't write 'None'.\n"
+                            . "- Skip a section entirely if it has no real content. Do not print 'None' or 'N/A'.\n"
                             . "- Do NOT invent names, numbers, or commitments not in the transcript.",
                     ],
                     [
@@ -774,7 +779,10 @@ class Messenger extends Component
                 return;
             }
 
-            $summaryBody = "📝 **Meeting summary** (AI-generated)\n\n" . $summary;
+            // Belt-and-suspenders: strip any markdown the model might still slip in
+            $summary = $this->stripMarkdown($summary);
+
+            $summaryBody = "📝 Meeting summary (AI-generated)\n\n" . $summary;
 
             $this->service()->sendMessage(
                 $conversation,
@@ -1150,6 +1158,29 @@ class Messenger extends Component
                 ->all();
         }
         return $this->cachedPrefixes;
+    }
+
+    /**
+     * Strip common markdown decorations so AI-generated summaries render
+     * as clean plain text in chat bubbles (no leftover **bold**, __italic__, etc).
+     */
+    protected function stripMarkdown(string $text): string
+    {
+        // **bold** / __bold__  →  bold
+        $text = preg_replace('/\*\*(.+?)\*\*/s', '$1', $text);
+        $text = preg_replace('/__(.+?)__/s', '$1', $text);
+        // *italic* / _italic_  →  italic  (only match pairs, leave standalone * alone)
+        $text = preg_replace('/(?<![\*\w])\*([^\s\*][^\*]*?)\*(?!\w)/s', '$1', $text);
+        $text = preg_replace('/(?<![_\w])_([^\s_][^_]*?)_(?!\w)/s', '$1', $text);
+        // `code`  →  code
+        $text = preg_replace('/`([^`]+)`/', '$1', $text);
+        // Leading # heading markers (##, ###, ...) at start of line
+        $text = preg_replace('/^#{1,6}\s+/m', '', $text);
+        // Markdown link [text](url)  →  text (url)
+        $text = preg_replace('/\[([^\]]+)\]\(([^)]+)\)/', '$1 ($2)', $text);
+        // Collapse triple-or-more newlines
+        $text = preg_replace("/\n{3,}/", "\n\n", $text);
+        return trim($text);
     }
 
     protected function renderTicketBadges(?string $body): ?string

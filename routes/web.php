@@ -49,6 +49,21 @@ Route::middleware(['web', 'auth'])
             ->name('preview');
     });
 
+// Standalone full-screen Jitsi meeting page. Opens in a new tab from messenger,
+// broadcasts lifecycle events back to the main PMHelper tab via BroadcastChannel.
+Route::middleware(['web', 'auth'])
+    ->get('/dm/meet/{slug}', function (string $slug) {
+        abort_unless(preg_match('/^pmhelper-[a-z0-9]+$/i', $slug), 404);
+        return view('messenger.meet-tab', [
+            'slug' => $slug,
+            'meetUser' => auth()->user(),
+            'role' => request('role', 'joiner'),
+            'conversationId' => (int) request('convo', 0),
+            'meetingMessageId' => (int) request('msg', 0),
+        ]);
+    })
+    ->name('messenger.meet.tab');
+
 // Auto-detect timezone from browser
 Route::post('/user/timezone', function (\Illuminate\Http\Request $request) {
     if (auth()->check() && $request->has('timezone')) {
