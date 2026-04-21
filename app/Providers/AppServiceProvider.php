@@ -443,30 +443,17 @@ class AppServiceProvider extends ServiceProvider
             HTML : '',
         );
 
-        // Version pill at the bottom of the sidebar. Click opens a modal that
-        // shows the current version's changelog highlights with a link to
-        // /changelog for the full history.
+        // Version pill at the bottom of the sidebar — dispatches a global
+        // event that the body-level changelog modal (below) listens for.
         Filament::registerRenderHook(
             'sidebar.end',
             function (): string {
                 if (! auth()->check()) return '';
-                $current = config('changelog.0', null);
-                if (! $current) return '';
-                $version = $current['version'] ?? '1.0.0';
-                $title = $current['title'] ?? '';
-                $date = !empty($current['released_at']) ? \Carbon\Carbon::parse($current['released_at'])->format('d M Y') : '';
-                $highlights = $current['highlights'] ?? [];
-                $bullets = collect($highlights)
-                    ->map(fn ($h) => '<li style="position:relative;padding-left:20px;margin-bottom:6px;font-size:12.5px;line-height:1.5;color:#374151;"><span style="position:absolute;left:0;top:2px;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;background:rgba(59,130,246,0.12);color:#2563eb;border-radius:50%;font-size:10px;font-weight:700;">✓</span>'.e($h).'</li>')
-                    ->implode('');
-                $fullUrl = url('/changelog');
-                $escTitle = e($title);
-
+                $version = config('changelog.0.version', '1.0.0');
                 return <<<HTML
-                <div style="padding: 14px 20px 16px; border-top: 1px solid rgba(148,163,184,0.15); margin-top: auto;"
-                     x-data="{ open: false }">
+                <div style="padding: 14px 20px 16px; border-top: 1px solid rgba(148,163,184,0.15); margin-top: auto;">
                     <button type="button"
-                            x-on:click="open = true"
+                            onclick="window.dispatchEvent(new CustomEvent('changelog:open'))"
                             style="width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 10px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.25); border-radius:8px; color:#93c5fd; font-size:12px; font-weight:600; cursor:pointer; transition:background 0.15s;"
                             onmouseover="this.style.background='rgba(59,130,246,0.18)'"
                             onmouseout="this.style.background='rgba(59,130,246,0.08)'"
@@ -477,45 +464,108 @@ class AppServiceProvider extends ServiceProvider
                         </span>
                         <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </button>
+                </div>
+                HTML;
+            },
+        );
 
-                    <div x-show="open"
-                         x-transition.opacity
-                         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9998; align-items:center; justify-content:center; padding:24px;"
-                         x-bind:style="open ? 'display:flex' : 'display:none'"
-                         x-on:click="open = false"
-                         x-on:keydown.escape.window="open = false">
-                        <div x-on:click.stop
-                             style="background:#fff; color:#111827; border-radius:12px; max-width:640px; width:100%; max-height:85vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,0.4);"
-                             class="dark:bg-gray-800 dark:text-gray-100">
-                            <div style="padding:20px 24px; border-bottom:1px solid rgba(148,163,184,0.2); display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                                <div>
-                                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                                        <span style="font-size:20px; font-weight:700;">v{$version}</span>
-                                        <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:#dbeafe; color:#1d4ed8;">What's new</span>
-                                        <span style="font-size:12px; color:#6b7280;">{$date}</span>
-                                    </div>
-                                    <div style="font-size:14px; font-weight:600; margin-top:6px; color:#111827;" class="dark:text-gray-100">{$escTitle}</div>
+        // Changelog modal — rendered at document body level (not inside the
+        // sidebar) so it escapes any stacking context or transform ancestors
+        // that would clip a position:fixed overlay. Theme matches the app
+        // dark mode (gray-900 body, gray-700 borders) and falls back to a
+        // light palette when the html element lacks the "dark" class.
+        Filament::registerRenderHook(
+            'body.end',
+            function (): string {
+                if (! auth()->check()) return '';
+                $current = config('changelog.0', null);
+                if (! $current) return '';
+                $version = $current['version'] ?? '1.0.0';
+                $title = $current['title'] ?? '';
+                $date = !empty($current['released_at']) ? \Carbon\Carbon::parse($current['released_at'])->format('d M Y') : '';
+                $highlights = $current['highlights'] ?? [];
+                $bullets = collect($highlights)
+                    ->map(fn ($h) => '<li class="cl-hl-item"><span class="cl-hl-check">✓</span><span>'.e($h).'</span></li>')
+                    ->implode('');
+                $fullUrl = url('/changelog');
+                $escTitle = e($title);
+
+                return <<<HTML
+                <style>
+                    #cl-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:10000; align-items:center; justify-content:center; padding:24px; display:none; }
+                    #cl-modal-overlay.is-open { display:flex; }
+                    #cl-modal-card {
+                        background:#1f2937;
+                        color:#e5e7eb;
+                        border:1px solid #374151;
+                        border-radius:12px;
+                        max-width:640px;
+                        width:100%;
+                        max-height:85vh;
+                        overflow:auto;
+                        box-shadow:0 20px 60px rgba(0,0,0,0.5);
+                    }
+                    html:not(.dark) #cl-modal-card {
+                        background:#ffffff;
+                        color:#111827;
+                        border-color:#e5e7eb;
+                    }
+                    #cl-modal-head { padding:18px 22px; border-bottom:1px solid #374151; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+                    html:not(.dark) #cl-modal-head { border-bottom-color:#e5e7eb; }
+                    #cl-modal-head .cl-v { font-size:20px; font-weight:700; }
+                    #cl-modal-head .cl-date { font-size:12px; color:#9ca3af; }
+                    html:not(.dark) #cl-modal-head .cl-date { color:#6b7280; }
+                    #cl-modal-head .cl-title { font-size:14px; font-weight:600; margin-top:6px; }
+                    #cl-modal-head .cl-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:rgba(59,130,246,0.2); color:#93c5fd; }
+                    html:not(.dark) #cl-modal-head .cl-badge { background:#dbeafe; color:#1d4ed8; }
+                    #cl-modal-close { background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:24px; line-height:1; padding:4px 8px; border-radius:6px; transition:background 0.15s; }
+                    #cl-modal-close:hover { background:rgba(148,163,184,0.15); }
+                    #cl-modal-body { padding:16px 22px 20px; }
+                    #cl-modal-body ul { list-style:none; padding:0; margin:0; }
+                    .cl-hl-item { position:relative; padding-left:24px; margin-bottom:8px; font-size:13px; line-height:1.55; color:#d1d5db; }
+                    html:not(.dark) .cl-hl-item { color:#374151; }
+                    .cl-hl-check { position:absolute; left:0; top:2px; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; background:rgba(59,130,246,0.18); color:#93c5fd; border-radius:50%; font-size:10px; font-weight:700; }
+                    html:not(.dark) .cl-hl-check { background:rgba(59,130,246,0.12); color:#2563eb; }
+                    #cl-modal-footer { margin-top:16px; padding-top:14px; border-top:1px solid #374151; text-align:right; }
+                    html:not(.dark) #cl-modal-footer { border-top-color:#e5e7eb; }
+                    #cl-modal-footer a { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#60a5fa; text-decoration:none; }
+                    html:not(.dark) #cl-modal-footer a { color:#2563eb; }
+                    #cl-modal-footer a:hover { text-decoration:underline; }
+                </style>
+                <div id="cl-modal-overlay" onclick="if(event.target===this)window.dispatchEvent(new CustomEvent('changelog:close'))">
+                    <div id="cl-modal-card">
+                        <div id="cl-modal-head">
+                            <div>
+                                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                    <span class="cl-v">v{$version}</span>
+                                    <span class="cl-badge">What's new</span>
+                                    <span class="cl-date">{$date}</span>
                                 </div>
-                                <button type="button" x-on:click="open = false"
-                                        style="background:transparent; border:none; color:#9ca3af; cursor:pointer; font-size:22px; line-height:1; padding:4px;">&times;</button>
+                                <div class="cl-title">{$escTitle}</div>
                             </div>
-                            <div style="padding:16px 24px 20px;">
-                                <ul style="list-style:none; padding:0; margin:0;">
-                                    {$bullets}
-                                </ul>
-                                <div style="margin-top:16px; padding-top:14px; border-top:1px solid rgba(148,163,184,0.2); text-align:right;">
-                                    <a href="{$fullUrl}"
-                                       style="display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#2563eb; text-decoration:none;"
-                                       onmouseover="this.style.textDecoration='underline'"
-                                       onmouseout="this.style.textDecoration='none'">
-                                        View full changelog
-                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                                    </a>
-                                </div>
+                            <button type="button" id="cl-modal-close" onclick="window.dispatchEvent(new CustomEvent('changelog:close'))">&times;</button>
+                        </div>
+                        <div id="cl-modal-body">
+                            <ul>{$bullets}</ul>
+                            <div id="cl-modal-footer">
+                                <a href="{$fullUrl}">View full changelog
+                                    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
+                <script>
+                (function(){
+                    if (window.__clModalWired) return;
+                    window.__clModalWired = true;
+                    const ov = document.getElementById('cl-modal-overlay');
+                    if (! ov) return;
+                    window.addEventListener('changelog:open', function(){ ov.classList.add('is-open'); document.body.style.overflow='hidden'; });
+                    window.addEventListener('changelog:close', function(){ ov.classList.remove('is-open'); document.body.style.overflow=''; });
+                    window.addEventListener('keydown', function(e){ if (e.key === 'Escape') window.dispatchEvent(new CustomEvent('changelog:close')); });
+                })();
+                </script>
                 HTML;
             },
         );
