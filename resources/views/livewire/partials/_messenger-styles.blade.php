@@ -117,8 +117,16 @@
             vertical-align: middle;
         }
         .msgr-status-dot.is-online    { background: #22c55e; }
-        .msgr-status-dot.is-busy      { background: #ef4444; }
-        .msgr-status-dot.is-in-meeting { background: #a855f7; }
+        .msgr-status-dot.is-busy      { background: #dc2626; }
+        .msgr-status-dot.is-in-meeting { background: #ef4444; }
+        /* Pulsing animation on in_meeting dot to visually indicate an active call */
+        .msgr-status-dot.is-in-meeting {
+            animation: msgrMeetDotPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes msgrMeetDotPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+            50%      { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+        }
         .msgr-status-dot.is-on-leave  { background: #6b7280; border-color: #fbbf24; }
 
         /* ── Status menu (dropdown overlay) ── */

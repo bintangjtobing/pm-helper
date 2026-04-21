@@ -142,6 +142,12 @@
                 // Lock body scroll while meeting is up
                 document.body.style.overflow = 'hidden';
 
+                // Set user status to "In a meeting" so other team members see red dot
+                try {
+                    const componentId = this.getMessengerComponentId();
+                    window.Livewire?.find(componentId)?.call('setMyStatus', 'in_meeting', 'In a meeting');
+                } catch (e) { console.warn('[jitsi] setMyStatus failed', e); }
+
                 // Start duration ticker
                 this.timerHandle = setInterval(() => {
                     const sec = Math.floor((Date.now() - this.startTime) / 1000);
@@ -319,6 +325,12 @@
                 if (this.$refs.container) this.$refs.container.innerHTML = '';
                 this.isOpen = false;
                 document.body.style.overflow = '';
+
+                // Clear "In a meeting" status so user goes back to online
+                try {
+                    const componentId = this.getMessengerComponentId();
+                    window.Livewire?.find(componentId)?.call('clearMyStatus');
+                } catch (e) { console.warn('[jitsi] clearMyStatus failed', e); }
             },
         };
     }
