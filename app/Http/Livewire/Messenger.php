@@ -21,12 +21,18 @@ class Messenger extends Component
     // UI state
     // ──────────────────────────────────────────────────────────────────────
 
+    /** 'floating' | 'fullpage' */
+    public string $mode = 'floating';
+
     public bool $isOpen = false;
 
     /** 'list' | 'conversation' | 'new_chat' */
     public string $view = 'list';
 
     public ?int $activeConversationId = null;
+
+    /** null | 'profile' | 'files' — only used in fullpage mode */
+    public ?string $thirdPanelView = null;
 
     // ──────────────────────────────────────────────────────────────────────
     // Conversation list
@@ -86,17 +92,23 @@ class Messenger extends Component
     // Lifecycle
     // ──────────────────────────────────────────────────────────────────────
 
-    public function mount(): void
+    public function mount(string $mode = 'floating'): void
     {
         if (! auth()->check()) {
             return;
         }
+        $this->mode = in_array($mode, ['floating', 'fullpage'], true) ? $mode : 'floating';
+
+        if ($this->mode === 'fullpage') {
+            $this->isOpen = true;
+        }
+
         $this->loadConversations();
     }
 
     public function render()
     {
-        return view('livewire.messenger');
+        return view($this->mode === 'fullpage' ? 'livewire.messenger-fullpage' : 'livewire.messenger');
     }
 
     protected function service(): MessengerService
@@ -110,11 +122,27 @@ class Messenger extends Component
 
     public function toggleOpen(): void
     {
+        if ($this->mode === 'fullpage') {
+            return;
+        }
         $this->isOpen = ! $this->isOpen;
         if ($this->isOpen) {
             $this->loadConversations();
         }
         $this->dispatchBrowserEvent('messenger:reset-menus');
+    }
+
+    public function toggleThirdPanel(string $panel): void
+    {
+        if (! in_array($panel, ['profile', 'files'], true)) {
+            return;
+        }
+        $this->thirdPanelView = $this->thirdPanelView === $panel ? null : $panel;
+    }
+
+    public function closeThirdPanel(): void
+    {
+        $this->thirdPanelView = null;
     }
 
     public function openConversation(int $conversationId): void

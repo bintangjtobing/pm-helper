@@ -376,11 +376,42 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // Messenger Widget - 1-on-1 team chat, injected at bottom-right (left of chatbot)
+        // Auto-hidden on /dm (fullpage messenger) to avoid double-mounting the component.
         Filament::registerRenderHook(
             'body.end',
-            fn (): string => auth()->check()
+            fn (): string => auth()->check() && ! request()->is('dm')
                 ? Blade::render('@livewire("messenger")')
                 : '',
+        );
+
+        // Messenger topbar icon - sits between the bell and the user avatar.
+        // Clicking it opens the fullpage view at /dm. Unread badge mirrors
+        // the floating widget's total-unread count (fetched inline per-render).
+        Filament::registerRenderHook(
+            'user-menu.start',
+            function (): string {
+                if (! auth()->check()) {
+                    return '';
+                }
+                $userId = (int) auth()->id();
+                $unread = \App\Models\MessengerMessage::query()
+                    ->whereHas('conversation', fn ($q) => $q->where('user_one_id', $userId)->orWhere('user_two_id', $userId))
+                    ->where('sender_id', '!=', $userId)
+                    ->whereDoesntHave('reads', fn ($q) => $q->where('user_id', $userId))
+                    ->whereNull('deleted_for_everyone_at')
+                    ->count();
+                $badge = $unread > 0
+                    ? '<span style="position:absolute;top:4px;right:4px;min-width:16px;height:16px;padding:0 4px;background:#ef4444;color:#fff;font-size:10px;font-weight:600;border-radius:8px;display:flex;align-items:center;justify-content:center;line-height:1;">'.($unread > 99 ? '99+' : $unread).'</span>'
+                    : '';
+                return <<<HTML
+                <a href="/dm" title="Messenger" style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;color:#6b7280;transition:background 0.15s, color 0.15s;" onmouseover="this.style.background='rgba(107,114,128,0.1)';this.style.color='#374151';" onmouseout="this.style.background='transparent';this.style.color='#6b7280';">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m-5-4V6a2 2 0 012-2h7a2 2 0 012 2v5a2 2 0 01-2 2h-4l-4 4v-4H4a2 2 0 01-2-2z"/>
+                    </svg>
+                    $badge
+                </a>
+                HTML;
+            },
         );
 
         // Command palette - modal + ⌘K/Ctrl+K keyboard handler (body.end)
