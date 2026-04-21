@@ -1041,6 +1041,33 @@
             color: #065f46 !important;
         }
 
+        /* ── Summarize-transcript button (AI / GPT-4o) ────────────── */
+        .msgr-summarize-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 6px;
+            padding: 5px 10px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.15s, transform 0.15s;
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+        }
+        .msgr-summarize-btn:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+        .msgr-summarize-btn:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+        .msgr-summarize-btn svg { flex-shrink: 0; }
+
         /* ── Link preview card ────────────────────────────────────── */
         .msgr-link-preview {
             display: block;

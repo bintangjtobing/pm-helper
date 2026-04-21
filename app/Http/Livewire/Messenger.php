@@ -465,6 +465,128 @@ class Messenger extends Component
         $this->dispatchBrowserEvent('messenger:message-sent');
     }
 
+    public function summarizeTranscript(int $messageId, int $attachmentId): void
+    {
+        if (! $this->activeConversationId) {
+            return;
+        }
+        $conversation = MessengerConversation::find($this->activeConversationId);
+        if (! $conversation || ! $conversation->hasParticipant((int) auth()->id())) {
+            return;
+        }
+
+        $message = MessengerMessage::find($messageId);
+        if (! $message || (int) $message->conversation_id !== (int) $this->activeConversationId) {
+            return;
+        }
+
+        $attachment = \App\Models\MessengerMessageAttachment::find($attachmentId);
+        if (! $attachment || (int) $attachment->message_id !== (int) $message->id) {
+            return;
+        }
+
+        // Only text-based transcript formats
+        $filename = strtolower($attachment->filename_original ?? '');
+        $isTextFile = str_ends_with($filename, '.txt')
+            || str_ends_with($filename, '.vtt')
+            || str_starts_with($attachment->mime_type ?? '', 'text/');
+        if (! $isTextFile) {
+            $this->addError('newMessage', 'Only .txt or .vtt transcript files can be summarized.');
+            return;
+        }
+
+        // 1 MB cap — enough for ~2 hours of transcript, stays under GPT-4o context
+        if (($attachment->size_bytes ?? 0) > 1024 * 1024) {
+            $this->addError('newMessage', 'Transcript too large (max 1 MB).');
+            return;
+        }
+
+        $path = app(MessengerService::class)->resolveAttachmentPath($attachment);
+        if (! $path) {
+            $this->addError('newMessage', 'Transcript file not found on disk.');
+            return;
+        }
+
+        $transcript = @file_get_contents($path);
+        if ($transcript === false || trim($transcript) === '') {
+            $this->addError('newMessage', 'Transcript file is empty or unreadable.');
+            return;
+        }
+
+        // For .vtt, strip timestamp cues so GPT sees clean text
+        if (str_ends_with($filename, '.vtt')) {
+            $lines = preg_split('/\r?\n/', $transcript);
+            $lines = array_filter($lines, fn ($l) => ! preg_match('/^(WEBVTT|\d{2}:\d{2}|NOTE)/', trim($l)) && trim($l) !== '');
+            $transcript = implode("\n", $lines);
+        }
+
+        $apiKey = config('services.openai.key');
+        if (empty($apiKey)) {
+            $this->addError('newMessage', 'OpenAI API key not configured.');
+            return;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+            ])->timeout(120)->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-4o',
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => "You are a meeting note-taker. Summarize the transcript into three concise sections:\n\n"
+                            . "📌 **Key points** — 3-6 bullets of the main topics discussed.\n"
+                            . "✅ **Decisions** — concrete decisions made (if any).\n"
+                            . "🎯 **Action items** — who does what by when (if mentioned).\n\n"
+                            . "Rules:\n"
+                            . "- Match the language of the transcript (Indonesian → summary in Indonesian, English → English).\n"
+                            . "- Keep the whole summary under 300 words.\n"
+                            . "- Skip sections that have no content — don't write 'None'.\n"
+                            . "- Do NOT invent names, numbers, or commitments not in the transcript.",
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => "Here is the meeting transcript:\n\n---\n" . $transcript . "\n---",
+                    ],
+                ],
+                'temperature' => 0.3,
+                'max_tokens' => 800,
+            ]);
+
+            if ($response->failed()) {
+                \Illuminate\Support\Facades\Log::error('Messenger summarize error', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                $this->addError('newMessage', 'OpenAI request failed — check logs.');
+                return;
+            }
+
+            $summary = trim($response->json('choices.0.message.content', ''));
+            if ($summary === '') {
+                $this->addError('newMessage', 'OpenAI returned an empty summary.');
+                return;
+            }
+
+            $body = "📝 **Meeting summary** (AI-generated)\n\n" . $summary;
+
+            $this->service()->sendMessage(
+                $conversation,
+                auth()->user(),
+                $body,
+                [],
+                $message->id
+            );
+
+            $this->loadMessages(initial: true);
+            $this->loadConversations();
+            $this->dispatchBrowserEvent('messenger:message-sent');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Messenger summarize exception', ['msg' => $e->getMessage()]);
+            $this->addError('newMessage', 'Summarize failed: ' . $e->getMessage());
+        }
+    }
+
     public function startJitsiMeeting(): void
     {
         if (! $this->activeConversationId) {

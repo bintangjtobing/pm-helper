@@ -10,6 +10,7 @@
         .msgr-fullpage-wrap {
             display: grid;
             grid-template-columns: 320px minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr);
             gap: 0;
             height: calc(100vh - 64px); /* minus filament topbar */
             background: #111827;
@@ -510,6 +511,15 @@
                                                                 </div>
                                                             </div>
                                                         </a>
+                                                        @php $isTranscript = preg_match('/\.(txt|vtt)$/i', $att['filename_original']); @endphp
+                                                        @if($isTranscript)
+                                                            <button type="button" class="msgr-summarize-btn" wire:click="summarizeTranscript({{ $m['id'] }}, {{ $att['id'] }})" wire:loading.attr="disabled" wire:target="summarizeTranscript({{ $m['id'] }},{{ $att['id'] }})">
+                                                                <svg wire:loading.remove wire:target="summarizeTranscript({{ $m['id'] }},{{ $att['id'] }})" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                                                <svg wire:loading wire:target="summarizeTranscript({{ $m['id'] }},{{ $att['id'] }})" class="msgr-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                                                <span wire:loading.remove wire:target="summarizeTranscript({{ $m['id'] }},{{ $att['id'] }})">Summarize with AI</span>
+                                                                <span wire:loading wire:target="summarizeTranscript({{ $m['id'] }},{{ $att['id'] }})">Summarizing…</span>
+                                                            </button>
+                                                        @endif
                                                     @endif
                                                 @endforeach
                                             </div>
