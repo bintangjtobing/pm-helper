@@ -17,6 +17,18 @@
 return [
 
     [
+        'version' => '1.1.2',
+        'released_at' => '2026-04-22',
+        'type' => 'patch',
+        'title' => 'Command palette now searches Discussions',
+        'highlights' => [
+            '🔎 ⌘K / Ctrl+K palette picks up Discussions — search by title and jump straight to the discussion view',
+            '🔐 Results respect the same permission scoping as the Discussions page: Super Admin & Stakeholder see everything, Project Managers see their projects, everyone else sees their own + project discussions',
+            '💬 Shows "Discussion · {project name}" (or "Discussion · General" for unprojected) as the subtitle so you can tell similar titles apart',
+        ],
+    ],
+
+    [
         'version' => '1.1.1',
         'released_at' => '2026-04-22',
         'type' => 'patch',

@@ -174,12 +174,31 @@ class CommandPalette extends Component
             ])
             ->all();
 
+        // Discussions — reuse the resource's permission-scoped query so
+        // regular users only see discussions in their projects / their own.
+        $discussions = \App\Filament\Resources\DiscussionResource::getEloquentQuery()
+            ->where('title', 'like', "%{$q}%")
+            ->latest('updated_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($d) => [
+                'label' => $d->title,
+                'group' => $d->project?->name
+                    ? 'Discussion · ' . $d->project->name
+                    : 'Discussion · General',
+                'url' => \App\Filament\Resources\DiscussionResource::getUrl('view', ['record' => $d]),
+                'icon' => 'heroicon-o-chat-alt-2',
+                'type' => 'discussion',
+            ])
+            ->all();
+
         $out = [];
         if (! empty($navFiltered)) $out['Navigation'] = $navFiltered;
         if (! empty($tickets)) $out['Tickets'] = $tickets;
         if (! empty($projects)) $out['Projects'] = $projects;
         if (! empty($users)) $out['People'] = $users;
         if (! empty($goals)) $out['Goals'] = $goals;
+        if (! empty($discussions)) $out['Discussions'] = $discussions;
 
         return $out;
     }
