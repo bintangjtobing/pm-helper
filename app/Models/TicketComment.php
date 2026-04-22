@@ -48,6 +48,29 @@ class TicketComment extends Model
                 $user->notify(new TicketCommented($item));
             }
         });
+
+        static::saved(function (TicketComment $item) {
+            if (! $item->wasRecentlyCreated && ! $item->wasChanged('content')) {
+                return;
+            }
+
+            TicketSharedResource::where('comment_id', $item->id)
+                ->where('source', 'comment')
+                ->delete();
+
+            foreach (\App\Support\SharedResourceExtractor::extractFromHtml($item->content) as $l) {
+                TicketSharedResource::create([
+                    'ticket_id' => $item->ticket_id,
+                    'comment_id' => $item->id,
+                    'user_id' => $item->user_id,
+                    'source' => 'comment',
+                    'kind' => $l['kind'],
+                    'url' => $l['url'],
+                    'title' => $l['title'],
+                    'host' => $l['host'],
+                ]);
+            }
+        });
     }
     private static function extractMentions($content)
     {

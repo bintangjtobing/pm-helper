@@ -129,6 +129,28 @@ class Ticket extends Model implements HasMedia
                 Ticket::where('id', $item->id)->update(['epic_id' => $item->sprint->epic_id]);
             }
         });
+
+        static::saved(function (Ticket $item) {
+            if (! $item->wasRecentlyCreated && ! $item->wasChanged('content')) {
+                return;
+            }
+
+            TicketSharedResource::where('ticket_id', $item->id)
+                ->where('source', 'description')
+                ->delete();
+
+            foreach (\App\Support\SharedResourceExtractor::extractFromHtml($item->content) as $l) {
+                TicketSharedResource::create([
+                    'ticket_id' => $item->id,
+                    'user_id' => $item->owner_id,
+                    'source' => 'description',
+                    'kind' => $l['kind'],
+                    'url' => $l['url'],
+                    'title' => $l['title'],
+                    'host' => $l['host'],
+                ]);
+            }
+        });
     }
 
     public function owner(): BelongsTo
@@ -174,6 +196,11 @@ class Ticket extends Model implements HasMedia
     public function activities(): HasMany
     {
         return $this->hasMany(TicketActivity::class, 'ticket_id', 'id');
+    }
+
+    public function sharedResources(): HasMany
+    {
+        return $this->hasMany(TicketSharedResource::class);
     }
 
     public function comments(): HasMany

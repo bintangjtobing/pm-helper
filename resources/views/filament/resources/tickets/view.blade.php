@@ -364,6 +364,128 @@
                 @endforeach
             </div>
             @endif
+
+            @php
+                $sharedResources = $record->sharedResources()
+                    ->with('user')
+                    ->orderBy('created_at', 'desc')
+                    ->get()
+                    ->unique('url')
+                    ->values();
+            @endphp
+            @if ($sharedResources->isNotEmpty())
+                <div class="flex flex-col w-full gap-2 pt-3">
+                    <div class="flex items-baseline justify-between">
+                        <span class="text-sm font-medium text-gray-500">
+                            {{ __('Shared documents') }}
+                        </span>
+                        <span style="font-size:10px;font-weight:600;color:#6b7280;font-family:ui-monospace,monospace;">
+                            {{ $sharedResources->count() }}
+                        </span>
+                    </div>
+                    <div class="pm-shared-list">
+                        @foreach ($sharedResources as $r)
+                            <a href="{{ $r->url }}" target="_blank" rel="noopener noreferrer"
+                               class="pm-shared-item pm-shared-item--{{ $r->kind }}"
+                               title="{{ $r->url }}">
+                                <span class="pm-shared-item__icon" aria-hidden="true">
+                                    @switch($r->kind)
+                                        @case('video')
+                                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 3.5C2 2.67157 2.67157 2 3.5 2H10.5C11.3284 2 12 2.67157 12 3.5V10.5C12 11.3284 11.3284 12 10.5 12H3.5C2.67157 12 2 11.3284 2 10.5V3.5Z" stroke="currentColor" stroke-width="1.2"/><path d="M5.75 5.25L8.75 7L5.75 8.75V5.25Z" fill="currentColor"/></svg>
+                                            @break
+                                        @case('image')
+                                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><rect x="2" y="2.5" width="10" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2"/><circle cx="5" cy="5.5" r="0.9" fill="currentColor"/><path d="M2.5 10L5.5 7.5L8 9.5L10.5 7L11.5 7.75" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                            @break
+                                        @case('file')
+                                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M3 2.5C3 2.22386 3.22386 2 3.5 2H8L11 5V11.5C11 11.7761 10.7761 12 10.5 12H3.5C3.22386 12 3 11.7761 3 11.5V2.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M8 2V5H11" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                                            @break
+                                        @default
+                                            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M6 8L8 6M5.5 4L4 5.5C2.89543 6.60457 2.89543 8.39543 4 9.5C5.10457 10.6046 6.89543 10.6046 8 9.5L9.5 8M8.5 10L10 8.5C11.1046 7.39543 11.1046 5.60457 10 4.5C8.89543 3.39543 7.10457 3.39543 6 4.5L4.5 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                                    @endswitch
+                                </span>
+                                <span class="pm-shared-item__body">
+                                    <span class="pm-shared-item__title">{{ $r->title ?: ($r->host ?: $r->url) }}</span>
+                                    <span class="pm-shared-item__meta">
+                                        @if ($r->user)
+                                            {{ $r->user->name }} ·
+                                        @endif
+                                        <span class="pm-shared-item__ago">{{ $r->created_at->diffForHumans() }}</span>
+                                        @if ($r->host && $r->title && $r->host !== $r->title)
+                                            <span class="pm-shared-item__host">· {{ $r->host }}</span>
+                                        @endif
+                                    </span>
+                                </span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                <style>
+                .pm-shared-list{display:flex;flex-direction:column;gap:4px;margin-top:2px}
+                .pm-shared-item{
+                    --accent:148,163,184;
+                    display:flex;align-items:flex-start;gap:9px;
+                    padding:8px 10px;border-radius:8px;text-decoration:none;
+                    background:linear-gradient(180deg,rgba(255,255,255,0.035) 0%,rgba(255,255,255,0) 60%),rgba(15,23,42,0.35);
+                    border:1px solid rgba(148,163,184,0.12);
+                    transition:transform 160ms cubic-bezier(0.4,0,0.2,1),border-color 160ms ease,background 160ms ease,box-shadow 180ms ease;
+                }
+                .pm-shared-item--docs    {--accent:96,165,250}
+                .pm-shared-item--api     {--accent:52,211,153}
+                .pm-shared-item--staging {--accent:245,158,11}
+                .pm-shared-item--design  {--accent:236,72,153}
+                .pm-shared-item--repo    {--accent:167,139,250}
+                .pm-shared-item--chat    {--accent:168,85,247}
+                .pm-shared-item--video   {--accent:248,113,113}
+                .pm-shared-item--image   {--accent:251,191,36}
+                .pm-shared-item--file    {--accent:148,163,184}
+                .pm-shared-item__icon{
+                    display:inline-flex;align-items:center;justify-content:center;
+                    flex-shrink:0;width:22px;height:22px;border-radius:6px;
+                    color:rgb(var(--accent));
+                    background:rgba(var(--accent),0.12);
+                    border:1px solid rgba(var(--accent),0.22);
+                    margin-top:1px;
+                }
+                .pm-shared-item__body{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+                .pm-shared-item__title{
+                    font-size:12px;font-weight:500;line-height:1.35;letter-spacing:-0.005em;
+                    color:#e2e8f0;
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+                }
+                .pm-shared-item__meta{
+                    font-size:10.5px;font-weight:500;line-height:1.3;
+                    color:rgba(148,163,184,0.7);
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+                }
+                .pm-shared-item__host{
+                    font-family:ui-monospace,"SF Mono",Menlo,monospace;
+                    letter-spacing:-0.02em;
+                    opacity:0.75;
+                }
+                .pm-shared-item:hover{
+                    transform:translateY(-1px);
+                    border-color:rgba(var(--accent),0.45);
+                    background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0) 60%),rgba(15,23,42,0.55);
+                    box-shadow:0 6px 16px -10px rgba(var(--accent),0.4),0 0 0 1px rgba(var(--accent),0.18);
+                }
+                html:not(.dark) .pm-shared-item{
+                    background:#ffffff;
+                    border:1px solid rgba(15,23,42,0.08);
+                }
+                html:not(.dark) .pm-shared-item__title{color:#0f172a}
+                html:not(.dark) .pm-shared-item__meta{color:rgba(71,85,105,0.75)}
+                html:not(.dark) .pm-shared-item:hover{
+                    border-color:rgba(var(--accent),0.5);
+                    background:#ffffff;
+                    box-shadow:0 6px 16px -10px rgba(var(--accent),0.3),0 0 0 1px rgba(var(--accent),0.15);
+                }
+                @media (prefers-reduced-motion: reduce){
+                    .pm-shared-item{transition:none}
+                    .pm-shared-item:hover{transform:none}
+                }
+                </style>
+            @endif
         </x-filament::card>
 
     </div>

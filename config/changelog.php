@@ -17,6 +17,21 @@
 return [
 
     [
+        'version' => '1.2.0',
+        'released_at' => '2026-04-22',
+        'type' => 'minor',
+        'title' => 'Shared documents panel on ticket sidebar',
+        'highlights' => [
+            '📎 New "Shared documents" section in the ticket detail sidebar — surfaces every link shared in the ticket description or in any comment, plus any video/file uploaded via the comment composer',
+            '🎨 Each item carries an accent icon derived from its kind (docs blue, API emerald, staging amber, Figma pink, repo violet, Slack purple, video red, image amber, file slate) so you can scan the rail and spot the type you need at a glance',
+            '👤 Shows the person who shared it + a relative timestamp ("Bintang Jerry · 2 hours ago") so you can trace who introduced which reference',
+            '⚙️ Behind the scenes: new ticket_shared_resources table materialized by observers on Ticket, TicketComment, TicketCommentAttachment saves — no parsing cost at render time',
+            '🧠 HTML-aware parser picks up both anchored links and bare URLs in comment bodies; deduped per ticket so the sidebar stays tidy',
+            '🔄 Existing tickets/comments backfilled via `php artisan pmhelper:backfill-shared-resources`',
+        ],
+    ],
+
+    [
         'version' => '1.1.2',
         'released_at' => '2026-04-22',
         'type' => 'patch',
