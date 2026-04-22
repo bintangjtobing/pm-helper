@@ -393,26 +393,151 @@ trait KanbanScrumHelper
             return '<span style="font-size:0.875rem;color:#9ca3af;">Manage your project tickets with drag &amp; drop</span>';
         }
 
-        $html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">';
+        $arrow = '<svg class="pm-linkpill__arrow" width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">'
+            . '<path d="M2.5 7.5L7.5 2.5M7.5 2.5H3.5M7.5 2.5V6.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+            . '</svg>';
+
+        $html = $this->linkPillStyles();
+        $html .= '<div class="pm-linkrail">';
         foreach ($items as $item) {
             if (!$item['url']) continue;
 
             $url = e($item['url']);
             $label = e($item['label']);
+            $kind = $this->detectLinkKind($item['url']);
+            $host = e(parse_url($item['url'], PHP_URL_HOST) ?: '');
 
-            $html .= '<a href="' . $url . '" target="_blank" rel="noopener"'
-                . ' style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;'
-                . 'font-size:12px;font-weight:500;border-radius:6px;'
-                . 'background:rgba(55,65,81,0.5);color:#60a5fa;'
-                . 'border:1px solid rgba(75,85,99,0.5);text-decoration:none;"'
-                . ' onmouseover="this.style.background=\'rgba(55,65,81,0.8)\';this.style.color=\'#93bbfd\'"'
-                . ' onmouseout="this.style.background=\'rgba(55,65,81,0.5)\';this.style.color=\'#60a5fa\'">'
-                . $label . ' &#8599;'
+            $html .= '<a href="' . $url . '" target="_blank" rel="noopener noreferrer"'
+                . ' class="pm-linkpill pm-linkpill--' . $kind . '"'
+                . ' data-host="' . $host . '">'
+                . '<span class="pm-linkpill__dot" aria-hidden="true"></span>'
+                . '<span class="pm-linkpill__label">' . $label . '</span>'
+                . ($host !== '' ? '<span class="pm-linkpill__host">' . $host . '</span>' : '')
+                . $arrow
                 . '</a>';
         }
         $html .= '</div>';
 
         return $html;
+    }
+
+    protected function detectLinkKind(string $url): string
+    {
+        $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+        $path = strtolower(parse_url($url, PHP_URL_PATH) ?? '');
+        $full = $host . $path;
+
+        if (preg_match('/(?:^|\.)(?:staging|stage|dev|uat|preview|test)\./', $host)
+            || str_contains($full, '/staging') || str_contains($host, 'localhost')) {
+            return 'staging';
+        }
+        if (str_contains($host, 'figma.com') || str_contains($host, 'penpot')
+            || str_contains($host, 'framer.') || str_contains($full, 'design')) {
+            return 'design';
+        }
+        if (str_contains($host, 'github.') || str_contains($host, 'gitlab.')
+            || str_contains($host, 'bitbucket.')) {
+            return 'repo';
+        }
+        if (str_starts_with($host, 'api.') || str_contains($full, '/api')
+            || str_contains($full, 'swagger') || str_contains($host, 'postman')) {
+            return 'api';
+        }
+        if (str_contains($host, 'notion.') || str_contains($host, 'confluence.')
+            || str_contains($host, 'readme.') || str_contains($full, 'docs')
+            || str_contains($full, 'documentation')) {
+            return 'docs';
+        }
+        if (str_contains($host, 'slack.') || str_contains($host, 'discord.')
+            || str_contains($host, 't.me') || str_contains($host, 'telegram')) {
+            return 'chat';
+        }
+
+        return 'default';
+    }
+
+    protected function linkPillStyles(): string
+    {
+        return '<style>
+        .pm-linkrail{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+        .pm-linkpill{
+            --accent:148,163,184;
+            position:relative;display:inline-flex;align-items:center;gap:7px;
+            padding:5px 11px 5px 9px;font-size:12px;font-weight:500;line-height:1;
+            letter-spacing:-0.005em;color:#cbd5e1;text-decoration:none;
+            background:linear-gradient(180deg,rgba(255,255,255,0.045) 0%,rgba(255,255,255,0.012) 45%,rgba(255,255,255,0) 100%),rgba(15,23,42,0.55);
+            border:1px solid rgba(148,163,184,0.14);border-radius:8px;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 1px 0 rgba(0,0,0,0.28);
+            transition:transform 180ms cubic-bezier(0.4,0,0.2,1),border-color 180ms ease,background 180ms ease,box-shadow 220ms ease,color 180ms ease;
+            white-space:nowrap;
+        }
+        .pm-linkpill--docs    {--accent:96,165,250}
+        .pm-linkpill--api     {--accent:52,211,153}
+        .pm-linkpill--staging {--accent:245,158,11}
+        .pm-linkpill--design  {--accent:236,72,153}
+        .pm-linkpill--repo    {--accent:167,139,250}
+        .pm-linkpill--chat    {--accent:168,85,247}
+        .pm-linkpill__dot{
+            width:6px;height:6px;border-radius:999px;flex-shrink:0;
+            background:rgb(var(--accent));
+            box-shadow:0 0 0 0 rgba(var(--accent),0);
+            transition:box-shadow 260ms ease,transform 260ms cubic-bezier(0.34,1.56,0.64,1);
+        }
+        .pm-linkpill__label{position:relative;z-index:1}
+        .pm-linkpill__host{
+            color:rgba(148,163,184,0.55);
+            font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+            font-size:10.5px;font-weight:500;letter-spacing:-0.02em;
+            max-width:0;opacity:0;overflow:hidden;
+            margin-left:-7px;
+            transition:max-width 280ms ease,opacity 200ms ease,margin 280ms ease;
+        }
+        .pm-linkpill__arrow{
+            color:rgba(148,163,184,0.7);flex-shrink:0;
+            transition:transform 280ms cubic-bezier(0.34,1.56,0.64,1),color 180ms ease;
+        }
+        .pm-linkpill:hover{
+            color:#f1f5f9;
+            border-color:rgba(var(--accent),0.5);
+            background:linear-gradient(180deg,rgba(255,255,255,0.065) 0%,rgba(255,255,255,0.02) 50%,rgba(255,255,255,0) 100%),rgba(15,23,42,0.75);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 8px 20px -12px rgba(var(--accent),0.45),0 0 0 1px rgba(var(--accent),0.22);
+            transform:translateY(-1px);
+        }
+        .pm-linkpill:hover .pm-linkpill__dot{
+            transform:scale(1.15);
+            box-shadow:0 0 0 3px rgba(var(--accent),0.22);
+        }
+        .pm-linkpill:hover .pm-linkpill__host{max-width:220px;opacity:1;margin-left:0}
+        .pm-linkpill:hover .pm-linkpill__arrow{
+            transform:translate(2px,-2px);
+            color:rgb(var(--accent));
+        }
+        .pm-linkpill:focus-visible{
+            outline:none;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.08),0 0 0 2px rgba(15,23,42,1),0 0 0 4px rgba(var(--accent),0.75);
+        }
+        .pm-linkpill:active{transform:translateY(0)}
+        html:not(.dark) .pm-linkpill{
+            color:#475569;
+            background:linear-gradient(180deg,rgba(15,23,42,0.02) 0%,rgba(15,23,42,0) 60%),#ffffff;
+            border:1px solid rgba(15,23,42,0.09);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 1px 0 rgba(15,23,42,0.03);
+        }
+        html:not(.dark) .pm-linkpill__host{color:rgba(71,85,105,0.55)}
+        html:not(.dark) .pm-linkpill__arrow{color:rgba(71,85,105,0.7)}
+        html:not(.dark) .pm-linkpill:hover{
+            color:#0f172a;
+            background:linear-gradient(180deg,rgba(15,23,42,0.04) 0%,rgba(15,23,42,0) 60%),#ffffff;
+            border-color:rgba(var(--accent),0.55);
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.9),0 8px 20px -12px rgba(var(--accent),0.35),0 0 0 1px rgba(var(--accent),0.18);
+        }
+        @media (prefers-reduced-motion: reduce){
+            .pm-linkpill,.pm-linkpill__dot,.pm-linkpill__arrow,.pm-linkpill__host{transition:none!important}
+            .pm-linkpill:hover{transform:none}
+            .pm-linkpill:hover .pm-linkpill__dot{transform:none}
+            .pm-linkpill:hover .pm-linkpill__arrow{transform:none}
+        }
+        </style>';
     }
 
     protected function kanbanHeading(): string|Htmlable

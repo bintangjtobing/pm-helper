@@ -17,6 +17,20 @@
 return [
 
     [
+        'version' => '1.1.1',
+        'released_at' => '2026-04-22',
+        'type' => 'patch',
+        'title' => 'Kanban project-link pills redesign',
+        'highlights' => [
+            '✨ Kanban header link-pills got a major glow-up — type-aware accent dots auto-detect URL kind (docs blue, API emerald, staging amber, Figma pink, repo violet, Slack purple) so you can scan the rail at a glance',
+            '✨ Glass-surface treatment with soft gradient + inner highlight replaces the flat grey pill — same density, much more refined',
+            '🪄 Hover motion: pill lifts 1px, border picks up the accent, the up-right arrow springs with a small overshoot, and a muted monospace hostname (docs.digicrats.com) fades in next to the label',
+            '♿ Focus-visible ring for keyboard nav and full prefers-reduced-motion support — no animation if the OS says no',
+            '🌗 Light-theme variant bundled — pills render cleanly under both .dark and default themes',
+        ],
+    ],
+
+    [
         'version' => '1.1.0',
         'released_at' => '2026-04-21',
         'type' => 'minor',
