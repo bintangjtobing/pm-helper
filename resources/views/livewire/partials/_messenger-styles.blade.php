@@ -649,17 +649,18 @@
             z-index: 9999;
             background: rgba(0,0,0,0.85);
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: safe center;
+            justify-content: safe center;
             cursor: zoom-out;
             backdrop-filter: blur(4px);
+            overflow: auto;
+            padding: 24px;
         }
         .msgr-lightbox img {
-            max-width: 90vw;
-            max-height: 90vh;
+            display: block;
+            margin: auto;
             border-radius: 8px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            object-fit: contain;
         }
         .msgr-lightbox-close {
             position: absolute;
