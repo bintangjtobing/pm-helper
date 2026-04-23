@@ -64,6 +64,29 @@ Route::middleware(['web', 'auth'])
     })
     ->name('messenger.meet.tab');
 
+// ─── MCP OAuth 2.0 (RFC 6749 + RFC 7591 + PKCE) ──────────────────────────
+// Lets Claude Desktop and other MCP clients obtain a Sanctum access token
+// without exposing PMHelper internals or long-lived credentials.
+// The issued access_token lives in the same personal_access_tokens table
+// used by /api/mcp, so no change to the MCP controller is required.
+Route::get('/.well-known/oauth-authorization-server',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'metadata'])
+    ->name('oauth.metadata');
+Route::post('/oauth/register',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'register'])
+    ->name('oauth.register');
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/oauth/authorize',
+        [\App\Http\Controllers\Mcp\OAuthController::class, 'authorize'])
+        ->name('oauth.authorize');
+    Route::post('/oauth/authorize',
+        [\App\Http\Controllers\Mcp\OAuthController::class, 'approve'])
+        ->name('oauth.approve');
+});
+Route::post('/oauth/token',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'token'])
+    ->name('oauth.token');
+
 // Auto-detect timezone from browser
 Route::post('/user/timezone', function (\Illuminate\Http\Request $request) {
     if (auth()->check() && $request->has('timezone')) {
