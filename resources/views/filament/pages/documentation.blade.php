@@ -551,14 +551,16 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         <h3 style="{{ $h3 }}">Step 2 — Register the server in Claude</h3>
 
         <p style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">Option A — Claude Code (CLI)</p>
+        <p style="font-size:12px;color:#9ca3af;margin:0 0 6px 0;">Run this single command in your terminal:</p>
         <pre style="background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:11px;color:#e5e7eb;overflow-x:auto;margin:0 0 10px 0;white-space:pre-wrap;word-break:break-all;">claude mcp add --transport http pmhelper {{ url('/api/mcp') }} --header "Authorization: Bearer &lt;your-token&gt;"</pre>
 
         <p style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">Option B — Claude Desktop app</p>
+        <p style="font-size:12px;color:#fbbf24;margin:0 0 6px 0;"><strong>⚠️ Do NOT paste the CLI one-liner into a URL field.</strong> Claude Desktop needs the URL and the header in separate fields.</p>
         <ol style="padding-left:20px;margin:0 0 12px 0;">
             <li style="{{ $li }}">Open Claude Desktop → <strong style="color:#e5e7eb;">Settings</strong> → <strong style="color:#e5e7eb;">Connectors</strong> (or <em>Integrations</em>, depending on version).</li>
             <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">Add custom connector</strong>.</li>
-            <li style="{{ $li }}">Set URL to <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">{{ url('/api/mcp') }}</code></li>
-            <li style="{{ $li }}">Add header <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">Authorization: Bearer &lt;your-token&gt;</code></li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">URL field only:</strong> <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">{{ url('/api/mcp') }}</code></li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Header field (separate):</strong> key <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">Authorization</code>, value <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">Bearer &lt;your-token&gt;</code></li>
             <li style="{{ $li }}">Save. Claude will list the PMHelper tools in your next chat.</li>
         </ol>
 

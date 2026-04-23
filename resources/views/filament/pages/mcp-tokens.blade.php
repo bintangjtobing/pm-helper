@@ -23,9 +23,20 @@
                             {{ __('Copy') }}
                         </button>
                     </div>
-                    <div class="mt-3 text-xs text-emerald-800 dark:text-emerald-300">
-                        <div class="mb-1 font-semibold">{{ __('Quick setup (Claude Code CLI)') }}</div>
-                        <code class="block p-2 overflow-x-auto text-[11px] bg-white border rounded-lg border-emerald-200 dark:bg-gray-900 dark:border-emerald-800">claude mcp add --transport http pmhelper {{ url('/api/mcp') }} --header "Authorization: Bearer {{ $plaintextToken }}"</code>
+                    <div class="grid gap-3 mt-4 md:grid-cols-2">
+                        <div class="p-3 text-xs border rounded-lg bg-white/50 border-emerald-200 dark:bg-gray-900/40 dark:border-emerald-800">
+                            <div class="mb-1.5 font-semibold text-emerald-900 dark:text-emerald-200">{{ __('Claude Desktop app') }}</div>
+                            <div class="mb-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">{{ __('Server URL') }}</div>
+                            <code class="block p-2 mb-2 overflow-x-auto text-[11px] bg-white border rounded border-emerald-200 dark:bg-gray-950 dark:border-emerald-800">{{ url('/api/mcp') }}</code>
+                            <div class="mb-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">{{ __('Custom header') }}</div>
+                            <code class="block p-2 overflow-x-auto text-[11px] break-all bg-white border rounded border-emerald-200 dark:bg-gray-950 dark:border-emerald-800">Authorization: Bearer {{ $plaintextToken }}</code>
+                            <p class="mt-2 text-[11px] text-emerald-700 dark:text-emerald-400">{{ __('Settings → Connectors → Add custom connector. Paste URL and header into their own fields (do NOT put them in one line).') }}</p>
+                        </div>
+                        <div class="p-3 text-xs border rounded-lg bg-white/50 border-emerald-200 dark:bg-gray-900/40 dark:border-emerald-800">
+                            <div class="mb-1.5 font-semibold text-emerald-900 dark:text-emerald-200">{{ __('Claude Code CLI') }}</div>
+                            <code class="block p-2 overflow-x-auto text-[11px] break-all bg-white border rounded border-emerald-200 dark:bg-gray-950 dark:border-emerald-800">claude mcp add --transport http pmhelper {{ url('/api/mcp') }} --header "Authorization: Bearer {{ $plaintextToken }}"</code>
+                            <p class="mt-2 text-[11px] text-emerald-700 dark:text-emerald-400">{{ __('Run in your terminal — this single command is the whole setup.') }}</p>
+                        </div>
                     </div>
                     <button wire:click="dismissToken" class="mt-3 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:underline">
                         {{ __('I\'ve saved it — dismiss') }}
