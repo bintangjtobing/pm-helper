@@ -27,9 +27,9 @@ class OAuthController extends Controller
 
         return response()->json([
             'issuer' => $base,
-            'authorization_endpoint' => $base . '/oauth/authorize',
-            'token_endpoint' => $base . '/oauth/token',
-            'registration_endpoint' => $base . '/oauth/register',
+            'authorization_endpoint' => $base . '/mcp/authorize',
+            'token_endpoint' => $base . '/mcp/token',
+            'registration_endpoint' => $base . '/mcp/register',
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code'],
             'code_challenge_methods_supported' => ['S256'],

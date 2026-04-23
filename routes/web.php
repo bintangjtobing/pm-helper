@@ -69,21 +69,26 @@ Route::middleware(['web', 'auth'])
 // without exposing PMHelper internals or long-lived credentials.
 // The issued access_token lives in the same personal_access_tokens table
 // used by /api/mcp, so no change to the MCP controller is required.
+// Note: endpoints live under /mcp/ rather than /oauth/ because Filament
+// Socialite registers a catch-all /oauth/{provider} route at package boot
+// that would otherwise swallow /oauth/authorize as provider "authorize".
+// The .well-known metadata advertises these /mcp/ paths, so MCP clients
+// still discover them correctly.
 Route::get('/.well-known/oauth-authorization-server',
     [\App\Http\Controllers\Mcp\OAuthController::class, 'metadata'])
     ->name('oauth.metadata');
-Route::post('/oauth/register',
+Route::post('/mcp/register',
     [\App\Http\Controllers\Mcp\OAuthController::class, 'register'])
     ->name('oauth.register');
 Route::middleware(['web', 'auth'])->group(function () {
-    Route::get('/oauth/authorize',
+    Route::get('/mcp/authorize',
         [\App\Http\Controllers\Mcp\OAuthController::class, 'showConsent'])
         ->name('oauth.authorize');
-    Route::post('/oauth/authorize',
+    Route::post('/mcp/authorize',
         [\App\Http\Controllers\Mcp\OAuthController::class, 'approve'])
         ->name('oauth.approve');
 });
-Route::post('/oauth/token',
+Route::post('/mcp/token',
     [\App\Http\Controllers\Mcp\OAuthController::class, 'token'])
     ->name('oauth.token');
 

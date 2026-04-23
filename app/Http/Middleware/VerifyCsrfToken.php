@@ -15,7 +15,7 @@ class VerifyCsrfToken extends Middleware
         // OAuth endpoints used by MCP clients (Claude Desktop) — not browser
         // form submissions, so CSRF doesn't apply. /oauth/authorize POST DOES
         // need CSRF because it's our own consent form.
-        'oauth/register',
-        'oauth/token',
+        'mcp/register',
+        'mcp/token',
     ];
 }
