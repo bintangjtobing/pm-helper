@@ -27,7 +27,7 @@ class ListTickets extends ListRecords
                 ->icon('heroicon-o-download')
                 ->color('secondary')
                 ->modalHeading(__('Export tickets as JSON'))
-                ->modalSubmitActionLabel(__('Download'))
+                ->modalButton(__('Download'))
                 ->form([
                     Forms\Components\Select::make('status_ids')
                         ->label(__('Statuses'))
