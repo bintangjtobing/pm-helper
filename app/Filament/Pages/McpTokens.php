@@ -37,7 +37,7 @@ class McpTokens extends Page implements HasForms
 
     protected static function getNavigationGroup(): ?string
     {
-        return null;
+        return __('Admin');
     }
 
     protected function getTitle(): string
