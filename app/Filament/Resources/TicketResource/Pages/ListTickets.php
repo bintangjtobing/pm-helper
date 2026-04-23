@@ -82,6 +82,7 @@ class ListTickets extends ListRecords
                                 'code' => $t->code,
                                 'name' => $t->name,
                                 'content' => $t->content,
+                                'comments_count' => ! empty($data['include_comments']) ? $t->comments->count() : null,
                                 'status' => $t->status ? [
                                     'id' => $t->status->id,
                                     'name' => $t->status->name,
