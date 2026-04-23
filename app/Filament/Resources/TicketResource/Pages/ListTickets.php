@@ -48,7 +48,7 @@ class ListTickets extends ListRecords
                             'status:id,name,color',
                             'priority:id,name,color',
                             'type:id,name',
-                            'project:id,name,code',
+                            'project:id,name,ticket_prefix',
                             'epic:id,name',
                             'sprint:id,name',
                         ]);

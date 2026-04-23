@@ -378,7 +378,7 @@ trait KanbanScrumHelper
                 'status:id,name,color',
                 'priority:id,name,color',
                 'type:id,name',
-                'project:id,name,code',
+                'project:id,name,ticket_prefix',
                 'epic:id,name',
                 'sprint:id,name',
             ]);
@@ -401,7 +401,7 @@ trait KanbanScrumHelper
             'project' => [
                 'id' => $this->project->id,
                 'name' => $this->project->name,
-                'code' => $this->project->code ?? null,
+                'ticket_prefix' => $this->project->ticket_prefix ?? null,
             ],
             'filters' => [
                 'status_ids' => array_map('intval', $data['status_ids']),
@@ -468,7 +468,7 @@ trait KanbanScrumHelper
             })->values(),
         ];
 
-        $filename = 'project-' . ($this->project->code ?? $this->project->id) . '-export-' . now()->format('Ymd-His') . '.json';
+        $filename = 'project-' . ($this->project->ticket_prefix ?: $this->project->id) . '-export-' . now()->format('Ymd-His') . '.json';
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         return response()->streamDownload(
