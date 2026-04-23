@@ -79,7 +79,11 @@
 
         const state = {
             api: null,
-            startTime: Date.now(),
+            // Start time is set when the local user actually joins the call
+            // (videoConferenceJoined event) — not at tab load. That keeps
+            // prejoin delays, browser permission prompts, and backgrounded
+            // tabs from inflating the meeting duration.
+            startTime: null,
             transcriptChunks: [],
             participantIds: new Set(),
             hasFinalized: false,
@@ -96,9 +100,10 @@
             catch (e) { log('broadcast failed', e); }
         }
 
-        // Timer
+        // Timer (shows 00:00 until the user actually joins)
         const timerEl = document.getElementById('meet-timer');
         state.timerHandle = setInterval(() => {
+            if (! state.startTime) { if (timerEl) timerEl.textContent = '00:00'; return; }
             const sec = Math.floor((Date.now() - state.startTime) / 1000);
             const m = String(Math.floor(sec / 60)).padStart(2, '0');
             const s = String(sec % 60).padStart(2, '0');
@@ -174,7 +179,12 @@
         }
 
         function wireEvents() {
-            state.api.addListener('videoConferenceJoined', (e) => { log('joined', e); if (e.id) state.participantIds.add(e.id); });
+            state.api.addListener('videoConferenceJoined', (e) => {
+                log('joined', e);
+                // Pin the meeting start to the moment the local user actually joins.
+                if (! state.startTime) state.startTime = Date.now();
+                if (e.id) state.participantIds.add(e.id);
+            });
             state.api.addListener('participantJoined', (e) => { log('participant joined', e); if (e.id) state.participantIds.add(e.id); });
 
             state.api.addListener('transcribingStatusChanged', (e) => {
@@ -218,7 +228,11 @@
             state.hasFinalized = true;
             log('finalize, isUnload=' + !!isUnload);
 
-            const durationSec = Math.floor((Date.now() - state.startTime) / 1000);
+            // If the user never actually joined (cancelled at prejoin, permission
+            // denied, etc.), report 0 instead of the full tab-open duration.
+            const durationSec = state.startTime
+                ? Math.floor((Date.now() - state.startTime) / 1000)
+                : 0;
             const participantCount = Math.max(1, state.participantIds.size);
 
             if (MEET_CONFIG.role === 'starter' && MEET_CONFIG.conversationId) {
