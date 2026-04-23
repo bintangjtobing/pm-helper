@@ -567,34 +567,158 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         </ol>
         <p style="font-size:12px;color:#9ca3af;margin:10px 0 12px 0;">Access tokens minted via OAuth are visible on the <a href="{{ route('filament.pages.mcp-tokens') }}" style="color:#3b82f6;">MCP Tokens</a> page (named <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">mcp:oauth:...</code>) — you can revoke them like any other token.</p>
 
-        <h3 style="{{ $h3 }}">Available tools</h3>
+        <h3 style="{{ $h3 }}">Tool reference</h3>
+        <p style="font-size:12px;color:#9ca3af;margin:0 0 10px 0;">Fourteen tools across four groups. Every one of them checks your role/permissions + project access before acting.</p>
+
+        <h4 style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">📋 Tickets</h4>
         <table style="{{ $tbl }}">
-            <tr><th style="{{ $th }}">Tool</th><th style="{{ $th }}">Purpose</th></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_tickets</code></td><td style="{{ $td }}">List tickets. Filters: project_id, status_id, assignee_id, mine, search, limit.</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">get_ticket</code></td><td style="{{ $td }}">Full ticket detail incl. comments (by id or code).</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">create_ticket</code></td><td style="{{ $td }}">Create a ticket in a project you can access.</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">update_ticket_status</code></td><td style="{{ $td }}">Move a ticket to a new status (respects role-group gates).</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">add_ticket_comment</code></td><td style="{{ $td }}">Add a comment. Content may include @mentions.</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_discussions</code> / <code style="font-size:11px;">get_discussion</code></td><td style="{{ $td }}">Browse discussions + replies.</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">add_discussion_comment</code></td><td style="{{ $td }}">Reply to a discussion.</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_daily_reports</code> / <code style="font-size:11px;">get_daily_report</code></td><td style="{{ $td }}">Own reports by default; team-wide when you pass user_id or all_accessible.</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">create_daily_report</code></td><td style="{{ $td }}">Create a draft or submitted report (one per user/project/date).</td></tr>
-            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_projects</code> / <code style="font-size:11px;">list_ticket_statuses</code> / <code style="font-size:11px;">list_users</code></td><td style="{{ $td }}">Lookup helpers for resolving IDs.</td></tr>
+            <tr><th style="{{ $th }}">Tool</th><th style="{{ $th }}">Inputs</th><th style="{{ $th }}">Returns</th></tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">list_tickets</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">project_id</code>, <code style="font-size:11px;">status_id</code>, <code style="font-size:11px;">assignee_id</code>, <code style="font-size:11px;">mine</code> (bool), <code style="font-size:11px;">search</code> (comma-separated codes or name fragment), <code style="font-size:11px;">limit</code> (1–100, default 25). All optional.</td>
+                <td style="{{ $td }}">Array of tickets with id, code, name, project, status, priority, type, owner, responsible, due_date, updated_at.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">get_ticket</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">id</code> or <code style="font-size:11px;">code</code> (e.g. "QOS-51"), optional <code style="font-size:11px;">include_comments</code> (default true).</td>
+                <td style="{{ $td }}">Full ticket: id, code, name, content, status, priority, type, project, epic, sprint, owner, responsible, due_date, created_at, updated_at. With comments: comments_count + array of {id, author, content, created_at}.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">create_ticket</code></td>
+                <td style="{{ $td }}">Required: <code style="font-size:11px;">project_id</code>, <code style="font-size:11px;">name</code>, <code style="font-size:11px;">content</code>. Optional: <code style="font-size:11px;">responsible_id</code>, <code style="font-size:11px;">type_id</code>, <code style="font-size:11px;">priority_id</code>, <code style="font-size:11px;">status_id</code>, <code style="font-size:11px;">due_date</code> (ISO). Defaults are used for missing type/priority/status.</td>
+                <td style="{{ $td }}">Created ticket: id, code, name, project, status. Observers fire — watchers get notifications.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">update_ticket_status</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">id</code> or <code style="font-size:11px;">code</code>. Status identified by <code style="font-size:11px;">status_id</code> or <code style="font-size:11px;">status_name</code> (case-insensitive).</td>
+                <td style="{{ $td }}">Updated ticket id, code, new status. <strong>Enforces role-group gates</strong> — e.g. "QA Passed" is QA-only.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">add_ticket_comment</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">id</code> or <code style="font-size:11px;">code</code>, <code style="font-size:11px;">content</code> (markdown or HTML — <code style="font-size:11px;">@username</code> mentions parsed automatically and notifications sent).</td>
+                <td style="{{ $td }}">Created comment id, ticket ref, timestamp. Watchers + mentioned users get notified.</td>
+            </tr>
         </table>
+
+        <h4 style="font-size:13px;font-weight:600;color:#e5e7eb;margin:14px 0 6px 0;">💬 Discussions</h4>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Tool</th><th style="{{ $th }}">Inputs</th><th style="{{ $th }}">Returns</th></tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">list_discussions</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">project_id</code>, <code style="font-size:11px;">status</code> (open/resolved), <code style="font-size:11px;">search</code>, <code style="font-size:11px;">limit</code>.</td>
+                <td style="{{ $td }}">Discussions with id, title, status, priority, project, linked ticket, author, replies_count.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">get_discussion</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">id</code> (required).</td>
+                <td style="{{ $td }}">Full discussion + all replies (id, author, content, created_at).</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">add_discussion_comment</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">discussion_id</code>, <code style="font-size:11px;">content</code>.</td>
+                <td style="{{ $td }}">Created reply id + timestamp.</td>
+            </tr>
+        </table>
+
+        <h4 style="font-size:13px;font-weight:600;color:#e5e7eb;margin:14px 0 6px 0;">📅 Daily reports</h4>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Tool</th><th style="{{ $th }}">Inputs</th><th style="{{ $th }}">Returns</th></tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">list_daily_reports</code></td>
+                <td style="{{ $td }}">By default returns only YOUR reports. Pass <code style="font-size:11px;">user_id</code> (team-wide, project-access-filtered), or <code style="font-size:11px;">all_accessible</code>=true to span every project you're on. Plus <code style="font-size:11px;">project_id</code>, <code style="font-size:11px;">from</code> / <code style="font-size:11px;">to</code> (ISO date), <code style="font-size:11px;">status</code> (draft/submitted), <code style="font-size:11px;">limit</code>.</td>
+                <td style="{{ $td }}">Reports with id, report_date, status, user, project, submitted_at.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">get_daily_report</code></td>
+                <td style="{{ $td }}"><code style="font-size:11px;">id</code> (required). Accessible if you authored it OR have access to its project.</td>
+                <td style="{{ $td }}">Full report: date, status, accomplished, plans, blockers, user, project, acknowledged_by, timestamps.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">create_daily_report</code></td>
+                <td style="{{ $td }}">Required: <code style="font-size:11px;">project_id</code>, <code style="font-size:11px;">report_date</code>. Optional: <code style="font-size:11px;">accomplished</code>, <code style="font-size:11px;">plans</code>, <code style="font-size:11px;">blockers</code>, <code style="font-size:11px;">status</code> ("draft" default, or "submitted"). One report per user per project per date.</td>
+                <td style="{{ $td }}">Created report id, date, status.</td>
+            </tr>
+        </table>
+
+        <h4 style="font-size:13px;font-weight:600;color:#e5e7eb;margin:14px 0 6px 0;">🔎 Lookups (resolve IDs)</h4>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Tool</th><th style="{{ $th }}">Inputs</th><th style="{{ $th }}">Returns</th></tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">list_projects</code></td>
+                <td style="{{ $td }}">Optional <code style="font-size:11px;">search</code>, <code style="font-size:11px;">limit</code> (up to 200).</td>
+                <td style="{{ $td }}">Projects you own or are a member of: id, name, ticket_prefix, type.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">list_ticket_statuses</code></td>
+                <td style="{{ $td }}">Optional <code style="font-size:11px;">project_id</code> — returns project-custom statuses if the project uses them, otherwise global statuses.</td>
+                <td style="{{ $td }}">Statuses with id, name, color, order, role_group.</td>
+            </tr>
+            <tr>
+                <td style="{{ $td }}"><code style="font-size:11px;">list_users</code></td>
+                <td style="{{ $td }}">Optional <code style="font-size:11px;">search</code> (name or email), <code style="font-size:11px;">limit</code>.</td>
+                <td style="{{ $td }}">Users with id, name, email.</td>
+            </tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">What Claude can and cannot do</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+            <div style="border:1px solid #14532d;background:#052e1a;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:8px;">✓ CAN do</div>
+                <ul style="padding-left:16px;margin:0;font-size:12px;color:#d1d5db;line-height:1.7;">
+                    <li>Browse + search tickets in projects you can access</li>
+                    <li>Read full ticket content + every comment</li>
+                    <li>Create tickets (if your role has Create ticket permission)</li>
+                    <li>Update ticket status (subject to role-group gates)</li>
+                    <li>Post comments on tickets + discussions (with @mentions)</li>
+                    <li>Read discussions + replies in your projects</li>
+                    <li>Create daily reports (draft or submitted) for your own account</li>
+                    <li>Read daily reports (yours, or team members' in shared projects)</li>
+                    <li>Look up IDs for projects, statuses, users</li>
+                </ul>
+            </div>
+            <div style="border:1px solid #7f1d1d;background:#2c0a0a;border-radius:8px;padding:12px 14px;">
+                <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:8px;">✗ CANNOT do</div>
+                <ul style="padding-left:16px;margin:0;font-size:12px;color:#d1d5db;line-height:1.7;">
+                    <li>Delete tickets, comments, discussions, or reports (no destructive tools exposed)</li>
+                    <li>Edit or delete other people's comments/replies</li>
+                    <li>Access projects you're not a member of</li>
+                    <li>Bypass role-group gates (e.g. non-QA can't move to "QA Passed")</li>
+                    <li>Touch weekly reports, OKR/KPI, performance reviews</li>
+                    <li>Modify users, roles, permissions, settings, branding</li>
+                    <li>Run arbitrary SQL or access the filesystem</li>
+                    <li>Post as another user — activity is always attributed to the token owner</li>
+                    <li>Send email outside of built-in notifications (e.g. watchers on a commented ticket)</li>
+                </ul>
+            </div>
+        </div>
 
         <h3 style="{{ $h3 }}">Example prompts</h3>
         <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><em>"List all my open tickets in QineticOS, sorted by due date."</em></li>
             <li style="{{ $li }}"><em>"Ringkas semua komentar di QOS-51 dalam bentuk timeline."</em></li>
             <li style="{{ $li }}"><em>"Cek tiket status Retest di project QineticOS, lalu bikin daily report draft hari ini yang ngerangkum kerjaan dari tiket-tiket itu."</em></li>
             <li style="{{ $li }}"><em>"Balas discussion #42 dengan konfirmasi bahwa fix sudah di-deploy dan minta QA mulai retest."</em></li>
+            <li style="{{ $li }}"><em>"Move QOS-55 ke QA Passed dan tambah komentar ringkasan test case yang udah lewat."</em></li>
+            <li style="{{ $li }}"><em>"Tampilkan daily reports Leo minggu ini di project Website Digicrats."</em></li>
+            <li style="{{ $li }}"><em>"Create a bug ticket di QineticOS: title 'Login loop di Safari', content-nya include steps to reproduce."</em></li>
+            <li style="{{ $li }}"><em>"Which tickets assigned to me haven't been updated in over 3 days?"</em></li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Rate limits &amp; response shape</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">List tools cap at <strong style="color:#e5e7eb;">100 results per call</strong> (default 25). Ask Claude to paginate by adjusting filters (date range, project, status) if you need more.</li>
+            <li style="{{ $li }}">All endpoints run through Laravel's built-in API rate limiter (60 req/min/user). Normal Claude usage stays well under.</li>
+            <li style="{{ $li }}">Every tool returns JSON — Claude pretty-prints it in chat. You can ask it to reformat as a table, markdown, or bullet list.</li>
         </ul>
 
         <h3 style="{{ $h3 }}">Security notes</h3>
         <ul style="padding-left:20px;margin:0 0 12px 0;">
-            <li style="{{ $li }}">Tokens inherit your permissions — <strong style="color:#e5e7eb;">don't share the token</strong> with teammates; let them create their own.</li>
-            <li style="{{ $li }}">The <em>Last used</em> column shows when a token was last touched. A long-idle token is a candidate to revoke.</li>
+            <li style="{{ $li }}">Tokens inherit your permissions — <strong style="color:#e5e7eb;">don't share the token</strong> with teammates; let them OAuth their own Claude Desktop or create a CLI token.</li>
+            <li style="{{ $li }}">The <em>Last used</em> column on the <a href="{{ route('filament.pages.mcp-tokens') }}" style="color:#3b82f6;">MCP Tokens</a> page shows when a token was last touched. A long-idle token is a candidate to revoke.</li>
             <li style="{{ $li }}">Lost a laptop or quitting a project? Revoke the token from the MCP Tokens page and generate a new one for the replacement device.</li>
             <li style="{{ $li }}">Comments / tickets created via MCP are attributed to the token owner. Activity log + email notifications behave exactly as if you created them through the web UI.</li>
+            <li style="{{ $li }}">OAuth access tokens expire after <strong style="color:#e5e7eb;">90 days</strong>. Authorization codes are single-use and expire in 5 minutes.</li>
+            <li style="{{ $li }}">PKCE-S256 is enforced for all OAuth flows. Redirect URIs must exactly match what the client registered.</li>
         </ul>
     </div>
 
