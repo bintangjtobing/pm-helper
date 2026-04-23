@@ -27,16 +27,31 @@ class OAuthController extends Controller
 
         return response()->json([
             'issuer' => $base,
-            'authorization_endpoint' => $base . '/mcp/authorize',
-            'token_endpoint' => $base . '/mcp/token',
-            'registration_endpoint' => $base . '/mcp/register',
+            'authorization_endpoint' => $base . '/oauth/authorize',
+            'token_endpoint' => $base . '/oauth/token',
+            'registration_endpoint' => $base . '/oauth/register',
             'response_types_supported' => ['code'],
             'grant_types_supported' => ['authorization_code'],
             'code_challenge_methods_supported' => ['S256'],
             'token_endpoint_auth_methods_supported' => ['none'],
             'scopes_supported' => ['mcp:*'],
             'service_documentation' => $base . '/docs#mcp',
-        ])->header('Cache-Control', 'public, max-age=300');
+        ])->header('Cache-Control', 'no-store');
+    }
+
+    /**
+     * RFC 9728 — Protected Resource Metadata.
+     * Points MCP clients at the authorization server for a given resource.
+     */
+    public function protectedResource(): JsonResponse
+    {
+        $base = url('/');
+        return response()->json([
+            'resource' => $base . '/api/mcp',
+            'authorization_servers' => [$base],
+            'scopes_supported' => ['mcp:*'],
+            'bearer_methods_supported' => ['header'],
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**

@@ -28,6 +28,12 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
 
+        // Filament Socialite registers GET /oauth/{provider} which would
+        // otherwise swallow our OAuth endpoints like /oauth/authorize as if
+        // "authorize" were a provider name. Constrain {provider} to real
+        // socialite providers so those paths fall through to our routes.
+        Route::pattern('provider', 'facebook|github|google|twitter|microsoft|azure|apple|linkedin|microsoft-graph|slack');
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

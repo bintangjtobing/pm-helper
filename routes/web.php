@@ -69,28 +69,47 @@ Route::middleware(['web', 'auth'])
 // without exposing PMHelper internals or long-lived credentials.
 // The issued access_token lives in the same personal_access_tokens table
 // used by /api/mcp, so no change to the MCP controller is required.
-// Note: endpoints live under /mcp/ rather than /oauth/ because Filament
-// Socialite registers a catch-all /oauth/{provider} route at package boot
-// that would otherwise swallow /oauth/authorize as provider "authorize".
-// The .well-known metadata advertises these /mcp/ paths, so MCP clients
-// still discover them correctly.
+// /oauth/* paths are canonical (advertised by the metadata endpoint). The
+// /mcp/* paths are unnamed aliases kept for robustness. Filament Socialite's
+// catch-all /oauth/{provider} is constrained in RouteServiceProvider so it
+// no longer swallows names like "authorize", "register", or "token".
 Route::get('/.well-known/oauth-authorization-server',
     [\App\Http\Controllers\Mcp\OAuthController::class, 'metadata'])
     ->name('oauth.metadata');
-Route::post('/mcp/register',
+// RFC 9728 — Protected Resource Metadata. Claude Desktop probes this before
+// discovery; answering lets it find the authorization server cleanly.
+Route::get('/.well-known/oauth-protected-resource',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'protectedResource']);
+Route::get('/.well-known/oauth-protected-resource/api/mcp',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'protectedResource']);
+
+// Canonical OAuth endpoints (named).
+Route::post('/oauth/register',
     [\App\Http\Controllers\Mcp\OAuthController::class, 'register'])
     ->name('oauth.register');
+Route::post('/oauth/token',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'token'])
+    ->name('oauth.token');
 Route::middleware(['web', 'auth'])->group(function () {
-    Route::get('/mcp/authorize',
+    Route::get('/oauth/authorize',
         [\App\Http\Controllers\Mcp\OAuthController::class, 'showConsent'])
         ->name('oauth.authorize');
-    Route::post('/mcp/authorize',
+    Route::post('/oauth/authorize',
         [\App\Http\Controllers\Mcp\OAuthController::class, 'approve'])
         ->name('oauth.approve');
 });
+
+// Unnamed /mcp/* aliases for clients that still hit the previous path.
+Route::post('/mcp/register',
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'register']);
 Route::post('/mcp/token',
-    [\App\Http\Controllers\Mcp\OAuthController::class, 'token'])
-    ->name('oauth.token');
+    [\App\Http\Controllers\Mcp\OAuthController::class, 'token']);
+Route::middleware(['web', 'auth'])->group(function () {
+    Route::get('/mcp/authorize',
+        [\App\Http\Controllers\Mcp\OAuthController::class, 'showConsent']);
+    Route::post('/mcp/authorize',
+        [\App\Http\Controllers\Mcp\OAuthController::class, 'approve']);
+});
 
 // Auto-detect timezone from browser
 Route::post('/user/timezone', function (\Illuminate\Http\Request $request) {
