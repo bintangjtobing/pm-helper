@@ -554,15 +554,18 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         <p style="font-size:12px;color:#9ca3af;margin:0 0 6px 0;">Run this single command in your terminal:</p>
         <pre style="background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:11px;color:#e5e7eb;overflow-x:auto;margin:0 0 10px 0;white-space:pre-wrap;word-break:break-all;">claude mcp add --transport http pmhelper {{ url('/api/mcp') }} --header "Authorization: Bearer &lt;your-token&gt;"</pre>
 
-        <p style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">Option B — Claude Desktop app</p>
-        <p style="font-size:12px;color:#fbbf24;margin:0 0 6px 0;"><strong>⚠️ Do NOT paste the CLI one-liner into a URL field.</strong> Claude Desktop needs the URL and the header in separate fields.</p>
+        <p style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">Option B — Claude Desktop app (OAuth, no manual token)</p>
+        <p style="font-size:12px;color:#9ca3af;margin:0 0 8px 0;">Claude Desktop uses an OAuth flow — you don't paste a token anywhere. It will briefly open your browser for you to approve access.</p>
         <ol style="padding-left:20px;margin:0 0 12px 0;">
-            <li style="{{ $li }}">Open Claude Desktop → <strong style="color:#e5e7eb;">Settings</strong> → <strong style="color:#e5e7eb;">Connectors</strong> (or <em>Integrations</em>, depending on version).</li>
+            <li style="{{ $li }}">Open Claude Desktop → <strong style="color:#e5e7eb;">Settings</strong> → <strong style="color:#e5e7eb;">Connectors</strong> (or <em>Integrations</em>).</li>
             <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">Add custom connector</strong>.</li>
-            <li style="{{ $li }}"><strong style="color:#e5e7eb;">URL field only:</strong> <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">{{ url('/api/mcp') }}</code></li>
-            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Header field (separate):</strong> key <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">Authorization</code>, value <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">Bearer &lt;your-token&gt;</code></li>
-            <li style="{{ $li }}">Save. Claude will list the PMHelper tools in your next chat.</li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Name:</strong> <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">PMHelper</code></li>
+            <li style="{{ $li }}"><strong style="color:#e5e7eb;">Remote MCP server URL:</strong> <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">{{ url('/api/mcp') }}</code></li>
+            <li style="{{ $li }}">Leave <em>OAuth Client ID</em> / <em>OAuth Client Secret</em> <strong style="color:#e5e7eb;">empty</strong> — PMHelper issues them automatically via dynamic client registration.</li>
+            <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">Add</strong>. Claude opens <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">{{ url('/oauth/authorize') }}</code> in your browser — <strong style="color:#e5e7eb;">make sure you're logged in to PMHelper there</strong>, then click <strong style="color:#22c55e;">Authorize</strong>.</li>
+            <li style="{{ $li }}">Browser returns to Claude Desktop with a "Connected" state. Tools appear in your next chat.</li>
         </ol>
+        <p style="font-size:12px;color:#9ca3af;margin:10px 0 12px 0;">Access tokens minted via OAuth are visible on the <a href="{{ route('filament.pages.mcp-tokens') }}" style="color:#3b82f6;">MCP Tokens</a> page (named <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">mcp:oauth:...</code>) — you can revoke them like any other token.</p>
 
         <h3 style="{{ $h3 }}">Available tools</h3>
         <table style="{{ $tbl }}">

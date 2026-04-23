@@ -59,7 +59,13 @@
                     {{ __('Connect Claude to PMHelper via MCP') }}
                 </div>
                 <div class="mt-0.5 text-xs text-gray-600 dark:text-gray-400 max-w-2xl">
-                    {{ __('Each token inherits your role and project access. Comments, tickets, and reports created through Claude are attributed to you. Revoke any token whose device you no longer use.') }}
+                    {{ __('Each token inherits your role and project access. Comments, tickets, and reports created through Claude are attributed to you.') }}
+                </div>
+                <div class="mt-1.5 text-[11px] text-gray-500 dark:text-gray-500">
+                    <strong class="text-gray-700 dark:text-gray-300">{{ __('Using Claude Desktop?') }}</strong>
+                    {{ __('No manual token needed — add a Custom Connector pointing to') }}
+                    <code class="px-1 py-0.5 font-mono rounded bg-gray-100 dark:bg-gray-900">{{ url('/api/mcp') }}</code>
+                    {{ __('and OAuth will mint the token for you.') }}
                 </div>
             </div>
         </div>

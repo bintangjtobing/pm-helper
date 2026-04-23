@@ -17,6 +17,20 @@
 return [
 
     [
+        'version' => '1.3.1',
+        'released_at' => '2026-04-23',
+        'type' => 'patch',
+        'title' => 'MCP OAuth — Claude Desktop works out of the box',
+        'highlights' => [
+            '🔐 New OAuth 2.0 authorization server at /.well-known/oauth-authorization-server + /oauth/authorize + /oauth/token so Claude Desktop\'s Custom Connector UI works without pasting a token',
+            '🪪 Dynamic client registration (RFC 7591) — Claude registers itself, you just click "Authorize" once in the browser',
+            '🔒 PKCE-S256 enforced, auth codes live 5 min + single-use, redirect_uri exact-match, 90-day access tokens stored in the same Sanctum table as hand-issued tokens',
+            '📚 Docs section 16 updated: Claude Desktop now uses OAuth (no manual token paste), Claude Code CLI still supports the --header flow',
+            '🧩 Zero impact on existing login, Filament, Livewire, or mobile API — new tables oauth_clients / oauth_auth_codes only',
+        ],
+    ],
+
+    [
         'version' => '1.3.0',
         'released_at' => '2026-04-23',
         'type' => 'minor',
