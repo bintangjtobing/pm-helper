@@ -32,16 +32,19 @@ class ListTickets extends ListRecords
                     Forms\Components\Select::make('status_ids')
                         ->label(__('Statuses'))
                         ->multiple()
+                        ->default([])
+                        ->reactive()
                         ->options(fn() => TicketStatus::orderBy('order')->pluck('name', 'id')->toArray())
-                        ->required()
-                        ->helperText(__('Only tickets in the selected statuses will be exported.')),
+                        ->helperText(__('Leave empty to export every status.')),
                     Forms\Components\Toggle::make('include_comments')
                         ->label(__('Include comments'))
                         ->default(true),
                 ])
                 ->action(function (array $data) {
+                    $statusIds = array_values(array_filter($data['status_ids'] ?? [], fn ($v) => $v !== null && $v !== ''));
+
                     $query = $this->getTableQuery()
-                        ->whereIn('status_id', $data['status_ids'])
+                        ->when(! empty($statusIds), fn ($q) => $q->whereIn('status_id', $statusIds))
                         ->with([
                             'owner:id,name,email',
                             'responsible:id,name,email',
@@ -69,7 +72,7 @@ class ListTickets extends ListRecords
                             'email' => auth()->user()->email,
                         ],
                         'filters' => [
-                            'status_ids' => array_map('intval', $data['status_ids']),
+                            'status_ids' => array_map('intval', $statusIds),
                             'include_comments' => (bool) ($data['include_comments'] ?? false),
                         ],
                         'count' => $tickets->count(),
