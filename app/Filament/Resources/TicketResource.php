@@ -367,10 +367,25 @@ class TicketResource extends Resource
                 ->label(__('Ticket'))
                 ->view('partials.filament.resources.ticket-info-column')
                 ->searchable(query: function ($query, string $search) {
-                    $query->where(function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%")
-                          ->orWhere('code', 'like', "%{$search}%")
-                          ->orWhereHas('project', fn($q2) => $q2->where('name', 'like', "%{$search}%"));
+                    $terms = array_values(array_filter(
+                        preg_split('/[\s,;]+/', trim($search)) ?: [],
+                        fn($t) => $t !== ''
+                    ));
+
+                    if (count($terms) > 1) {
+                        $query->where(function ($q) use ($terms) {
+                            foreach ($terms as $t) {
+                                $q->orWhere('code', 'like', "%{$t}%");
+                            }
+                        });
+                        return;
+                    }
+
+                    $term = $terms[0] ?? $search;
+                    $query->where(function ($q) use ($term) {
+                        $q->where('name', 'like', "%{$term}%")
+                          ->orWhere('code', 'like', "%{$term}%")
+                          ->orWhereHas('project', fn($q2) => $q2->where('name', 'like', "%{$term}%"));
                     });
                 }),
 
@@ -454,6 +469,19 @@ class TicketResource extends Resource
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
+                Tables\Actions\BulkAction::make('updateStatus')
+                    ->label(__('Update status'))
+                    ->icon('heroicon-o-flag')
+                    ->form([
+                        Forms\Components\Select::make('status_id')
+                            ->label(__('Status'))
+                            ->options(fn() => TicketStatus::orderBy('order')->pluck('name', 'id')->toArray())
+                            ->required(),
+                    ])
+                    ->action(function (\Illuminate\Database\Eloquent\Collection $records, array $data): void {
+                        $records->each(fn ($record) => $record->update(['status_id' => $data['status_id']]));
+                    })
+                    ->deselectRecordsAfterCompletion(),
                 Tables\Actions\DeleteBulkAction::make(),
             ]);
     }
