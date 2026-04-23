@@ -46,6 +46,19 @@ class ListTickets extends ListRecords
             return $query;
         }
 
+        $terms = array_values(array_filter(
+            preg_split('/[\s,;]+/', trim($search)) ?: [],
+            fn($t) => $t !== ''
+        ));
+
+        if (count($terms) > 1) {
+            return $query->where(function ($q) use ($terms) {
+                foreach ($terms as $t) {
+                    $q->orWhere('code', 'like', "%{$t}%");
+                }
+            });
+        }
+
         // First apply default column search
         $query = parent::applySearchToTableQuery($query);
 
