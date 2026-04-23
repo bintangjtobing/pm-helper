@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Mcp\McpController;
 use App\Http\Controllers\Api\BroadcastAuthController;
 use App\Http\Controllers\Api\DailyReportController;
 use App\Http\Controllers\Api\DiscussionController;
@@ -90,4 +91,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Pusher channel authentication for private/presence subscriptions
     Route::post('broadcasting/auth', BroadcastAuthController::class);
+
+    // Model Context Protocol (MCP) — JSON-RPC 2.0 streamable HTTP transport.
+    // Requires a Sanctum token created with the 'mcp:*' ability.
+    Route::match(['POST', 'GET'], 'mcp', McpController::class)->name('api.mcp');
 });

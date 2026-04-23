@@ -50,7 +50,7 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
     <div style="{{ $card }}">
         <h2 style="font-size:15px;font-weight:700;color:#f3f4f6;margin:0 0 14px 0;">Table of Contents</h2>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 20px;">
-            @php $toc = [['getting-started','Getting Started'],['dashboard','Dashboard'],['projects','Projects'],['tickets','Tickets & Request System'],['kanban','Kanban Board'],['comments','Comments & Mentions'],['reports','Daily & Weekly Reports'],['discussions','Discussions'],['timesheet','Timesheet & Time Logging'],['notifications','Notifications'],['roles','Roles & Permissions'],['organization','Organization & Departments'],['profile','Profile Settings'],['feedback','Customer Feedback'],['performance','Performance (OKR & KPI)'],['writing-rules','Writing Guidelines'],['dos-donts',"Do's & Don'ts"],['faq','FAQ']]; @endphp
+            @php $toc = [['getting-started','Getting Started'],['dashboard','Dashboard'],['projects','Projects'],['tickets','Tickets & Request System'],['kanban','Kanban Board'],['comments','Comments & Mentions'],['reports','Daily & Weekly Reports'],['discussions','Discussions'],['timesheet','Timesheet & Time Logging'],['notifications','Notifications'],['roles','Roles & Permissions'],['organization','Organization & Departments'],['profile','Profile Settings'],['feedback','Customer Feedback'],['performance','Performance (OKR & KPI)'],['mcp','MCP Integration (Claude)'],['writing-rules','Writing Guidelines'],['dos-donts',"Do's & Don'ts"],['faq','FAQ']]; @endphp
             @foreach($toc as $i => $item)
             <a href="#{{ $item[0] }}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;text-decoration:none;font-size:13px;color:#9ca3af;" onmouseover="this.style.background='#374151';this.style.color='#f3f4f6'" onmouseout="this.style.background='transparent';this.style.color='#9ca3af'">
                 <span style="min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:4px;background:#374151;color:#6b7280;font-size:10px;font-weight:700;">{{ $i + 1 }}</span>
@@ -534,9 +534,68 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         </table>
     </div>
 
-    {{-- 16. WRITING GUIDELINES --}}
+    {{-- 16. MCP INTEGRATION --}}
+    <div style="{{ $card }}" id="mcp" data-doc-section="MCP Integration Claude Model Context Protocol Tokens">
+        <h2 style="{{ $h2 }}">16. MCP Integration (Claude)</h2>
+
+        <p style="{{ $p }}">PMHelper exposes a <strong style="color:#e5e7eb;">Model Context Protocol</strong> endpoint so you can connect Claude Desktop or Claude Code to PMHelper. With it, Claude can list tickets, read comments, create daily reports, etc. — using your permissions.</p>
+
+        <h3 style="{{ $h3 }}">Step 1 — Create an MCP token</h3>
+        <ol style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Open <a href="{{ url('/admin/mcp-tokens') }}" style="color:#3b82f6;">MCP Tokens</a> from the sidebar.</li>
+            <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">New MCP token</strong>, name it after the device that will use it (e.g. <em>Bintang MacBook</em>).</li>
+            <li style="{{ $li }}">Copy the token string — it is shown <strong style="color:#ef4444;">only once</strong>. If lost, revoke and generate a new one.</li>
+        </ol>
+        <p style="font-size:12px;color:#9ca3af;margin:0 0 12px 0;">One token per machine is best. Tokens inherit your role/permissions, so any action taken via MCP is attributed to you.</p>
+
+        <h3 style="{{ $h3 }}">Step 2 — Register the server in Claude</h3>
+
+        <p style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">Option A — Claude Code (CLI)</p>
+        <pre style="background:#111827;border:1px solid #374151;border-radius:6px;padding:10px 12px;font-size:11px;color:#e5e7eb;overflow-x:auto;margin:0 0 10px 0;white-space:pre-wrap;word-break:break-all;">claude mcp add --transport http pmhelper {{ url('/api/mcp') }} --header "Authorization: Bearer &lt;your-token&gt;"</pre>
+
+        <p style="font-size:13px;font-weight:600;color:#e5e7eb;margin:10px 0 6px 0;">Option B — Claude Desktop app</p>
+        <ol style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Open Claude Desktop → <strong style="color:#e5e7eb;">Settings</strong> → <strong style="color:#e5e7eb;">Connectors</strong> (or <em>Integrations</em>, depending on version).</li>
+            <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">Add custom connector</strong>.</li>
+            <li style="{{ $li }}">Set URL to <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">{{ url('/api/mcp') }}</code></li>
+            <li style="{{ $li }}">Add header <code style="background:#1f2937;padding:2px 6px;border-radius:4px;font-size:11px;color:#e5e7eb;">Authorization: Bearer &lt;your-token&gt;</code></li>
+            <li style="{{ $li }}">Save. Claude will list the PMHelper tools in your next chat.</li>
+        </ol>
+
+        <h3 style="{{ $h3 }}">Available tools</h3>
+        <table style="{{ $tbl }}">
+            <tr><th style="{{ $th }}">Tool</th><th style="{{ $th }}">Purpose</th></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_tickets</code></td><td style="{{ $td }}">List tickets. Filters: project_id, status_id, assignee_id, mine, search, limit.</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">get_ticket</code></td><td style="{{ $td }}">Full ticket detail incl. comments (by id or code).</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">create_ticket</code></td><td style="{{ $td }}">Create a ticket in a project you can access.</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">update_ticket_status</code></td><td style="{{ $td }}">Move a ticket to a new status (respects role-group gates).</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">add_ticket_comment</code></td><td style="{{ $td }}">Add a comment. Content may include @mentions.</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_discussions</code> / <code style="font-size:11px;">get_discussion</code></td><td style="{{ $td }}">Browse discussions + replies.</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">add_discussion_comment</code></td><td style="{{ $td }}">Reply to a discussion.</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_daily_reports</code> / <code style="font-size:11px;">get_daily_report</code></td><td style="{{ $td }}">Own reports by default; team-wide when you pass user_id or all_accessible.</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">create_daily_report</code></td><td style="{{ $td }}">Create a draft or submitted report (one per user/project/date).</td></tr>
+            <tr><td style="{{ $td }}"><code style="font-size:11px;">list_projects</code> / <code style="font-size:11px;">list_ticket_statuses</code> / <code style="font-size:11px;">list_users</code></td><td style="{{ $td }}">Lookup helpers for resolving IDs.</td></tr>
+        </table>
+
+        <h3 style="{{ $h3 }}">Example prompts</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}"><em>"Ringkas semua komentar di QOS-51 dalam bentuk timeline."</em></li>
+            <li style="{{ $li }}"><em>"Cek tiket status Retest di project QineticOS, lalu bikin daily report draft hari ini yang ngerangkum kerjaan dari tiket-tiket itu."</em></li>
+            <li style="{{ $li }}"><em>"Balas discussion #42 dengan konfirmasi bahwa fix sudah di-deploy dan minta QA mulai retest."</em></li>
+        </ul>
+
+        <h3 style="{{ $h3 }}">Security notes</h3>
+        <ul style="padding-left:20px;margin:0 0 12px 0;">
+            <li style="{{ $li }}">Tokens inherit your permissions — <strong style="color:#e5e7eb;">don't share the token</strong> with teammates; let them create their own.</li>
+            <li style="{{ $li }}">The <em>Last used</em> column shows when a token was last touched. A long-idle token is a candidate to revoke.</li>
+            <li style="{{ $li }}">Lost a laptop or quitting a project? Revoke the token from the MCP Tokens page and generate a new one for the replacement device.</li>
+            <li style="{{ $li }}">Comments / tickets created via MCP are attributed to the token owner. Activity log + email notifications behave exactly as if you created them through the web UI.</li>
+        </ul>
+    </div>
+
+    {{-- 17. WRITING GUIDELINES --}}
     <div style="{{ $card }}" id="writing-rules" data-doc-section="Writing Guidelines">
-        <h2 style="{{ $h2 }}">16. Writing Guidelines</h2>
+        <h2 style="{{ $h2 }}">17. Writing Guidelines</h2>
 
         <h3 style="{{ $h3 }}">Ticket Names</h3>
         <table style="{{ $tbl }}">
@@ -572,9 +631,9 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
         </ul>
     </div>
 
-    {{-- 16. DO'S AND DON'TS --}}
+    {{-- 18. DO'S AND DON'TS --}}
     <div style="{{ $card }}" id="dos-donts" data-doc-section="Do's and Don'ts">
-        <h2 style="{{ $h2 }}">17. Do's & Don'ts</h2>
+        <h2 style="{{ $h2 }}">18. Do's & Don'ts</h2>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div>
@@ -602,7 +661,7 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
 
     {{-- 18. FAQ --}}
     <div style="{{ $card }}" id="faq" data-doc-section="Frequently Asked Questions">
-        <h2 style="{{ $h2 }}">18. FAQ</h2>
+        <h2 style="{{ $h2 }}">19. FAQ</h2>
 
         @php
         $faqs = [

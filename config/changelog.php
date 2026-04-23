@@ -17,6 +17,22 @@
 return [
 
     [
+        'version' => '1.3.0',
+        'released_at' => '2026-04-23',
+        'type' => 'minor',
+        'title' => 'MCP integration — connect Claude to PMHelper',
+        'highlights' => [
+            '🤖 New MCP (Model Context Protocol) endpoint at /api/mcp so Claude Desktop and Claude Code can browse tickets, read comments, update statuses, and create daily reports as you — respecting your role and project access',
+            '🔑 Per-user token management: open "MCP Tokens" in the sidebar, name each token after the device that will use it, copy the string once. Tokens inherit your permissions',
+            '🧰 14 tools exposed: list_tickets / get_ticket / create_ticket / update_ticket_status / add_ticket_comment, list_discussions / get_discussion / add_discussion_comment, list_daily_reports / get_daily_report / create_daily_report, plus list_projects / list_ticket_statuses / list_users helpers',
+            '📚 Documentation section 16 covers setup for Claude Code CLI and Claude Desktop custom connector, full tool catalog, and security notes',
+            '📥 Kanban + Scrum + Tickets list: "Download JSON" action — pick statuses, optionally include comments, get a project-scoped snapshot without hitting the API',
+            '🔍 Tickets table: multi-code search ("51, 52, 53") returns every match, bulk "Update status" action, and bulk actions rendered inline instead of behind the 3-dot menu',
+            '🖼️ Messenger image lightbox: natural-size preview (scrollable when larger than the viewport) instead of shrinking everything to fit',
+        ],
+    ],
+
+    [
         'version' => '1.2.0',
         'released_at' => '2026-04-22',
         'type' => 'minor',
