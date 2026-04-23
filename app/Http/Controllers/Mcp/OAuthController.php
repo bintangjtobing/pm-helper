@@ -84,7 +84,7 @@ class OAuthController extends Controller
      * GET /oauth/authorize — shows consent screen. Requires the user to be logged in
      * (handled by web middleware). Validates client_id + redirect_uri + PKCE challenge.
      */
-    public function authorize(Request $request)
+    public function showConsent(Request $request)
     {
         $params = $request->validate([
             'response_type' => 'required|in:code',

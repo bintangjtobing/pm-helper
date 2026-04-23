@@ -77,7 +77,7 @@ Route::post('/oauth/register',
     ->name('oauth.register');
 Route::middleware(['web', 'auth'])->group(function () {
     Route::get('/oauth/authorize',
-        [\App\Http\Controllers\Mcp\OAuthController::class, 'authorize'])
+        [\App\Http\Controllers\Mcp\OAuthController::class, 'showConsent'])
         ->name('oauth.authorize');
     Route::post('/oauth/authorize',
         [\App\Http\Controllers\Mcp\OAuthController::class, 'approve'])
