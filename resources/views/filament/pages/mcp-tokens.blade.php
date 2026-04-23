@@ -52,7 +52,7 @@
                 </div>
             </div>
         </div>
-        <a href="{{ url('/admin/docs') }}#mcp"
+        <a href="{{ route('filament.pages.docs') }}#mcp"
            class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
             {{ __('Setup guide') }}
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>

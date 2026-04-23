@@ -542,7 +542,7 @@ $td = 'padding:7px 12px;border-bottom:1px solid #1f2937;color:#9ca3af;';
 
         <h3 style="{{ $h3 }}">Step 1 — Create an MCP token</h3>
         <ol style="padding-left:20px;margin:0 0 12px 0;">
-            <li style="{{ $li }}">Open <a href="{{ url('/admin/mcp-tokens') }}" style="color:#3b82f6;">MCP Tokens</a> from the sidebar.</li>
+            <li style="{{ $li }}">Open <a href="{{ route('filament.pages.mcp-tokens') }}" style="color:#3b82f6;">MCP Tokens</a> from the sidebar.</li>
             <li style="{{ $li }}">Click <strong style="color:#e5e7eb;">New MCP token</strong>, name it after the device that will use it (e.g. <em>Bintang MacBook</em>).</li>
             <li style="{{ $li }}">Copy the token string — it is shown <strong style="color:#ef4444;">only once</strong>. If lost, revoke and generate a new one.</li>
         </ol>
