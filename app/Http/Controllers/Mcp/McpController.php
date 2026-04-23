@@ -32,13 +32,13 @@ class McpController extends Controller
         if (array_is_list($payload) && isset($payload[0]['jsonrpc'])) {
             $responses = [];
             foreach ($payload as $call) {
-                $responses[] = $this->dispatch($registry, $user, $call);
+                $responses[] = $this->handleRpc($registry, $user, $call);
             }
             $responses = array_values(array_filter($responses));
             return response()->json($responses);
         }
 
-        $response = $this->dispatch($registry, $user, $payload);
+        $response = $this->handleRpc($registry, $user, $payload);
 
         if ($response === null) {
             return response()->json(null, 204);
@@ -47,7 +47,7 @@ class McpController extends Controller
         return response()->json($response);
     }
 
-    private function dispatch(ToolRegistry $registry, $user, array $call): ?array
+    private function handleRpc(ToolRegistry $registry, $user, array $call): ?array
     {
         $id = $call['id'] ?? null;
         $method = $call['method'] ?? '';
