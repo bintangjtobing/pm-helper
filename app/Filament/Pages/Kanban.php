@@ -81,6 +81,8 @@ class Kanban extends Page implements HasForms
                 Filament::notify('success', __('Kanban board refreshed'));
             });
 
+        $actions[] = $this->exportJsonAction();
+
         return $actions;
     }
     /**

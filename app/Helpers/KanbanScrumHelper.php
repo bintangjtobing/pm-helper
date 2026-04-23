@@ -14,6 +14,7 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
+use Filament\Pages\Actions\Action;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
@@ -333,6 +334,148 @@ trait KanbanScrumHelper
     {
         $this->filter();
         Filament::notify('success', __('Board refreshed'));
+    }
+
+    protected function exportJsonAction(): Action
+    {
+        return Action::make('exportJson')
+            ->label(__('Download JSON'))
+            ->icon('heroicon-o-download')
+            ->color('secondary')
+            ->button()
+            ->modalHeading(__('Export tickets as JSON'))
+            ->modalButton(__('Download'))
+            ->form([
+                Select::make('status_ids')
+                    ->label(__('Statuses'))
+                    ->multiple()
+                    ->options(fn () => TicketStatus::query()
+                        ->when(
+                            $this->project && $this->project->status_type === 'custom',
+                            fn ($q) => $q->where('project_id', $this->project->id),
+                            fn ($q) => $q->whereNull('project_id'),
+                        )
+                        ->orderBy('order')
+                        ->pluck('name', 'id')
+                        ->toArray())
+                    ->required()
+                    ->helperText(__('Only tickets in the selected statuses will be exported.')),
+                Toggle::make('include_comments')
+                    ->label(__('Include comments'))
+                    ->default(true),
+            ])
+            ->action(fn (array $data) => $this->streamTicketsJson($data));
+    }
+
+    protected function streamTicketsJson(array $data)
+    {
+        $query = Ticket::query()
+            ->where('project_id', $this->project->id)
+            ->whereIn('status_id', $data['status_ids'])
+            ->with([
+                'owner:id,name,email',
+                'responsible:id,name,email',
+                'status:id,name,color',
+                'priority:id,name,color',
+                'type:id,name',
+                'project:id,name,code',
+                'epic:id,name',
+                'sprint:id,name',
+            ]);
+
+        if (! empty($data['include_comments'])) {
+            $query->with(['comments' => function ($q) {
+                $q->with('user:id,name,email')->orderBy('created_at');
+            }]);
+        }
+
+        $tickets = $query->orderBy('code')->get();
+
+        $payload = [
+            'exported_at' => now()->toIso8601String(),
+            'exported_by' => [
+                'id' => auth()->user()->id,
+                'name' => auth()->user()->name,
+                'email' => auth()->user()->email,
+            ],
+            'project' => [
+                'id' => $this->project->id,
+                'name' => $this->project->name,
+                'code' => $this->project->code ?? null,
+            ],
+            'filters' => [
+                'status_ids' => array_map('intval', $data['status_ids']),
+                'include_comments' => (bool) ($data['include_comments'] ?? false),
+            ],
+            'count' => $tickets->count(),
+            'tickets' => $tickets->map(function ($t) use ($data) {
+                $row = [
+                    'id' => $t->id,
+                    'code' => $t->code,
+                    'name' => $t->name,
+                    'content' => $t->content,
+                    'status' => $t->status ? [
+                        'id' => $t->status->id,
+                        'name' => $t->status->name,
+                        'color' => $t->status->color,
+                    ] : null,
+                    'priority' => $t->priority ? [
+                        'id' => $t->priority->id,
+                        'name' => $t->priority->name,
+                        'color' => $t->priority->color,
+                    ] : null,
+                    'type' => $t->type ? [
+                        'id' => $t->type->id,
+                        'name' => $t->type->name,
+                    ] : null,
+                    'epic' => $t->epic ? [
+                        'id' => $t->epic->id,
+                        'name' => $t->epic->name,
+                    ] : null,
+                    'sprint' => $t->sprint ? [
+                        'id' => $t->sprint->id,
+                        'name' => $t->sprint->name,
+                    ] : null,
+                    'owner' => $t->owner ? [
+                        'id' => $t->owner->id,
+                        'name' => $t->owner->name,
+                        'email' => $t->owner->email,
+                    ] : null,
+                    'responsible' => $t->responsible ? [
+                        'id' => $t->responsible->id,
+                        'name' => $t->responsible->name,
+                        'email' => $t->responsible->email,
+                    ] : null,
+                    'due_date' => optional($t->due_date)->toIso8601String(),
+                    'created_at' => optional($t->created_at)->toIso8601String(),
+                    'updated_at' => optional($t->updated_at)->toIso8601String(),
+                ];
+
+                if (! empty($data['include_comments'])) {
+                    $row['comments'] = $t->comments->map(fn ($c) => [
+                        'id' => $c->id,
+                        'author' => $c->user ? [
+                            'id' => $c->user->id,
+                            'name' => $c->user->name,
+                            'email' => $c->user->email,
+                        ] : null,
+                        'content' => $c->content,
+                        'created_at' => optional($c->created_at)->toIso8601String(),
+                    ])->values();
+                }
+
+                return $row;
+            })->values(),
+        ];
+
+        $filename = 'project-' . ($this->project->code ?? $this->project->id) . '-export-' . now()->format('Ymd-His') . '.json';
+        $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return response()->streamDownload(
+            fn () => print($json),
+            $filename,
+            ['Content-Type' => 'application/json'],
+        );
     }
 
     public function getProjectTitle(): string

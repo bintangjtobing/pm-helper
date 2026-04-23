@@ -62,6 +62,8 @@ class Scrum extends Page implements HasForms
                     $this->getRecords();
                     Filament::notify('success', __('Kanban board updated'));
                 }),
+
+            $this->exportJsonAction(),
         ];
     }
 

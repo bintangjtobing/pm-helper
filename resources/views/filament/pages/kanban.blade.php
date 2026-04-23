@@ -1,16 +1,35 @@
 <x-filament::page>
     @livewire('kanban.ticket-modal', key('ticket-modal'))
-    <div class="w-full mx-auto" wire:ignore>
-        <details class="w-full duration-300 bg-white open:bg-gray-200">
-            <summary class="relative w-full px-5 py-3 text-base text-gray-500 cursor-pointer bg-inherit">
-                {{ __('Filters') }}
-            </summary>
-            <div class="px-5 py-3 bg-white">
+    @php
+        $activeFilterCount = (is_array($users) && count($users) ? 1 : 0)
+            + (is_array($types) && count($types) ? 1 : 0)
+            + (is_array($priorities) && count($priorities) ? 1 : 0)
+            + ($includeNotAffectedTickets ? 1 : 0);
+    @endphp
+    <div class="mb-3" x-data="{ filtersOpen: @js($activeFilterCount > 0) }">
+        <button type="button" @click="filtersOpen = !filtersOpen"
+            class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full transition-colors"
+            :class="filtersOpen ? 'bg-primary-500 text-white hover:bg-primary-600' : 'bg-gray-200 text-gray-600 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+            </svg>
+            <span>{{ __('Filters') }}</span>
+            @if($activeFilterCount > 0)
+                <span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold rounded-full"
+                      :class="filtersOpen ? 'bg-white/25 text-white' : 'bg-primary-500 text-white'">{{ $activeFilterCount }}</span>
+            @endif
+            <svg class="w-3 h-3 transition-transform" :class="filtersOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+
+        <div x-show="filtersOpen" x-collapse x-cloak class="mt-2" wire:ignore>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700">
                 <form>
                     {{ $this->form }}
                 </form>
             </div>
-        </details>
+        </div>
     </div>
 
     {{-- Sort + Column Visibility Controls --}}
