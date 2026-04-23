@@ -673,10 +673,7 @@ class Messenger extends Component
             return;
         }
 
-        $minutes = (int) round($durationSec / 60);
-        $durationLabel = $minutes <= 0
-            ? ($durationSec . ' sec')
-            : ($minutes . ' min');
+        $durationLabel = $this->formatMeetingDuration($durationSec);
 
         $endBody = "📹 Meeting ended · {$durationLabel} · {$participantCount} participant" . ($participantCount === 1 ? '' : 's');
 
@@ -1364,5 +1361,24 @@ class Messenger extends Component
     public function getCurrentUserIdProperty(): int
     {
         return (int) auth()->id();
+    }
+
+    private function formatMeetingDuration(int $durationSec): string
+    {
+        if ($durationSec < 60) {
+            return $durationSec . ' sec';
+        }
+
+        $totalMinutes = (int) round($durationSec / 60);
+        $hours = intdiv($totalMinutes, 60);
+        $minutes = $totalMinutes % 60;
+
+        if ($hours === 0) {
+            return $minutes . ' min';
+        }
+
+        return $minutes > 0
+            ? $hours . 'h ' . $minutes . ' min'
+            : $hours . 'h';
     }
 }
