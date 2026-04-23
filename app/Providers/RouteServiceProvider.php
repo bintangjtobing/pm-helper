@@ -28,10 +28,8 @@ class RouteServiceProvider extends ServiceProvider
     {
         $this->configureRateLimiting();
 
-        // Filament Socialite registers GET /oauth/{provider} which would
-        // otherwise swallow our OAuth endpoints like /oauth/authorize as if
-        // "authorize" were a provider name. Constrain {provider} to real
-        // socialite providers so those paths fall through to our routes.
+        // Constrain {provider} parameter globally. This is set BEFORE route
+        // registration so new routes pick it up automatically.
         Route::pattern('provider', 'facebook|github|google|twitter|microsoft|azure|apple|linkedin|microsoft-graph|slack');
 
         $this->routes(function () {
@@ -42,6 +40,17 @@ class RouteServiceProvider extends ServiceProvider
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });
+
+        // Retroactively apply the {provider} constraint to any route that was
+        // already registered by an earlier-booting service provider (e.g.
+        // Filament Socialite auto-discovered at position ~20 while this
+        // RouteServiceProvider sits at ~45 in the boot order).
+        $providerPattern = 'facebook|github|google|twitter|microsoft|azure|apple|linkedin|microsoft-graph|slack';
+        foreach (Route::getRoutes() as $route) {
+            if (in_array('provider', $route->parameterNames(), true)) {
+                $route->where('provider', $providerPattern);
+            }
+        }
     }
 
     /**
