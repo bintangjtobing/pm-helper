@@ -510,7 +510,7 @@ trait KanbanScrumHelper
 
             // Check if this line contains "label: URL" pattern
             if (preg_match('/^(.+?):\s*(https?:\/\/\S+)$/i', $line, $m)) {
-                $items[] = ['label' => trim($m[1]), 'url' => trim($m[2])];
+                $items[] = ['label' => $this->cleanLinkLabel($m[1]), 'url' => trim($m[2]), 'fromUrl' => false];
                 $i++;
                 continue;
             }
@@ -518,7 +518,7 @@ trait KanbanScrumHelper
             // Check if next line is a URL (label on current line, URL on next)
             $nextLine = isset($lines[$i + 1]) ? trim($lines[$i + 1]) : '';
             if ($nextLine && preg_match('/^https?:\/\/\S+$/', $nextLine)) {
-                $items[] = ['label' => $line, 'url' => $nextLine];
+                $items[] = ['label' => $this->cleanLinkLabel($line), 'url' => $nextLine, 'fromUrl' => false];
                 $i += 2;
                 continue;
             }
@@ -526,13 +526,13 @@ trait KanbanScrumHelper
             // Standalone URL
             if (preg_match('/^https?:\/\/\S+$/', $line)) {
                 $host = parse_url($line, PHP_URL_HOST) ?: $line;
-                $items[] = ['label' => $host, 'url' => $line];
+                $items[] = ['label' => $host, 'url' => $line, 'fromUrl' => true];
                 $i++;
                 continue;
             }
 
             // Plain text line - just skip or treat as label without URL
-            $items[] = ['label' => $line, 'url' => null];
+            $items[] = ['label' => $line, 'url' => null, 'fromUrl' => false];
             $i++;
         }
 
@@ -552,20 +552,26 @@ trait KanbanScrumHelper
             $url = e($item['url']);
             $label = e($item['label']);
             $kind = $this->detectLinkKind($item['url']);
-            $host = e(parse_url($item['url'], PHP_URL_HOST) ?: '');
+            $host = parse_url($item['url'], PHP_URL_HOST) ?: '';
+            $showHost = ! empty($item['fromUrl']) && $host !== '' && $host !== $item['label'];
 
             $html .= '<a href="' . $url . '" target="_blank" rel="noopener noreferrer"'
                 . ' class="pm-linkpill pm-linkpill--' . $kind . '"'
-                . ' data-host="' . $host . '">'
+                . ' data-host="' . e($host) . '">'
                 . '<span class="pm-linkpill__dot" aria-hidden="true"></span>'
                 . '<span class="pm-linkpill__label">' . $label . '</span>'
-                . ($host !== '' ? '<span class="pm-linkpill__host">' . $host . '</span>' : '')
+                . ($showHost ? '<span class="pm-linkpill__host">' . e($host) . '</span>' : '')
                 . $arrow
                 . '</a>';
         }
         $html .= '</div>';
 
         return $html;
+    }
+
+    protected function cleanLinkLabel(string $label): string
+    {
+        return rtrim(trim($label), " \t\n\r\0\x0B:-–—");
     }
 
     protected function detectLinkKind(string $url): string

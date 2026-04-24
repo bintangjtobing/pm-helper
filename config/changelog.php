@@ -17,6 +17,18 @@
 return [
 
     [
+        'version' => '1.3.5',
+        'released_at' => '2026-04-24',
+        'type' => 'patch',
+        'title' => 'Kanban header — link pills no longer glitch with trailing “:” and ghost host text',
+        'highlights' => [
+            '🧼 Labels in the project link rail no longer carry a trailing colon — "Web staging:" renders as "Web staging", same for every label-style entry',
+            '👻 Killed the hover/focus ghost that made the last pill show a truncated hostname ("web-stagi…") next to its label — host hint now only appears for pills where the label was auto-derived from the URL itself',
+            '🔒 Added HTML-escape on the data-host attribute as a small hygiene fix while we were in there',
+        ],
+    ],
+
+    [
         'version' => '1.3.4',
         'released_at' => '2026-04-24',
         'type' => 'patch',
