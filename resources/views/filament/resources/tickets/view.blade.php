@@ -607,78 +607,202 @@
                 </div>
             </form>
 
-            @foreach($record->comments->sortByDesc('created_at') as $comment)
-            <div
-                class="w-full flex flex-col gap-2 @if(!$loop->last) pb-5 mb-5 border-b border-gray-200 @endif ticket-comment">
-                <div class="flex justify-between w-full">
-                    <span class="flex items-center gap-1 text-sm text-gray-500">
-                        <span class="flex items-center gap-1 font-medium">
+            <div class="ticket-comments-timeline">
+                @foreach($record->comments->sortByDesc('created_at') as $comment)
+                @php
+                    $previewText = \Illuminate\Support\Str::limit(trim(preg_replace('/\s+/', ' ', strip_tags($comment->content))), 140);
+                @endphp
+                <div
+                    x-data="{ open: {{ $loop->first ? 'true' : 'false' }} }"
+                    class="tcr @if($loop->last) tcr--last @endif ticket-comment"
+                >
+                    <div class="tcr-rail">
+                        <div class="tcr-node">
                             <x-user-avatar :user="$comment->user" />
-                            {{ $comment->user->name }}
-                        </span>
-                        <span class="px-2 text-gray-400">|</span>
-                        {{ $comment->created_at->format('Y-m-d g:i A') }}
-                        ({{ $comment->created_at->diffForHumans() }})
-                    </span>
-                    <div class="flex items-center gap-2 actions">
-                        <button type="button" wire:click="raiseToDiscussion({{ $comment->id }})"
-                            class="inline-flex items-center gap-1 text-xs text-amber-500 hover:text-amber-600 hover:underline"
-                            title="{{ __('Raise this comment to an open discussion') }}">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
-                            {{ __('Raise') }}
-                        </button>
-                        @if($this->isAdministrator() || $comment->user_id === auth()->user()->id)
-                        <span class="text-gray-300 dark:text-gray-600">|</span>
-                        <button type="button" wire:click="editComment({{ $comment->id }})"
-                            class="text-xs text-primary-500 hover:text-primary-600 hover:underline">
-                            {{ __('Edit') }}
-                        </button>
-                        <span class="text-gray-300 dark:text-gray-600">|</span>
-                        <button type="button" wire:click="deleteComment({{ $comment->id }})"
-                            class="text-xs text-danger-500 hover:text-danger-600 hover:underline">
-                            {{ __('Delete') }}
-                        </button>
-                        @endif
+                        </div>
                     </div>
-                </div>
-                <div class="w-full prose-sm prose max-w-none dark:prose-invert">
-                    {!! \App\Helpers\CodeBlockHelper::linkTicketCodes(\App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($comment->content))) !!}
-                </div>
 
-                {{-- Video / Screen Recording attachments --}}
-                @if($comment->attachments->count())
-                <div class="mt-3 space-y-3">
-                    @foreach($comment->attachments as $att)
-                        <div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
-                            <video
-                                controls
-                                preload="metadata"
-                                class="w-full max-h-[400px] bg-black"
-                                style="max-width: 640px;"
-                            >
-                                <source src="{{ asset('storage/' . $att->filename_stored) }}" type="video/mp4">
-                                {{ __('Your browser does not support the video tag.') }}
-                            </video>
-                            <div class="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-700">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ $att->filename_original }}</span>
-                                    <span class="text-xs text-gray-400">
-                                        {{ $att->size_bytes >= 1048576 ? round($att->size_bytes / 1048576, 1) . ' MB' : round($att->size_bytes / 1024, 1) . ' KB' }}
-                                    </span>
-                                </div>
-                                <a href="{{ asset('storage/' . $att->filename_stored) }}" download="{{ $att->filename_original }}"
-                                    class="flex items-center gap-1 text-xs text-primary-500 hover:text-primary-600 flex-shrink-0">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                    {{ __('Download') }}
-                                </a>
+                    <div class="tcr-col">
+                        <div class="tcr-headline">
+                            <button type="button"
+                                class="tcr-toggle"
+                                x-on:click="open = !open"
+                                x-bind:aria-expanded="open">
+                                <span class="tcr-meta">
+                                    <span class="tcr-author">{{ $comment->user->name }}</span>
+                                    <span class="tcr-sep">·</span>
+                                    <span class="tcr-time">{{ $comment->created_at->format('Y-m-d g:i A') }}</span>
+                                    <span class="tcr-time-rel">({{ $comment->created_at->diffForHumans() }})</span>
+                                    <svg class="tcr-chevron" x-bind:class="{ 'tcr-chevron-open': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </span>
+                                <span class="tcr-preview" x-show="!open">{{ $previewText }}</span>
+                            </button>
+
+                            <div class="tcr-actions" x-show="open">
+                                <button type="button" wire:click="raiseToDiscussion({{ $comment->id }})"
+                                    class="inline-flex items-center gap-1 text-xs text-amber-500 hover:text-amber-600 hover:underline"
+                                    title="{{ __('Raise this comment to an open discussion') }}">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+                                    {{ __('Raise') }}
+                                </button>
+                                @if($this->isAdministrator() || $comment->user_id === auth()->user()->id)
+                                <span class="text-gray-300 dark:text-gray-600">|</span>
+                                <button type="button" wire:click="editComment({{ $comment->id }})"
+                                    class="text-xs text-primary-500 hover:text-primary-600 hover:underline">
+                                    {{ __('Edit') }}
+                                </button>
+                                <span class="text-gray-300 dark:text-gray-600">|</span>
+                                <button type="button" wire:click="deleteComment({{ $comment->id }})"
+                                    class="text-xs text-danger-500 hover:text-danger-600 hover:underline">
+                                    {{ __('Delete') }}
+                                </button>
+                                @endif
                             </div>
                         </div>
-                    @endforeach
+
+                        <div class="tcr-body" x-show="open" x-cloak>
+                            <div class="w-full prose-sm prose max-w-none dark:prose-invert">
+                                {!! \App\Helpers\CodeBlockHelper::linkTicketCodes(\App\Helpers\MentionHelper::renderMentions(\App\Helpers\CodeBlockHelper::renderContent($comment->content))) !!}
+                            </div>
+
+                            @if($comment->attachments->count())
+                            <div class="mt-3 space-y-3">
+                                @foreach($comment->attachments as $att)
+                                    <div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                                        <video
+                                            controls
+                                            preload="metadata"
+                                            class="w-full max-h-[400px] bg-black"
+                                            style="max-width: 640px;"
+                                        >
+                                            <source src="{{ asset('storage/' . $att->filename_stored) }}" type="video/mp4">
+                                            {{ __('Your browser does not support the video tag.') }}
+                                        </video>
+                                        <div class="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-gray-700">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                <span class="text-xs text-gray-600 dark:text-gray-300 truncate">{{ $att->filename_original }}</span>
+                                                <span class="text-xs text-gray-400">
+                                                    {{ $att->size_bytes >= 1048576 ? round($att->size_bytes / 1048576, 1) . ' MB' : round($att->size_bytes / 1024, 1) . ' KB' }}
+                                                </span>
+                                            </div>
+                                            <a href="{{ asset('storage/' . $att->filename_stored) }}" download="{{ $att->filename_original }}"
+                                                class="flex items-center gap-1 text-xs text-primary-500 hover:text-primary-600 flex-shrink-0">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                                {{ __('Download') }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
-                @endif
+                @endforeach
             </div>
-            @endforeach
+
+            <style>
+                [x-cloak] { display: none !important; }
+                .ticket-comments-timeline { position: relative; padding-top: 4px; }
+                .tcr {
+                    position: relative;
+                    display: flex;
+                    gap: 14px;
+                    padding-bottom: 18px;
+                }
+                .tcr--last { padding-bottom: 0; }
+                .tcr-rail {
+                    position: relative;
+                    flex: 0 0 28px;
+                    display: flex;
+                    justify-content: center;
+                }
+                /* vertical line behind the avatar, skipped on the last row */
+                .tcr:not(.tcr--last) .tcr-rail::before {
+                    content: '';
+                    position: absolute;
+                    top: 28px;
+                    bottom: -18px;
+                    left: 50%;
+                    width: 2px;
+                    margin-left: -1px;
+                    background: rgba(148, 163, 184, 0.28);
+                }
+                .tcr-node {
+                    position: relative;
+                    z-index: 1;
+                    width: 28px;
+                    height: 28px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 9999px;
+                    background: rgb(17, 24, 39);
+                    box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.28);
+                }
+                :root:not(.dark) .tcr-node { background: #ffffff; box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.45); }
+
+                .tcr-col { flex: 1; min-width: 0; }
+                .tcr-headline {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    width: 100%;
+                }
+                .tcr-toggle {
+                    flex: 1;
+                    min-width: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 3px;
+                    text-align: left;
+                    background: transparent;
+                    border: 0;
+                    padding: 4px 0;
+                    cursor: pointer;
+                    color: inherit;
+                }
+                .tcr-toggle:hover .tcr-author { color: rgb(59 130 246); }
+                .tcr-meta {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 13px;
+                    color: rgb(107 114 128);
+                    flex-wrap: wrap;
+                }
+                .tcr-author {
+                    font-weight: 600;
+                    color: rgb(229 231 235);
+                    transition: color 120ms ease;
+                }
+                :root:not(.dark) .tcr-author { color: rgb(17 24 39); }
+                .tcr-sep { color: rgb(75 85 99); }
+                .tcr-time-rel { color: rgb(107 114 128); }
+                .tcr-chevron {
+                    width: 14px;
+                    height: 14px;
+                    color: rgb(107 114 128);
+                    transition: transform 150ms ease;
+                }
+                .tcr-chevron-open { transform: rotate(180deg); }
+                .tcr-preview {
+                    font-size: 13px;
+                    color: rgb(156 163 175);
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .tcr-actions {
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding-top: 4px;
+                }
+                .tcr-body { margin-top: 8px; }
+            </style>
             @endif
 
             @if($tab === 'activities')
