@@ -17,6 +17,21 @@
 return [
 
     [
+        'version' => '1.3.2',
+        'released_at' => '2026-04-24',
+        'type' => 'patch',
+        'title' => 'Messenger — sharper images, pasting screenshots finally works',
+        'highlights' => [
+            '🖼️ Uploaded images no longer halved and heavily compressed — resize ratio 0.45 → 0.9 and quality 85 → 90, screenshots look crisp at retina density (only affects new uploads; already-uploaded media stays as is)',
+            '📐 Attachment thumbnail slot widened 240 → 380px so previews do not feel cramped; click still opens full-size lightbox',
+            '📋 Paste (Cmd+V) screenshots or images in the composer — previously silently broken, now uploads on the fly',
+            '🪟 Sequential pastes accumulate: take screenshot → paste → take another → paste → both stay attached until you send',
+            '🗂️ Drag-and-drop multiple files from Finder into the composer; each chip has an × to remove before sending',
+            '📨 Outbound email sender switched to noreply@digicrats.com (from bintang.jerry@digicrats.com) — all notifications, invites, daily/weekly reports, and AI replies now come from the shared mailbox',
+        ],
+    ],
+
+    [
         'version' => '1.3.1',
         'released_at' => '2026-04-23',
         'type' => 'patch',
