@@ -415,23 +415,8 @@
                         <div class="msgr-composer"
                              x-on:dragover.prevent="$el.classList.add('msgr-composer-dragover')"
                              x-on:dragleave.prevent="$el.classList.remove('msgr-composer-dragover')"
-                             x-on:drop.prevent="
-                                 $el.classList.remove('msgr-composer-dragover');
-                                 const dt = $event.dataTransfer;
-                                 if (!dt || !dt.files.length) return;
-                                 $wire.uploadMultiple('files', Array.from(dt.files), () => {}, () => {}, () => {});
-                             "
-                             x-on:paste="
-                                 const items = $event.clipboardData?.items;
-                                 if (! items) return;
-                                 const files = [];
-                                 for (const item of items) {
-                                     if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
-                                 }
-                                 if (! files.length) return;
-                                 $event.preventDefault();
-                                 $wire.uploadMultiple('files', files, () => {}, () => {}, () => {});
-                             ">
+                             x-on:drop.prevent="window.msgrHandleDrop($event, $wire, $el)"
+                             x-on:paste="window.msgrHandlePaste($event, $wire)">
                             @if($replyToMessageId)
                                 @php
                                     $replyMsg = collect($messages)->firstWhere('id', $replyToMessageId);
@@ -453,6 +438,7 @@
                                             @endif
                                             <span>{{ $file->getClientOriginalName() }}</span>
                                             <span style="font-size:10px;color:#6b7280;margin-left:4px;">({{ number_format($file->getSize() / 1024, 0) }}KB)</span>
+                                            <button type="button" wire:click="removeFile({{ $idx }})" title="Remove" style="background:transparent;border:none;color:#9ca3af;cursor:pointer;margin-left:6px;padding:0;font-size:14px;line-height:1;">×</button>
                                         </div>
                                     @endforeach
                                 </div>
@@ -469,17 +455,7 @@
                                     rows="1"
                                     x-on:input="onTyping()"
                                     x-on:keydown.enter.prevent="$el.form.requestSubmit()"
-                                    x-on:paste="
-                                        const items = $event.clipboardData?.items;
-                                        if (!items) return;
-                                        const files = [];
-                                        for (const item of items) {
-                                            if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
-                                        }
-                                        if (!files.length) return;
-                                        $event.preventDefault();
-                                        $wire.uploadMultiple('files', files, () => {}, () => {}, () => {});
-                                    "></textarea>
+                                    x-on:paste="window.msgrHandlePaste($event, $wire)"></textarea>
 
                                 <div class="msgr-composer-actions">
                                     <button type="button" class="msgr-icon-btn" wire:click="startJitsiMeeting" wire:loading.attr="disabled" wire:target="startJitsiMeeting" title="Start video meeting (Jitsi)">

@@ -602,23 +602,8 @@
                     <div class="msgr-composer"
                          x-on:dragover.prevent="$el.classList.add('msgr-composer-dragover')"
                          x-on:dragleave.prevent="$el.classList.remove('msgr-composer-dragover')"
-                         x-on:drop.prevent="
-                             $el.classList.remove('msgr-composer-dragover');
-                             const dt = $event.dataTransfer;
-                             if (!dt || !dt.files.length) return;
-                             $wire.uploadMultiple('files', Array.from(dt.files), () => {}, () => {}, () => {});
-                         "
-                         x-on:paste="
-                             const items = $event.clipboardData?.items;
-                             if (! items) return;
-                             const files = [];
-                             for (const item of items) {
-                                 if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
-                             }
-                             if (! files.length) return;
-                             $event.preventDefault();
-                             $wire.uploadMultiple('files', files, () => {}, () => {}, () => {});
-                         ">
+                         x-on:drop.prevent="window.msgrHandleDrop($event, $wire, $el)"
+                         x-on:paste="window.msgrHandlePaste($event, $wire)">
                         @if($replyToMessageId)
                             @php $replyMsg = collect($messages)->firstWhere('id', $replyToMessageId); @endphp
                             @if($replyMsg)
@@ -638,6 +623,7 @@
                                         @endif
                                         <span>{{ $file->getClientOriginalName() }}</span>
                                         <span style="font-size:10px;color:#6b7280;margin-left:4px;">({{ number_format($file->getSize() / 1024, 0) }}KB)</span>
+                                        <button type="button" wire:click="removeFile({{ $idx }})" title="Remove" style="background:transparent;border:none;color:#9ca3af;cursor:pointer;margin-left:6px;padding:0;font-size:14px;line-height:1;">×</button>
                                     </div>
                                 @endforeach
                             </div>
@@ -650,17 +636,7 @@
                             <textarea wire:model.defer="newMessage" class="msgr-composer-textarea" placeholder="Write a message… (Enter to send)" rows="1"
                                       x-on:input="onTyping()"
                                       x-on:keydown.enter.prevent="$el.form.requestSubmit()"
-                                      x-on:paste="
-                                          const items = $event.clipboardData?.items;
-                                          if (!items) return;
-                                          const files = [];
-                                          for (const item of items) {
-                                              if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
-                                          }
-                                          if (!files.length) return;
-                                          $event.preventDefault();
-                                          $wire.uploadMultiple('files', files, () => {}, () => {}, () => {});
-                                      "></textarea>
+                                      x-on:paste="window.msgrHandlePaste($event, $wire)"></textarea>
                             <div class="msgr-composer-actions">
                                 <button type="button" class="msgr-icon-btn" wire:click="startJitsiMeeting" wire:loading.attr="disabled" wire:target="startJitsiMeeting" title="Start video meeting (Jitsi)">
                                     <svg wire:loading.remove wire:target="startJitsiMeeting" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>

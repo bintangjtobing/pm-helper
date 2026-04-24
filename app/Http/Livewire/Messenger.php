@@ -56,6 +56,7 @@ class Messenger extends Component
 
     public string $newMessage = '';
     public $files = [];
+    public $pendingFiles = [];
     public ?int $replyToMessageId = null;
     public ?int $editingMessageId = null;
     public string $editingBody = '';
@@ -185,9 +186,32 @@ class Messenger extends Component
     {
         $this->newMessage = '';
         $this->files = [];
+        $this->pendingFiles = [];
         $this->replyToMessageId = null;
         $this->editingMessageId = null;
         $this->editingBody = '';
+    }
+
+    /**
+     * Append newly uploaded files to the composer instead of replacing them,
+     * so sequential paste/drop actions accumulate before send.
+     */
+    public function updatedPendingFiles(): void
+    {
+        if (! is_array($this->pendingFiles) || empty($this->pendingFiles)) {
+            return;
+        }
+        $this->files = array_merge(is_array($this->files) ? $this->files : [], $this->pendingFiles);
+        $this->pendingFiles = [];
+    }
+
+    public function removeFile(int $index): void
+    {
+        if (! is_array($this->files) || ! array_key_exists($index, $this->files)) {
+            return;
+        }
+        unset($this->files[$index]);
+        $this->files = array_values($this->files);
     }
 
     // ──────────────────────────────────────────────────────────────────────

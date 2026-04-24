@@ -1,4 +1,37 @@
     <script>
+        // Shared helpers for composer paste/drop handlers.
+        // Kept outside Alpine expressions because Alpine 2.x parser does not
+        // allow `const`/`let` inside x-on bodies (wrapped in `with() { ... }`).
+        window.msgrCollectClipboardFiles = function (event) {
+            var out = [];
+            var items = event && event.clipboardData && event.clipboardData.items;
+            if (!items) return out;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].kind === 'file') {
+                    var f = items[i].getAsFile();
+                    if (f) out.push(f);
+                }
+            }
+            return out;
+        };
+        window.msgrUploadFilesTo = function (wire, files) {
+            if (!files || !files.length) return;
+            var noop = function () {};
+            wire.uploadMultiple('pendingFiles', files, noop, noop, noop);
+        };
+        window.msgrHandlePaste = function (event, wire) {
+            var files = window.msgrCollectClipboardFiles(event);
+            if (!files.length) return;
+            event.preventDefault();
+            window.msgrUploadFilesTo(wire, files);
+        };
+        window.msgrHandleDrop = function (event, wire, composerEl) {
+            var dt = event.dataTransfer;
+            if (composerEl) composerEl.classList.remove('msgr-composer-dragover');
+            if (!dt || !dt.files.length) return;
+            window.msgrUploadFilesTo(wire, Array.prototype.slice.call(dt.files));
+        };
+
         function messengerWidget() {
             const initialMyStatus = @json($this->myStatus);
             const todayStr = new Date().toISOString().split('T')[0];
