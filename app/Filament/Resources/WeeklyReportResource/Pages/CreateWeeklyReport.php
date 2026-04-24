@@ -24,7 +24,7 @@ class CreateWeeklyReport extends CreateRecord
 
         $service = new WeeklyReportService();
         $bounds = $service->getWeekBounds();
-        $summary = $service->generateAutoSummary(auth()->user(), $bounds['week_start'], $bounds['week_end']);
+        $summary = $service->generateAutoSummary(auth()->user(), $bounds['week_start'], $bounds['week_end'], null);
         $content = $service->formatSummaryAsMarkdown($summary);
 
         $this->form->fill([
@@ -40,11 +40,12 @@ class CreateWeeklyReport extends CreateRecord
 
         $weekStart = Carbon::parse($data['week_start'])->startOfWeek(Carbon::MONDAY);
         $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
+        $projectId = isset($data['project_id']) && $data['project_id'] !== '' ? (int) $data['project_id'] : null;
 
         $data['user_id'] = auth()->id();
         $data['week_start'] = $weekStart->format('Y-m-d');
         $data['week_end'] = $weekEnd->format('Y-m-d');
-        $data['auto_summary'] = $service->generateAutoSummary(auth()->user(), $weekStart, $weekEnd);
+        $data['auto_summary'] = $service->generateAutoSummary(auth()->user(), $weekStart, $weekEnd, $projectId);
         $data['status'] = 'draft';
 
         return $data;

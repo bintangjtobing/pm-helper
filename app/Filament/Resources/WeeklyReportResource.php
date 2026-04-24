@@ -70,6 +70,31 @@ class WeeklyReportResource extends Resource
         return $query->where('user_id', $user->id);
     }
 
+    /**
+     * Regenerate the auto-summary content when week_start or project_id changes.
+     */
+    protected static function regenerateContent(callable $get, callable $set): void
+    {
+        $weekStartRaw = $get('week_start');
+        if (empty($weekStartRaw)) {
+            return;
+        }
+
+        try {
+            $weekStart = \Carbon\Carbon::parse($weekStartRaw)->startOfWeek(\Carbon\Carbon::MONDAY);
+        } catch (\Throwable $e) {
+            return;
+        }
+        $weekEnd = $weekStart->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+
+        $projectIdRaw = $get('project_id');
+        $projectId = $projectIdRaw !== null && $projectIdRaw !== '' ? (int) $projectIdRaw : null;
+
+        $service = new \App\Services\WeeklyReportService();
+        $summary = $service->generateAutoSummary(auth()->user(), $weekStart, $weekEnd, $projectId);
+        $set('content', $service->formatSummaryAsMarkdown($summary));
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -98,7 +123,8 @@ class WeeklyReportResource extends Resource
                                         }
                                         return $options;
                                     })
-                                    ->reactive(),
+                                    ->reactive()
+                                    ->afterStateUpdated(fn ($state, callable $get, callable $set) => self::regenerateContent($get, $set)),
 
                                 Forms\Components\Select::make('project_id')
                                     ->label(__('Project'))
@@ -112,7 +138,9 @@ class WeeklyReportResource extends Resource
                                         $owned = Project::where('owner_id', $user->id)->pluck('name', 'id');
                                         $attached = $user->projects()->pluck('name', 'projects.id');
                                         return $owned->union($attached);
-                                    }),
+                                    })
+                                    ->reactive()
+                                    ->afterStateUpdated(fn ($state, callable $get, callable $set) => self::regenerateContent($get, $set)),
 
                                 Forms\Components\Hidden::make('user_id')
                                     ->default(auth()->id()),

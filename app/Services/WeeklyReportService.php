@@ -20,18 +20,30 @@ class WeeklyReportService
         ];
     }
 
-    public function generateAutoSummary(User $user, Carbon $weekStart, Carbon $weekEnd): array
+    public function generateAutoSummary(User $user, Carbon $weekStart, Carbon $weekEnd, ?int $projectId = null): array
     {
-        $projectIds = $this->getUserProjectIds($user);
+        $userProjectIds = $this->getUserProjectIds($user);
 
-        // Snapshot: ALL tickets in user's projects (current state)
+        if ($projectId !== null) {
+            // Hard access check — don't leak tickets from projects the user isn't on.
+            if (! in_array((int) $projectId, $userProjectIds, true)) {
+                return $this->emptySummary();
+            }
+            $projectIds = [(int) $projectId];
+            $scoped = true;
+        } else {
+            $projectIds = $userProjectIds;
+            $scoped = false;
+        }
+
+        // Snapshot: ALL tickets in the scoped projects (current state)
         $allTickets = $this->getAllProjectTickets($projectIds);
 
         // Activity: tickets specifically updated THIS week
-        $ticketsUpdated = $this->getTicketsUpdated($user, $weekStart, $weekEnd);
-        $ticketsCompleted = $this->getTicketsCompleted($user, $weekStart, $weekEnd);
-        $statusChanges = $this->getStatusChanges($user, $weekStart, $weekEnd);
-        $hoursLogged = $this->getHoursLogged($user, $weekStart, $weekEnd);
+        $ticketsUpdated = $this->getTicketsUpdated($user, $weekStart, $weekEnd, $projectIds, $scoped);
+        $ticketsCompleted = $this->getTicketsCompleted($user, $weekStart, $weekEnd, $projectIds, $scoped);
+        $statusChanges = $this->getStatusChanges($user, $weekStart, $weekEnd, $projectIds, $scoped);
+        $hoursLogged = $this->getHoursLogged($user, $weekStart, $weekEnd, $projectIds, $scoped);
 
         // Build breakdowns from ALL project tickets (snapshot)
         $statusBreakdown = [];
@@ -160,7 +172,31 @@ class WeeklyReportService
     {
         $owned = \App\Models\Project::where('owner_id', $user->id)->pluck('id');
         $member = $user->projects()->pluck('projects.id');
-        return $owned->merge($member)->unique()->toArray();
+        return $owned->merge($member)->unique()->map(fn ($id) => (int) $id)->toArray();
+    }
+
+    private function emptySummary(): array
+    {
+        return [
+            'tickets_updated' => [],
+            'tickets_changed_this_week' => [],
+            'tickets_completed' => [],
+            'status_changes' => [],
+            'hours_logged' => ['total_hours' => 0, 'entries' => []],
+            'progress_summary' => [
+                'total_tickets_touched' => 0,
+                'tickets_updated_this_week' => 0,
+                'tickets_completed' => 0,
+                'completion_rate' => 0,
+                'status_changes_count' => 0,
+                'total_hours' => 0,
+                'projects_worked' => 0,
+            ],
+            'status_breakdown' => [],
+            'project_breakdown' => [],
+            'type_breakdown' => [],
+            'priority_breakdown' => [],
+        ];
     }
 
     private function getAllProjectTickets(array $projectIds): array
@@ -183,15 +219,20 @@ class WeeklyReportService
             ->toArray();
     }
 
-    private function getTicketsUpdated(User $user, Carbon $weekStart, Carbon $weekEnd): array
+    private function getTicketsUpdated(User $user, Carbon $weekStart, Carbon $weekEnd, array $projectIds, bool $scoped): array
     {
-        $projectIds = $this->getUserProjectIds($user);
-
-        return Ticket::where(function ($q) use ($user, $projectIds) {
+        $query = Ticket::query();
+        if ($scoped) {
+            $query->whereIn('project_id', $projectIds);
+        } else {
+            $query->where(function ($q) use ($user, $projectIds) {
                 $q->where('owner_id', $user->id)
                   ->orWhere('responsible_id', $user->id)
                   ->orWhereIn('project_id', $projectIds);
-            })
+            });
+        }
+
+        return $query
             ->whereBetween('updated_at', [$weekStart, $weekEnd])
             ->with(['project', 'status', 'type', 'priority'])
             ->limit(200)
@@ -210,16 +251,20 @@ class WeeklyReportService
             ->toArray();
     }
 
-    private function getTicketsCompleted(User $user, Carbon $weekStart, Carbon $weekEnd): array
+    private function getTicketsCompleted(User $user, Carbon $weekStart, Carbon $weekEnd, array $projectIds, bool $scoped): array
     {
-        $projectIds = $this->getUserProjectIds($user);
-
-        return Ticket::where(function ($q) use ($user, $projectIds) {
+        $query = Ticket::query();
+        if ($scoped) {
+            $query->whereIn('project_id', $projectIds);
+        } else {
+            $query->where(function ($q) use ($user, $projectIds) {
                 $q->where('owner_id', $user->id)
                   ->orWhere('responsible_id', $user->id)
                   ->orWhereIn('project_id', $projectIds);
-            })
-            ->completedBetween($weekStart, $weekEnd)
+            });
+        }
+
+        return $query->completedBetween($weekStart, $weekEnd)
             ->with(['project', 'status'])
             ->limit(200)
             ->get()
@@ -232,15 +277,19 @@ class WeeklyReportService
             ->toArray();
     }
 
-    private function getStatusChanges(User $user, Carbon $weekStart, Carbon $weekEnd): array
+    private function getStatusChanges(User $user, Carbon $weekStart, Carbon $weekEnd, array $projectIds, bool $scoped): array
     {
-        $projectIds = $this->getUserProjectIds($user);
-
-        return TicketActivity::where(function ($q) use ($user, $projectIds) {
+        $query = TicketActivity::query();
+        if ($scoped) {
+            $query->whereHas('ticket', fn($tq) => $tq->whereIn('project_id', $projectIds));
+        } else {
+            $query->where(function ($q) use ($user, $projectIds) {
                 $q->where('user_id', $user->id)
                   ->orWhereHas('ticket', fn($tq) => $tq->whereIn('project_id', $projectIds));
-            })
-            ->whereBetween('created_at', [$weekStart, $weekEnd])
+            });
+        }
+
+        return $query->whereBetween('created_at', [$weekStart, $weekEnd])
             ->with(['ticket', 'oldStatus', 'newStatus'])
             ->validStatuses()
             ->limit(200)
@@ -255,13 +304,18 @@ class WeeklyReportService
             ->toArray();
     }
 
-    private function getHoursLogged(User $user, Carbon $weekStart, Carbon $weekEnd): array
+    private function getHoursLogged(User $user, Carbon $weekStart, Carbon $weekEnd, array $projectIds, bool $scoped): array
     {
-        $entries = TicketHour::where('user_id', $user->id)
+        $query = TicketHour::where('user_id', $user->id)
             ->whereBetween('created_at', [$weekStart, $weekEnd])
             ->with(['ticket', 'activity'])
-            ->limit(100)
-            ->get();
+            ->limit(100);
+
+        if ($scoped) {
+            $query->whereHas('ticket', fn($q) => $q->whereIn('project_id', $projectIds));
+        }
+
+        $entries = $query->get();
 
         return [
             'total_hours' => round($entries->sum('value'), 2),
