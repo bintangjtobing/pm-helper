@@ -610,8 +610,8 @@
             margin-top: 6px;
         }
         .msgr-attachment-image {
-            max-width: 240px;
-            max-height: 240px;
+            max-width: 380px;
+            max-height: 380px;
             border-radius: 8px;
             cursor: pointer;
             display: block;

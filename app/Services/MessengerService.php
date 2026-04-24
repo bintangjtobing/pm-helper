@@ -44,7 +44,7 @@ class MessengerService
     /**
      * Resize ratio applied to uploaded images.
      */
-    public const IMAGE_RESIZE_RATIO = 0.45;
+    public const IMAGE_RESIZE_RATIO = 0.9;
 
     /**
      * Edit window in minutes after a message is sent.
@@ -488,8 +488,7 @@ class MessengerService
                 Image::load($sourcePath)
                     ->manipulate(function (Manipulations $m) use ($newWidth) {
                         $m->width($newWidth);
-                        $m->quality(85);
-                        $m->optimize();
+                        $m->quality(90);
                     })
                     ->save($absolutePath);
 
