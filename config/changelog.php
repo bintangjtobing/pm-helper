@@ -17,6 +17,21 @@
 return [
 
     [
+        'version' => '1.3.6',
+        'released_at' => '2026-04-25',
+        'type' => 'minor',
+        'title' => 'Customer Feedback — mobile API, dashboard visibility, public form, activity feed, chatbot chips',
+        'highlights' => [
+            '📱 Mobile API: 9 new Sanctum endpoints under /api/feedbacks — list, show, create, update, delete, convert-to-ticket, plus threaded comments (list/create/delete). Scoped to projects you own or are a member of; admins see everything',
+            '📊 Dashboard widget: new "Customer Feedback" card shows pending / converted / rejected counts, this-week new-feedback count, and this-week conversion rate with the 5 most recent pending items',
+            '🧵 Activity feed: the "Recent Activity" dashboard widget now includes customer-feedback events (submitted / converted / rejected / noted / changes applied) as a 4th union branch, with its own amber pill and "Customer Feedback Only" filter option',
+            '🌐 Public feedback form: opt-in per project — edit a project, toggle "Enable public feedback form", share the generated /feedback/{token} link. External clients can submit without logging in. Rate-limited 10/min/IP + honeypot spam protection',
+            '💬 Chatbot: added quick-action chips ("Submit feedback", "Report a bug", "Feature request") under the welcome message so users can trigger the already-wired create_customer_feedback intent without typing the prompt manually',
+            '🧱 New migration: projects.public_feedback_token (random 40-char) + projects.public_feedback_enabled boolean',
+        ],
+    ],
+
+    [
         'version' => '1.3.5',
         'released_at' => '2026-04-24',
         'type' => 'patch',

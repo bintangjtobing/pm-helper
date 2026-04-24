@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Mcp\McpController;
 use App\Http\Controllers\Api\BroadcastAuthController;
+use App\Http\Controllers\Api\CustomerFeedbackController;
 use App\Http\Controllers\Api\DailyReportController;
 use App\Http\Controllers\Api\DiscussionController;
 use App\Http\Controllers\Api\DiscussionReplyController;
@@ -84,6 +85,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // Discussion replies
     Route::post('discussions/{discussion}/replies', [DiscussionReplyController::class, 'store']);
     Route::delete('discussion-replies/{reply}', [DiscussionReplyController::class, 'destroy']);
+
+    // Customer Feedback
+    Route::get('feedbacks', [CustomerFeedbackController::class, 'index']);
+    Route::post('feedbacks', [CustomerFeedbackController::class, 'store']);
+    Route::get('feedbacks/{feedback}', [CustomerFeedbackController::class, 'show']);
+    Route::patch('feedbacks/{feedback}', [CustomerFeedbackController::class, 'update']);
+    Route::delete('feedbacks/{feedback}', [CustomerFeedbackController::class, 'destroy']);
+    Route::post('feedbacks/{feedback}/convert', [CustomerFeedbackController::class, 'convert']);
+    Route::get('feedbacks/{feedback}/comments', [CustomerFeedbackController::class, 'listComments']);
+    Route::post('feedbacks/{feedback}/comments', [CustomerFeedbackController::class, 'storeComment']);
+    Route::delete('feedback-comments/{comment}', [CustomerFeedbackController::class, 'destroyComment']);
 
     // Users
     Route::get('users', [UserController::class, 'index']);

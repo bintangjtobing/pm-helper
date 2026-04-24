@@ -112,6 +112,24 @@ class ChatWidget extends Component
         $this->emit('chatMessageReceived');
     }
 
+    public function quickPrompt(string $preset)
+    {
+        $lang = $this->language ?? 'en';
+
+        $this->message = match ($preset) {
+            'feedback' => $lang === 'id'
+                ? 'Saya mau mengirim feedback untuk project ini'
+                : 'I want to submit feedback for this project',
+            'bug' => $lang === 'id'
+                ? 'Saya mau laporin bug:'
+                : 'I want to report a bug:',
+            'feature' => $lang === 'id'
+                ? 'Saya punya ide feature request:'
+                : 'I have a feature request:',
+            default => $this->message,
+        };
+    }
+
     public function newConversation()
     {
         $this->conversationId = null;

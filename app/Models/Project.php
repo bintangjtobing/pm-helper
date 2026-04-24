@@ -19,7 +19,8 @@ class Project extends Model implements HasMedia
     protected $fillable = [
         'name', 'description', 'goals', 'status_id', 'owner_id', 'ticket_prefix',
         'status_type', 'type', 'auto_complete_enabled', 'auto_complete_days',
-        'auto_complete_from_status', 'auto_complete_to_status'
+        'auto_complete_from_status', 'auto_complete_to_status',
+        'public_feedback_token', 'public_feedback_enabled',
     ];
 
     protected $appends = [
@@ -29,7 +30,18 @@ class Project extends Model implements HasMedia
     protected $casts = [
         'auto_complete_enabled' => 'boolean',
         'auto_complete_days' => 'integer',
+        'public_feedback_enabled' => 'boolean',
     ];
+
+    public function ensurePublicFeedbackToken(): string
+    {
+        if (! $this->public_feedback_token) {
+            $this->public_feedback_token = \Illuminate\Support\Str::random(40);
+            $this->save();
+        }
+
+        return $this->public_feedback_token;
+    }
 
     public function owner(): BelongsTo
     {

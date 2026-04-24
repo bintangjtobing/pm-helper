@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Filament\Widgets\BirthdayCelebration;
 use App\Filament\Widgets\DiscussionsOverview;
 use App\Filament\Widgets\EnhancedActivityFeed;
+use App\Filament\Widgets\FeedbackOverview;
 use App\Filament\Widgets\GreetingWidget;
 use App\Filament\Widgets\FavoriteProjects;
 use App\Filament\Widgets\LatestProjects;
@@ -35,6 +36,7 @@ class Dashboard extends BasePage
             ReportsOverview::class,
             MyOkrProgressWidget::class,
             DiscussionsOverview::class,
+            FeedbackOverview::class,
             EnhancedActivityFeed::class,
             LatestProjects::class,
             LatestTickets::class,

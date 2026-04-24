@@ -7,11 +7,19 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use App\Http\Controllers\RoadMap\DataController;
 use App\Http\Controllers\Auth\OidcAuthController;
 use App\Http\Controllers\Messenger\MessengerAttachmentController;
+use App\Http\Controllers\PublicFeedbackController;
 
 // Share ticket
 Route::get('/tickets/share/{ticket:code}', function (Ticket $ticket) {
     return redirect()->to(route('filament.resources.tickets.view', $ticket));
 })->name('filament.resources.tickets.share');
+
+// Public customer feedback form (no auth, opt-in per project)
+Route::middleware(['web', 'throttle:public-feedback'])->group(function () {
+    Route::get('/feedback/{token}', [PublicFeedbackController::class, 'show'])->name('public.feedback.show');
+    Route::post('/feedback/{token}', [PublicFeedbackController::class, 'store'])->name('public.feedback.store');
+    Route::get('/feedback/{token}/thanks', [PublicFeedbackController::class, 'thanks'])->name('public.feedback.thanks');
+});
 
 // Validate an account
 Route::get('/validate-account/{user:creation_token}', function (User $user) {

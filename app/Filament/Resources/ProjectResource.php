@@ -290,6 +290,37 @@ class ProjectResource extends Resource
                                     ->columnSpan(1),
                             ]),
 
+                        // Public feedback link settings (optional per project)
+                        Forms\Components\Placeholder::make('public_feedback_heading')
+                            ->label('')
+                            ->content(new HtmlString('
+                                <div class="mb-2 mt-4">
+                                    <h3 class="text-lg font-medium text-gray-900">' . __('Public Feedback Link') . '</h3>
+                                    <p class="text-sm text-gray-600">' . __('Opt in to expose a public /feedback/{token} form so anyone with the link can submit feedback on this project without logging in.') . '</p>
+                                </div>
+                            ')),
+                        Forms\Components\Checkbox::make('public_feedback_enabled')
+                            ->label(__('Enable public feedback form'))
+                            ->helperText(__('When ON, the public link below will accept submissions.'))
+                            ->afterStateUpdated(function ($state, $record) {
+                                if ($state && $record) {
+                                    $record->ensurePublicFeedbackToken();
+                                }
+                            })
+                            ->reactive(),
+                        Forms\Components\Placeholder::make('public_feedback_link')
+                            ->label(__('Public feedback URL'))
+                            ->visible(fn ($record) => $record && $record->public_feedback_enabled)
+                            ->content(function ($record) {
+                                if (! $record) return '—';
+                                $token = $record->ensurePublicFeedbackToken();
+                                $url = url('/feedback/' . $token);
+                                return new HtmlString(
+                                    '<a href="' . e($url) . '" target="_blank" rel="noopener" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#2563eb;word-break:break-all;text-decoration:underline;">' . e($url) . '</a>'
+                                    . '<div style="margin-top:4px;font-size:11px;color:#71717a;">' . __('Share this link with external clients. Rate-limited to 10 submissions per minute per IP. Spam-protected via honeypot.') . '</div>'
+                                );
+                            }),
+
                         Forms\Components\Placeholder::make('auto_complete_info')
                             ->label('')
                             ->content(new HtmlString('

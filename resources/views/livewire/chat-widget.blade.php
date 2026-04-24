@@ -476,6 +476,20 @@
                 </div>
             </div>
             @endif
+
+            @if(count(array_filter($chatMessages, fn($m) => ($m['role'] ?? '') !== 'system')) <= 1)
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-left:36px;">
+                    <button type="button" wire:click="quickPrompt('feedback')" style="cursor:pointer;padding:5px 10px;font-size:11px;font-weight:500;background:rgba(245,158,11,0.08);color:#b45309;border:1px solid rgba(245,158,11,0.25);border-radius:999px;">
+                        💬 {{ $language === 'id' ? 'Kirim feedback' : 'Submit feedback' }}
+                    </button>
+                    <button type="button" wire:click="quickPrompt('bug')" style="cursor:pointer;padding:5px 10px;font-size:11px;font-weight:500;background:rgba(239,68,68,0.08);color:#b91c1c;border:1px solid rgba(239,68,68,0.25);border-radius:999px;">
+                        🐞 {{ $language === 'id' ? 'Laporin bug' : 'Report a bug' }}
+                    </button>
+                    <button type="button" wire:click="quickPrompt('feature')" style="cursor:pointer;padding:5px 10px;font-size:11px;font-weight:500;background:rgba(59,130,246,0.08);color:#1d4ed8;border:1px solid rgba(59,130,246,0.25);border-radius:999px;">
+                        ✨ {{ $language === 'id' ? 'Feature request' : 'Feature request' }}
+                    </button>
+                </div>
+            @endif
         </div>
 
         {{-- Input Area --}}

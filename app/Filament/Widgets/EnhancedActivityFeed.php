@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\CustomerFeedbackActivity;
 use App\Models\TicketActivity;
 use App\Models\TicketComment;
 use App\Models\WeeklyReport;
@@ -25,7 +26,7 @@ class EnhancedActivityFeed extends BaseWidget
     ];
 
     // Properties untuk filter
-    public string $activityType = 'all'; // 'all', 'activities', 'comments', 'weekly_reports'
+    public string $activityType = 'all'; // 'all', 'activities', 'comments', 'weekly_reports', 'feedbacks'
 
     public static function canView(): bool
     {
@@ -109,6 +110,34 @@ class EnhancedActivityFeed extends BaseWidget
                 \DB::raw('NULL as content'),
             ]);
 
+        $feedbacksQuery = CustomerFeedbackActivity::query()
+            ->select([
+                'id',
+                'created_at',
+                'user_id',
+                'feedback_id as ticket_id',
+                \DB::raw("'feedback' as type"),
+                \DB::raw("CASE action
+                    WHEN 'submitted' THEN 'submitted customer feedback'
+                    WHEN 'converted_to_ticket' THEN 'converted feedback to ticket'
+                    WHEN 'rejected' THEN 'rejected customer feedback'
+                    WHEN 'noted' THEN 'added a note to feedback'
+                    WHEN 'changes_applied' THEN 'applied proposed changes'
+                    ELSE CONCAT('updated feedback (', action, ')')
+                END as description"),
+                \DB::raw('NULL as old_status_id'),
+                \DB::raw('NULL as new_status_id'),
+                'notes as content',
+            ])
+            ->whereHas('feedback', function ($q) {
+                $uid = auth()->user()->id;
+                $q->where('user_id', $uid)
+                    ->orWhereHas('project', function ($p) use ($uid) {
+                        $p->where('owner_id', $uid)
+                            ->orWhereHas('users', fn ($u) => $u->where('users.id', $uid));
+                    });
+            });
+
         // Filter berdasarkan type
         if ($this->activityType === 'activities') {
             return $activitiesQuery->latest()->limit(10);
@@ -116,10 +145,12 @@ class EnhancedActivityFeed extends BaseWidget
             return $commentsQuery->latest()->limit(10);
         } elseif ($this->activityType === 'weekly_reports') {
             return $weeklyReportsQuery->orderBy('created_at', 'desc')->limit(10);
+        } elseif ($this->activityType === 'feedbacks') {
+            return $feedbacksQuery->orderBy('created_at', 'desc')->limit(10);
         }
 
         // Union untuk semua
-        return $activitiesQuery->union($commentsQuery)->union($weeklyReportsQuery)
+        return $activitiesQuery->union($commentsQuery)->union($weeklyReportsQuery)->union($feedbacksQuery)
             ->orderBy('created_at', 'desc')
             ->limit(10);
     }
@@ -154,6 +185,7 @@ class EnhancedActivityFeed extends BaseWidget
                     'activities' => 'Status Changes Only',
                     'comments' => 'Comments Only',
                     'weekly_reports' => 'Weekly Reports Only',
+                    'feedbacks' => 'Customer Feedback Only',
                 ])
                 ->default('all')
                 ->query(function (Builder $query, array $data): Builder {
@@ -171,7 +203,8 @@ class EnhancedActivityFeed extends BaseWidget
             'activities' => 'status changes',
             'comments' => 'comments',
             'weekly_reports' => 'weekly reports',
-            default => 'activities, comments, and weekly reports'
+            'feedbacks' => 'customer feedback events',
+            default => 'activities, comments, weekly reports, and customer feedback'
         };
 
         return "Recent {$typeDesc} from tickets you own, are responsible for, or from projects you're involved in.";
