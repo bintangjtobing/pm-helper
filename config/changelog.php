@@ -17,6 +17,19 @@
 return [
 
     [
+        'version' => '1.3.3',
+        'released_at' => '2026-04-24',
+        'type' => 'patch',
+        'title' => 'Ticket comments — vertical timeline, collapsible by default',
+        'highlights' => [
+            '🧵 Long comment threads no longer force endless scrolling — each comment collapses to a one-line header (author · time · preview) anchored to a round avatar node on a vertical rail',
+            '▾ Click any header to expand the full rendered body, video attachments, and Raise / Edit / Delete actions; chevron rotates so you can see at a glance which rows are open',
+            '📌 The newest comment stays expanded by default, so the common "open ticket → read latest reply" flow is unchanged',
+            '🎨 Theme-aware rail (dark + light), action buttons only appear on the expanded row so collapsed rows read clean',
+        ],
+    ],
+
+    [
         'version' => '1.3.2',
         'released_at' => '2026-04-24',
         'type' => 'patch',
