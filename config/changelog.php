@@ -17,6 +17,19 @@
 return [
 
     [
+        'version' => '1.3.4',
+        'released_at' => '2026-04-24',
+        'type' => 'patch',
+        'title' => 'Weekly Report — per-project scoping, no more cross-project ticket leak',
+        'highlights' => [
+            '🔒 Picking a Project on a Weekly Report now scopes the auto-summary to THAT project only — previously it still showed tickets from every project the author had access to, so people saw QOS tickets on a Website Digicrats report',
+            '🛡️ Added an access check: if someone tries to scope to a project they are not a member or owner of, the auto-summary returns empty instead of silently falling back to all projects',
+            '🔁 Switching the Project or Report Week dropdown now regenerates the Report Content on the fly (reactive) instead of leaving the previous week\'s/project\'s content stuck in the editor',
+            '🧮 Tight per-project scope drops the generic "owner_id=me OR responsible_id=me" OR when a project is selected, so you only see tickets inside the chosen project — not your tickets from unrelated projects',
+        ],
+    ],
+
+    [
         'version' => '1.3.3',
         'released_at' => '2026-04-24',
         'type' => 'patch',
