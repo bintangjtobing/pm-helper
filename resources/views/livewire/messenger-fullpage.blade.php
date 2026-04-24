@@ -606,8 +606,7 @@
                              $el.classList.remove('msgr-composer-dragover');
                              const dt = $event.dataTransfer;
                              if (!dt || !dt.files.length) return;
-                             const input = $el.querySelector('.msgr-hidden-input');
-                             if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                             $wire.uploadMultiple('files', Array.from(dt.files), () => {}, () => {}, () => {});
                          "
                          x-on:paste="
                              const items = $event.clipboardData?.items;
@@ -618,10 +617,7 @@
                              }
                              if (! files.length) return;
                              $event.preventDefault();
-                             const dt = new DataTransfer();
-                             files.forEach(f => dt.items.add(f));
-                             const input = $el.querySelector('.msgr-hidden-input');
-                             if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
+                             $wire.uploadMultiple('files', files, () => {}, () => {}, () => {});
                          ">
                         @if($replyToMessageId)
                             @php $replyMsg = collect($messages)->firstWhere('id', $replyToMessageId); @endphp
@@ -657,17 +653,13 @@
                                       x-on:paste="
                                           const items = $event.clipboardData?.items;
                                           if (!items) return;
+                                          const files = [];
                                           for (const item of items) {
-                                              if (item.type.startsWith('image/')) {
-                                                  $event.preventDefault();
-                                                  const file = item.getAsFile();
-                                                  const dt = new DataTransfer();
-                                                  dt.items.add(file);
-                                                  const input = $el.closest('.msgr-composer').querySelector('.msgr-hidden-input');
-                                                  if (input) { input.files = dt.files; input.dispatchEvent(new Event('change', { bubbles: true })); }
-                                                  break;
-                                              }
+                                              if (item.kind === 'file') { const f = item.getAsFile(); if (f) files.push(f); }
                                           }
+                                          if (!files.length) return;
+                                          $event.preventDefault();
+                                          $wire.uploadMultiple('files', files, () => {}, () => {}, () => {});
                                       "></textarea>
                             <div class="msgr-composer-actions">
                                 <button type="button" class="msgr-icon-btn" wire:click="startJitsiMeeting" wire:loading.attr="disabled" wire:target="startJitsiMeeting" title="Start video meeting (Jitsi)">
