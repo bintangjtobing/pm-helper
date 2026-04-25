@@ -177,12 +177,12 @@ class WebhookResource extends Resource
                 Tables\Columns\TextColumn::make('last_fired_at')
                     ->label('Last fired')
                     ->dateTime('Y-m-d H:i')
-                    ->placeholder('—')
+                    ->formatStateUsing(fn ($state) => $state ? $state->format('Y-m-d H:i') : '—')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('last_status')
                     ->label('Status')
-                    ->placeholder('—'),
+                    ->formatStateUsing(fn ($state) => $state ?: '—'),
             ])
             ->defaultSort('created_at', 'desc');
     }
