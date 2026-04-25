@@ -119,7 +119,6 @@ class WebhookResource extends Resource
                 Forms\Components\TextInput::make('secret')
                     ->label('Shared secret (optional)')
                     ->password()
-                    ->revealable()
                     ->maxLength(255)
                     ->helperText('Sent as the X-Webhook-Secret header. Use it on your endpoint to verify the request is genuine.'),
 
