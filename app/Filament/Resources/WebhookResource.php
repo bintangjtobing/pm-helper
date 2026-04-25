@@ -130,8 +130,8 @@ class WebhookResource extends Resource
                         if (! $user) {
                             return [];
                         }
-                        $owned = $user->ownedProjects()->pluck('name', 'id');
-                        $member = $user->projects()->pluck('name', 'id');
+                        $owned = $user->ownedProjects()->pluck('projects.name', 'projects.id');
+                        $member = $user->projects()->pluck('projects.name', 'projects.id');
                         return $owned->union($member)->toArray();
                     })
                     ->placeholder('Leave empty to fire for all your projects')
