@@ -262,6 +262,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return $this->hasMany(WeeklyReport::class, 'user_id');
     }
 
+    public function webhooks(): HasMany
+    {
+        return $this->hasMany(UserWebhook::class, 'user_id');
+    }
+
     /**
      * All messenger conversations where this user is a participant (either side).
      */

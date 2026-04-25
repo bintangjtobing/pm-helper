@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        \App\Models\Ticket::observe(\App\Observers\TicketStatusWebhookObserver::class);
+
         // Di AppServiceProvider.php dalam method boot()
         Filament::registerRenderHook(
             'head.end',
