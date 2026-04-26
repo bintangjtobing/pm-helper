@@ -17,6 +17,19 @@
 return [
 
     [
+        'version' => '1.4.0',
+        'released_at' => '2026-04-26',
+        'type' => 'minor',
+        'title' => 'Webhooks (per-user QA Failed triggers) + ticket status notification fixes',
+        'highlights' => [
+            '🪝 Admin → Webhooks: each user can now wire a personal webhook URL (n8n, Zapier, Make, custom) that fires the moment one of their tickets transitions to QA Failed (status_id = 7). AND-filter on the assignee, optional project narrowing, optional X-Webhook-Secret header for endpoint verification, Test fire button, last-fired/status/error diagnostics — all scoped per user',
+            '📧 Ticket status email: previously targeted the empty ticket_watchers pivot, so almost no one received status-change emails. Now sent to the responsible user (assignee) + anyone who has explicitly hit Subscribe on the ticket. Owner / project members are intentionally excluded — they opt in via the Subscribe button',
+            '🔔 Bell notification sound: when the unread badge increments, PMHelper now plays the same chime as the messenger (/sounds/messenger-notification.mp3, volume 0.7) — works across every Filament page via a global MutationObserver on the bell button',
+            '🛠️ Restored Gmail SMTP delivery — generated a fresh App Password for noreply@digicrats.com after the previous credential failed authentication; outbound mail flowing again',
+        ],
+    ],
+
+    [
         'version' => '1.3.6',
         'released_at' => '2026-04-25',
         'type' => 'minor',
