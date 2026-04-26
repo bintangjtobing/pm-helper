@@ -377,6 +377,84 @@ class AppServiceProvider extends ServiceProvider
                 : '',
         );
 
+        // Bell notification sound — plays the same chime as the messenger
+        // whenever the Filament database-notifications unread badge increases.
+        // Identifies the bell button by its heroicon-o-bell SVG and watches
+        // the indicator (digit) for upward changes via MutationObserver.
+        Filament::registerRenderHook(
+            'body.end',
+            fn (): string => auth()->check() ? <<<'HTML'
+            <script>
+            (function(){
+                if (window.__bellSoundWired) return;
+                window.__bellSoundWired = true;
+
+                let audio;
+                try {
+                    audio = new Audio('/sounds/messenger-notification.mp3');
+                    audio.preload = 'auto';
+                    audio.volume = 0.7;
+                } catch (e) { return; }
+
+                const playSound = () => {
+                    try {
+                        audio.currentTime = 0;
+                        const p = audio.play();
+                        if (p && p.catch) p.catch(() => {});
+                    } catch (e) {}
+                };
+
+                const findBellButton = () => {
+                    const svgs = document.querySelectorAll('svg.heroicon-o-bell, svg[class*="bell"]');
+                    for (const svg of svgs) {
+                        const btn = svg.closest('button, a, [role="button"]');
+                        if (btn) return btn;
+                    }
+                    return null;
+                };
+
+                const readCount = (btn) => {
+                    if (! btn) return 0;
+                    const m = (btn.textContent || '').match(/\d+/);
+                    return m ? parseInt(m[0], 10) : 0;
+                };
+
+                let lastCount = null;
+                let observer = null;
+
+                const wire = () => {
+                    const btn = findBellButton();
+                    if (! btn) return false;
+                    lastCount = readCount(btn);
+                    observer = new MutationObserver(() => {
+                        const next = readCount(btn);
+                        if (lastCount !== null && next > lastCount) {
+                            playSound();
+                        }
+                        lastCount = next;
+                    });
+                    observer.observe(btn, { subtree: true, childList: true, characterData: true });
+                    return true;
+                };
+
+                const tryWire = () => {
+                    if (wire()) return;
+                    let attempts = 0;
+                    const iv = setInterval(() => {
+                        if (wire() || ++attempts > 20) clearInterval(iv);
+                    }, 500);
+                };
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', tryWire);
+                } else {
+                    tryWire();
+                }
+            })();
+            </script>
+            HTML : '',
+        );
+
         // Messenger Widget - 1-on-1 team chat, injected at bottom-right (left of chatbot)
         // Auto-hidden on /dm (fullpage messenger) to avoid double-mounting the component.
         Filament::registerRenderHook(

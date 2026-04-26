@@ -103,10 +103,17 @@ class Ticket extends Model implements HasMedia
                     'user_id' => auth()->user()->id
                 ]);
 
-                // Reload watchers dari database untuk memastikan data fresh
-                $freshTicket = Ticket::with('watchers')->find($item->id);
+                // Recipients: ticket assignee (responsible) + explicit subscribers.
+                // Owner / project stakeholders are intentionally excluded — they get
+                // notified via subscribing if they want updates.
+                $freshTicket = Ticket::with(['responsible', 'subscribers'])->find($item->id);
+                $recipients = collect();
+                if ($freshTicket->responsible) {
+                    $recipients->push($freshTicket->responsible);
+                }
+                $recipients = $recipients->merge($freshTicket->subscribers)->unique('id');
 
-                foreach ($freshTicket->watchers as $user) {
+                foreach ($recipients as $user) {
                     $user->notify(new TicketStatusUpdated($freshTicket));
                 }
 
