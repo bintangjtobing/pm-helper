@@ -48,31 +48,45 @@ class WebhookResource extends Resource
                 Forms\Components\Placeholder::make('intro')
                     ->label('')
                     ->content(new HtmlString('
-                        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;color:#1e3a8a;">
-                            <div style="font-weight:600;font-size:14px;margin-bottom:6px;color:#1d4ed8;">What is this?</div>
+                        <style>
+                            .wh-info { background:#eff6ff; border:1px solid #bfdbfe; border-left:4px solid #3b82f6; border-radius:8px; padding:14px 16px; font-size:13px; line-height:1.6; color:#1e3a8a; }
+                            .wh-info h4 { font-weight:600; font-size:14px; margin:0 0 6px 0; color:#1d4ed8; }
+                            .wh-info h5 { font-weight:600; margin:10px 0 4px 0; color:#1d4ed8; }
+                            .wh-info p, .wh-info li { color:#1e3a8a; }
+                            .wh-info ul, .wh-info ol { margin:0; padding-left:18px; }
+                            .wh-info code { background:#dbeafe; color:#1e3a8a; padding:1px 5px; border-radius:3px; }
+                            .wh-info pre { margin:0; background:#1e293b; color:#e2e8f0; padding:10px 12px; border-radius:6px; font-size:11.5px; overflow:auto; }
+                            html.dark .wh-info { background:rgba(59,130,246,0.08); border-color:rgba(59,130,246,0.25); border-left-color:#60a5fa; color:#cbd5e1; }
+                            html.dark .wh-info h4, html.dark .wh-info h5 { color:#93c5fd; }
+                            html.dark .wh-info p, html.dark .wh-info li { color:#cbd5e1; }
+                            html.dark .wh-info code { background:rgba(59,130,246,0.2); color:#93c5fd; }
+                            html.dark .wh-info pre { background:#0f172a; color:#e2e8f0; }
+                        </style>
+                        <div class="wh-info">
+                            <h4>What is this?</h4>
                             <p style="margin:0 0 8px 0;">
                                 Webhooks let you push real-time notifications from PM Helper to your own automation tools
                                 (n8n, Zapier, Make, custom scripts, etc.) the moment a ticket event happens — no polling required.
                             </p>
-                            <div style="font-weight:600;margin-top:10px;margin-bottom:4px;color:#1d4ed8;">Currently supported event</div>
-                            <ul style="margin:0;padding-left:18px;">
-                                <li><strong>QA Failed</strong> — fires when a ticket assigned to <em>you</em> transitions to status <code style="background:#dbeafe;padding:1px 5px;border-radius:3px;">QA Failed (status_id&nbsp;=&nbsp;7)</code>.</li>
+                            <h5>Currently supported event</h5>
+                            <ul>
+                                <li><strong>QA Failed</strong> — fires when a ticket assigned to <em>you</em> transitions to status <code>QA Failed (status_id&nbsp;=&nbsp;7)</code>.</li>
                             </ul>
-                            <div style="font-weight:600;margin-top:10px;margin-bottom:4px;color:#1d4ed8;">How it works</div>
-                            <ol style="margin:0;padding-left:18px;">
+                            <h5>How it works</h5>
+                            <ol>
                                 <li>Save your webhook URL below (e.g. an n8n trigger URL exposed via Cloudflare Tunnel).</li>
                                 <li>Optionally narrow down which projects should fire by selecting them in <em>Project filter</em>.</li>
-                                <li>Optionally set a <em>Secret</em> — it will be sent as the <code style="background:#dbeafe;padding:1px 5px;border-radius:3px;">X-Webhook-Secret</code> header so your endpoint can verify the request is from PM Helper.</li>
+                                <li>Optionally set a <em>Secret</em> — it will be sent as the <code>X-Webhook-Secret</code> header so your endpoint can verify the request is from PM Helper.</li>
                                 <li>Hit <em>Test fire</em> after saving to verify your endpoint accepts the payload.</li>
                             </ol>
-                            <div style="font-weight:600;margin-top:10px;margin-bottom:4px;color:#1d4ed8;">Delivery semantics</div>
-                            <ul style="margin:0;padding-left:18px;">
+                            <h5>Delivery semantics</h5>
+                            <ul>
                                 <li>Fire-and-forget: a slow or failing endpoint will not block the user changing the ticket status.</li>
                                 <li>2-second timeout. Failures are logged below in <em>Last status / Last error</em> — there is no automatic retry.</li>
                                 <li>Each user owns their own webhook. Other users cannot see, edit, or trigger yours.</li>
                             </ul>
-                            <div style="font-weight:600;margin-top:10px;margin-bottom:4px;color:#1d4ed8;">Sample payload</div>
-                            <pre style="margin:0;background:#1e293b;color:#e2e8f0;padding:10px 12px;border-radius:6px;font-size:11.5px;overflow:auto;">{
+                            <h5>Sample payload</h5>
+                            <pre>{
   "event": "ticket.status_changed",
   "new_status_id": 7,
   "old_status_id": 6,
