@@ -51,7 +51,7 @@ class MyCcTickets extends BaseWidget
                           ->where('ticket_comments.created_at', '>=', $cutoff);
                   });
             })
-            ->with(['project:id,name', 'status:id,name,color', 'responsible:id,name,avatar'])
+            ->with(['project:id,name', 'status:id,name,color', 'responsible:id,name,avatar_url'])
             ->orderByDesc('last_activity_at')
             ->limit(5);
     }
