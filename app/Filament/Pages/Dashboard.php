@@ -10,6 +10,7 @@ use App\Filament\Widgets\GreetingWidget;
 use App\Filament\Widgets\FavoriteProjects;
 use App\Filament\Widgets\LatestProjects;
 use App\Filament\Widgets\LatestTickets;
+use App\Filament\Widgets\MyCcTickets;
 use App\Filament\Widgets\MyOkrProgressWidget;
 use App\Filament\Widgets\ReportsOverview;
 use App\Filament\Widgets\TicketsOverview;
@@ -40,6 +41,7 @@ class Dashboard extends BasePage
             EnhancedActivityFeed::class,
             LatestProjects::class,
             LatestTickets::class,
+            MyCcTickets::class,
             TicketsOverview::class,
             TimeLoggedByUsers::class,
         ];

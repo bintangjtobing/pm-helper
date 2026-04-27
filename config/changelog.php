@@ -17,6 +17,18 @@
 return [
 
     [
+        'version' => '1.4.2',
+        'released_at' => '2026-04-27',
+        'type' => 'minor',
+        'title' => "Dashboard widget: Tickets I'm CC'd on",
+        'highlights' => [
+            "👀 New dashboard widget surfaces the top 5 active tickets where you're listed as a CC user — sorted by last activity (latest comment first, falling back to ticket updated_at). Excludes anything in a final status (Released, Approved, QA Passed, Ready for Release) so the list stays focused on work that still needs eyes",
+            '🔗 Each row links straight to the ticket view; shows project pill, ticket code, status badge, responsible avatar, and a relative "X ago" timestamp with the full datetime on hover',
+            "💤 Empty state: friendly \"Nothing to watch — you're not CC'd on any active tickets right now.\" so the widget degrades cleanly when you have nothing pending",
+        ],
+    ],
+
+    [
         'version' => '1.4.1',
         'released_at' => '2026-04-27',
         'type' => 'patch',
