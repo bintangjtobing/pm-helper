@@ -17,6 +17,17 @@
 return [
 
     [
+        'version' => '1.4.3',
+        'released_at' => '2026-04-27',
+        'type' => 'patch',
+        'title' => "Tickets I'm CC'd on: switch from status-based to activity-based filter",
+        'highlights' => [
+            "🎯 v1.4.2 widget hid every ticket in a final status (Released/Approved/QA Passed/Ready for Release) — which broke the experience for QA reviewers like Leo whose entire CC list naturally lives in QA Passed once their work is done. The widget showed an empty state even though there were 33 relevant tickets",
+            "📅 Now filters by activity instead: shows CC'd tickets that have a comment OR ticket update within the last 14 days, regardless of status. A QA Passed ticket with a fresh regression comment still surfaces; a stale ticket from 3 months ago stays hidden",
+        ],
+    ],
+
+    [
         'version' => '1.4.2',
         'released_at' => '2026-04-27',
         'type' => 'minor',

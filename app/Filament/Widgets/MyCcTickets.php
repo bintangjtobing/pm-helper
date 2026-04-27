@@ -3,8 +3,6 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Ticket;
-use App\Models\TicketStatus;
-use App\Services\ProjectAuditService;
 use Filament\Tables;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -31,12 +29,12 @@ class MyCcTickets extends BaseWidget
         return (bool) auth()->user();
     }
 
+    protected const ACTIVITY_WINDOW_DAYS = 14;
+
     protected function getTableQuery(): Builder
     {
         $userId = auth()->id();
-
-        $completedStatusIds = TicketStatus::whereIn('name', ProjectAuditService::COMPLETED_STATUSES)
-            ->pluck('id');
+        $cutoff = now()->subDays(self::ACTIVITY_WINDOW_DAYS);
 
         return Ticket::query()
             ->select('tickets.*')
@@ -44,7 +42,15 @@ class MyCcTickets extends BaseWidget
                 'COALESCE((SELECT MAX(created_at) FROM ticket_comments WHERE ticket_id = tickets.id AND deleted_at IS NULL), tickets.updated_at) as last_activity_at'
             )
             ->whereHas('ccUsers', fn ($q) => $q->where('users.id', $userId))
-            ->when($completedStatusIds->isNotEmpty(), fn ($q) => $q->whereNotIn('status_id', $completedStatusIds))
+            ->where(function ($q) use ($cutoff) {
+                $q->where('tickets.updated_at', '>=', $cutoff)
+                  ->orWhereExists(function ($sub) use ($cutoff) {
+                      $sub->from('ticket_comments')
+                          ->whereColumn('ticket_comments.ticket_id', 'tickets.id')
+                          ->whereNull('ticket_comments.deleted_at')
+                          ->where('ticket_comments.created_at', '>=', $cutoff);
+                  });
+            })
             ->with(['project:id,name', 'status:id,name,color', 'responsible:id,name,avatar'])
             ->orderByDesc('last_activity_at')
             ->limit(5);
@@ -124,7 +130,7 @@ class MyCcTickets extends BaseWidget
 
     protected function getTableEmptyStateDescription(): ?string
     {
-        return __("You're not CC'd on any active tickets right now.");
+        return __("No CC'd tickets with activity in the last :days days.", ['days' => self::ACTIVITY_WINDOW_DAYS]);
     }
 
     protected function getTableEmptyStateIcon(): ?string
