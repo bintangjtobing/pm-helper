@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\User;
 use App\Models\Ticket;
 use App\Models\TicketStatus;
+use App\Services\ProjectAuditService;
 use Filament\Tables;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,11 +22,20 @@ class TimeLoggedByUsers extends BaseWidget
 
     protected function getTableQuery(): Builder
     {
+        $completedStatusIds = TicketStatus::whereIn('name', ProjectAuditService::COMPLETED_STATUSES)
+            ->pluck('id');
+
+        $completedIdsSql = $completedStatusIds->isEmpty()
+            ? 'NULL'
+            : $completedStatusIds->implode(',');
+
         return User::query()
             ->select([
                 'users.*',
                 \DB::raw('(SELECT COUNT(*) FROM tickets WHERE responsible_id = users.id AND deleted_at IS NULL) as total_tickets_count'),
-                \DB::raw('(SELECT COALESCE(SUM(value), 0) FROM ticket_hours WHERE user_id = users.id) as total_hours_logged')
+                \DB::raw('(SELECT COUNT(*) FROM tickets WHERE responsible_id = users.id AND deleted_at IS NULL AND status_id IN (' . $completedIdsSql . ')) as completed_tickets_count'),
+                \DB::raw('(SELECT COALESCE(SUM(value), 0) FROM ticket_hours WHERE user_id = users.id) as total_hours_logged'),
+                \DB::raw('CASE WHEN (SELECT COUNT(*) FROM tickets WHERE responsible_id = users.id AND deleted_at IS NULL) > 0 THEN ROUND((SELECT COUNT(*) FROM tickets WHERE responsible_id = users.id AND deleted_at IS NULL AND status_id IN (' . $completedIdsSql . ')) * 100.0 / (SELECT COUNT(*) FROM tickets WHERE responsible_id = users.id AND deleted_at IS NULL), 1) ELSE 0 END as completion_percentage'),
             ])
             ->havingRaw('total_tickets_count > 0 OR total_hours_logged > 0')
             ->orderByDesc('total_tickets_count')
@@ -185,16 +195,8 @@ class TimeLoggedByUsers extends BaseWidget
                             return new HtmlString('<div class="text-gray-400">-</div>');
                         }
 
-                        // Find completion statuses (you can adjust these names based on your system)
-                        $completionStatusNames = ['Done', 'Completed', 'Closed', 'Resolved'];
-
-                        $completedCount = Ticket::where('responsible_id', $record->id)
-                            ->whereHas('status', function ($query) use ($completionStatusNames) {
-                                $query->whereIn('name', $completionStatusNames);
-                            })
-                            ->count();
-
-                        $percentage = round(($completedCount / $totalTickets) * 100, 1);
+                        $completedCount = (int) ($record->completed_tickets_count ?? 0);
+                        $percentage = (float) ($record->completion_percentage ?? 0);
 
                         // Color based on completion rate
                         $barColor = 'bg-red-500';

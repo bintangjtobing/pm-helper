@@ -17,6 +17,17 @@
 return [
 
     [
+        'version' => '1.4.1',
+        'released_at' => '2026-04-27',
+        'type' => 'patch',
+        'title' => 'Fix Completion % stuck at 0% in "Time logged by users" widget',
+        'highlights' => [
+            '📊 Dashboard widget "Time logged by users" was hardcoding completed statuses as [Done, Completed, Closed, Resolved] — none of which exist in this system, so every user showed 0% completion regardless of work shipped. Now reads from ProjectAuditService::COMPLETED_STATUSES (Released, Approved, QA Passed, Ready for Release) — the same source of truth used by Project Audit, Roadmap, and Weekly Report',
+            '⚡ Same widget: moved completed_tickets_count and completion_percentage into the SQL select as subqueries — eliminates the per-row N+1 (1 extra query per user on every render) and makes the Completion % column genuinely sortable on the server side',
+        ],
+    ],
+
+    [
         'version' => '1.4.0',
         'released_at' => '2026-04-26',
         'type' => 'minor',
