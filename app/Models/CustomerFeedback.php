@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerFeedback extends Model
 {
@@ -44,6 +45,18 @@ class CustomerFeedback extends Model
                 $admin->notify(new FeedbackSubmitted($feedback));
             }
         });
+
+        static::deleting(function (CustomerFeedback $feedback) {
+            // Cascade cleans the rows; we still need to wipe the files on disk.
+            foreach ($feedback->attachments as $attachment) {
+                $attachment->delete();
+            }
+
+            $dir = 'feedback-attachments/' . $feedback->id;
+            if (Storage::disk('public')->exists($dir)) {
+                Storage::disk('public')->deleteDirectory($dir);
+            }
+        });
     }
 
     public function project(): BelongsTo
@@ -69,6 +82,11 @@ class CustomerFeedback extends Model
     public function comments(): HasMany
     {
         return $this->hasMany(CustomerFeedbackComment::class, 'feedback_id');
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(CustomerFeedbackAttachment::class, 'feedback_id');
     }
 
     public function getStatusBadgeAttribute(): string

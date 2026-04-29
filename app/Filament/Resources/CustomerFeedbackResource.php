@@ -199,6 +199,41 @@ class CustomerFeedbackResource extends Resource
                     ])
                     ->visible(fn ($record) => $record?->change_type && $record?->proposed_data),
 
+                // Attachments Card
+                Forms\Components\Card::make()
+                    ->schema([
+                        Forms\Components\Placeholder::make('attachments_list')
+                            ->label(__('Attachments'))
+                            ->content(function ($record) {
+                                if (!$record) return '';
+                                $items = $record->attachments()->orderBy('id')->get();
+                                if ($items->isEmpty()) {
+                                    return new HtmlString('<div style="font-size:13px;color:#9ca3af;">No attachments.</div>');
+                                }
+
+                                $html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+                                foreach ($items as $att) {
+                                    $isPdf = $att->isPdf();
+                                    $badge = $isPdf ? 'PDF' : 'DOCX';
+                                    $bgColor = $isPdf ? '#dc2626' : '#2563eb';
+
+                                    $html .= '<a href="' . e($att->url) . '" target="_blank" rel="noopener" '
+                                        . 'style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafafa;border:1px solid #e4e4e7;border-radius:8px;text-decoration:none;color:#3f3f46;transition:all 140ms;">';
+                                    $html .= '<div style="flex-shrink:0;width:32px;height:32px;border-radius:5px;background:' . $bgColor . ';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:0.5px;">' . $badge . '</div>';
+                                    $html .= '<div style="flex:1;min-width:0;">';
+                                    $html .= '<div style="font-size:13px;font-weight:500;color:#18181b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' . e($att->filename_original) . '</div>';
+                                    $html .= '<div style="font-size:11px;color:#a1a1aa;">' . e($att->human_size) . ' · ' . $att->created_at->diffForHumans() . '</div>';
+                                    $html .= '</div>';
+                                    $html .= '<div style="flex-shrink:0;font-size:11px;color:#3b82f6;font-weight:600;">Download &rarr;</div>';
+                                    $html .= '</a>';
+                                }
+                                $html .= '</div>';
+
+                                return new HtmlString($html);
+                            })
+                    ])
+                    ->visible(fn ($record) => $record !== null && $record->attachments()->exists()),
+
                 // Activity Log Card - Hanya tampil di edit/view
                 Forms\Components\Card::make()
                     ->schema([

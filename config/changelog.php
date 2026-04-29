@@ -17,6 +17,18 @@
 return [
 
     [
+        'version' => '1.4.5',
+        'released_at' => '2026-04-29',
+        'type' => 'minor',
+        'title' => 'Public feedback form now accepts PDF / DOCX attachments',
+        'highlights' => [
+            "📎 The public `/feedback/{token}` form has a new optional Attachments field — drag & drop or click to attach PDF or DOCX files (max 25MB each, up to 10 per submission). Selected files render as compact rows with type badge, size, and a remove button before submit",
+            "🛡️ Server-side validation enforces both extension and MIME (`application/pdf`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`) so spoofed extensions are rejected. Files store under `storage/app/public/feedback-attachments/{feedback_id}/` and cascade-delete with the parent feedback (rows + on-disk files)",
+            "👀 Filament feedback view shows an Attachments card with download links, file size, and how long ago each file was uploaded. PHP-FPM `upload_max_filesize=110M` already covers 25MB, no server config change required",
+        ],
+    ],
+
+    [
         'version' => '1.4.4',
         'released_at' => '2026-04-29',
         'type' => 'patch',
