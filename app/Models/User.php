@@ -84,6 +84,16 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     ];
 
     /**
+     * Default attribute values. Mirror the DB-level default for `type`
+     * so Eloquent's `creating`/`created` events see `type='db'` even when
+     * the form (e.g. Filament UserResource) doesn't submit the field —
+     * otherwise the welcome-email + creation_token logic in boot() is skipped.
+     */
+    protected $attributes = [
+        'type' => 'db',
+    ];
+
+    /**
      * Allowed manual status values. Online/Away come from Pusher presence.
      */
     public const ALLOWED_STATUSES = ['busy', 'in_meeting', 'lunch_break', 'on_leave'];
