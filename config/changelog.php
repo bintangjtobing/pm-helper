@@ -17,6 +17,17 @@
 return [
 
     [
+        'version' => '1.4.4',
+        'released_at' => '2026-04-29',
+        'type' => 'patch',
+        'title' => 'Welcome email now actually fires when admins create a user',
+        'highlights' => [
+            "📧 Filament's Create User form doesn't submit a `type` field, so the User model's `creating`/`created` boot events saw `type=NULL` instead of `db`. The DB-level default `db` was applied only after the events ran — so the welcome-email + creation_token logic was silently skipped. New users were created without an account-validation token and never got the \"Verify My Account\" email",
+            "🛠️ Fix: model now sets `protected \$attributes = ['type' => 'db']` to mirror the DB default, so events see the right value from instantiation. The one user already affected by the bug was manually re-tokenized and re-notified",
+        ],
+    ],
+
+    [
         'version' => '1.4.3',
         'released_at' => '2026-04-27',
         'type' => 'patch',
