@@ -51,7 +51,7 @@
 
             @if($totalIdle > $idleUsers->count())
                 <div class="mt-3 text-center">
-                    <a href="{{ url('/admin/team-activity?filterPresence=idle') }}"
+                    <a href="{{ route('filament.pages.team-activity') }}?filterPresence=idle"
                        class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">
                         {{ __('View all :n idle users', ['n' => $totalIdle]) }}
                     </a>
