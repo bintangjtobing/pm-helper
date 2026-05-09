@@ -17,6 +17,18 @@
 return [
 
     [
+        'version' => '1.4.6',
+        'released_at' => '2026-05-09',
+        'type' => 'minor',
+        'title' => 'Team Activity surface — see who logged in when',
+        'highlights' => [
+            "🟢 User cards in Admin → Users now show a Last Active badge. Green dot for active in the past hour, amber for today/yesterday, orange for 1-7 days ago, red for >7 days idle, gray for users who never logged in. Hover the badge to see the exact timestamp",
+            "📋 New page Admin → Team → Team Activity (`/admin/team-activity`). Shows every user with last seen, idle bucket, department, role, open ticket count, and join date. Filters: presence bucket, department, role, free-text search. Permission-gated to users with `Update user`",
+            "⏰ New dashboard widget Idle Users surfaces up to 8 people who have not been active in 7+ days, with a deep link into the Team Activity page filtered to idle. Source of truth is `users.last_seen_at`, which the `UpdateLastSeen` middleware bumps every 60 seconds while the user has the app open",
+        ],
+    ],
+
+    [
         'version' => '1.4.5',
         'released_at' => '2026-04-29',
         'type' => 'minor',

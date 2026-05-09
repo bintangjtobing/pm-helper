@@ -11,6 +11,43 @@
     ];
     $rawAvatar = $record->getAttributes()['avatar_url'] ?? null;
     $avatarSrc = $rawAvatar ?: ('https://ui-avatars.com/api/?name=' . urlencode($record->name) . '&size=128&background=' . substr(md5($record->id), 0, 6) . '&color=ffffff&bold=true');
+
+    $lastSeen = $record->last_seen_at;
+    if (!$lastSeen) {
+        $presenceLabel = __('Never logged in');
+        $presenceDot = 'bg-gray-400';
+        $presenceText = 'text-gray-500 dark:text-gray-400';
+    } else {
+        $minutesAgo = $lastSeen->diffInMinutes(now());
+        if ($minutesAgo <= 5) {
+            $presenceLabel = __('Active now');
+            $presenceDot = 'bg-emerald-500';
+            $presenceText = 'text-emerald-600 dark:text-emerald-400';
+        } elseif ($minutesAgo <= 60) {
+            $presenceLabel = __('Active :n min ago', ['n' => $minutesAgo]);
+            $presenceDot = 'bg-emerald-400';
+            $presenceText = 'text-emerald-600 dark:text-emerald-400';
+        } elseif ($lastSeen->isToday()) {
+            $presenceLabel = __('Today, :time', ['time' => $lastSeen->format('H:i')]);
+            $presenceDot = 'bg-amber-400';
+            $presenceText = 'text-amber-600 dark:text-amber-400';
+        } elseif ($lastSeen->isYesterday()) {
+            $presenceLabel = __('Yesterday, :time', ['time' => $lastSeen->format('H:i')]);
+            $presenceDot = 'bg-amber-500';
+            $presenceText = 'text-amber-600 dark:text-amber-400';
+        } else {
+            $daysAgo = (int) $lastSeen->diffInDays(now());
+            if ($daysAgo <= 7) {
+                $presenceLabel = __(':n days ago', ['n' => $daysAgo]);
+                $presenceDot = 'bg-orange-500';
+                $presenceText = 'text-orange-600 dark:text-orange-400';
+            } else {
+                $presenceLabel = __(':n days idle', ['n' => $daysAgo]);
+                $presenceDot = 'bg-red-500';
+                $presenceText = 'text-red-600 dark:text-red-400';
+            }
+        }
+    }
 @endphp
 <div class="flex flex-col items-center w-full px-4 py-5 text-center">
     {{-- Avatar --}}
@@ -63,6 +100,12 @@
         {{ __('Reports to') }} <span class="font-medium text-gray-500 dark:text-gray-300">{{ $record->supervisor->name }}</span>
     </div>
     @endif
+
+    {{-- Last Active badge --}}
+    <div class="flex items-center justify-center gap-1.5 mt-2.5 px-2.5 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50" title="{{ $lastSeen ? $lastSeen->format('Y-m-d H:i:s') : __('Never logged in') }}">
+        <span class="inline-block w-1.5 h-1.5 rounded-full {{ $presenceDot }}"></span>
+        <span class="text-[10px] font-medium {{ $presenceText }}">{{ $presenceLabel }}</span>
+    </div>
 
     {{-- Meta row: gender, birthday, join date --}}
     <div class="flex items-center justify-center gap-2 mt-2 text-[10px] text-gray-400">
