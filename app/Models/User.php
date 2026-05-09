@@ -81,6 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         'status_until' => 'datetime',
         'on_leave_from' => 'date',
         'on_leave_until' => 'date',
+        'last_seen_at' => 'datetime',
     ];
 
     /**
