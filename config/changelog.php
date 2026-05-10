@@ -17,6 +17,18 @@
 return [
 
     [
+        'version' => '1.4.7',
+        'released_at' => '2026-05-11',
+        'type' => 'patch',
+        'title' => 'Video meetings restored — Jitsi moved to meet.cirrus-hub.net',
+        'highlights' => [
+            "📹 The self-hosted Jitsi instance is back online at `meet.cirrus-hub.net`. The previous domain `meet.digicrats.com` stopped resolving after the cirrus-hub migration, which made every meeting start fail with a connection error",
+            "🔧 Server side: new nginx vhost + Let's Encrypt cert for `meet.cirrus-hub.net`, reverse-proxying to the existing Jitsi docker stack (web container on `127.0.0.1:18000`). Updated `/opt/jitsi/.env` `PUBLIC_URL` and restarted the compose stack so prosody, jicofo, jvb, web, transcriber, and skynet all advertise the new domain",
+            "🧩 App side: hardcoded `meet.digicrats.com` references swapped to `meet.cirrus-hub.net` in `meet-tab.blade.php` (External API script + JitsiMeetExternalAPI constructor) and `Messenger.php` (meeting URL generator). The legacy-URL join regex still accepts `meet.digicrats.com` and `meet.jit.si` for any chat history that points to the old hostnames",
+        ],
+    ],
+
+    [
         'version' => '1.4.6',
         'released_at' => '2026-05-09',
         'type' => 'minor',

@@ -56,7 +56,7 @@
     <div id="meet-iframe-wrap" class="meet-iframe-wrap"></div>
 </div>
 
-<script src="https://meet.digicrats.com/external_api.js"></script>
+<script src="https://meet.cirrus-hub.net/external_api.js"></script>
 <script>
     @php
         $safeRole = in_array($role, ['starter', 'joiner'], true) ? $role : 'joiner';
@@ -143,7 +143,7 @@
         function initIframe() {
             log('init iframe');
             const container = document.getElementById('meet-iframe-wrap');
-            state.api = new window.JitsiMeetExternalAPI('meet.digicrats.com', {
+            state.api = new window.JitsiMeetExternalAPI('meet.cirrus-hub.net', {
                 roomName: MEET_CONFIG.slug,
                 parentNode: container,
                 width: '100%',

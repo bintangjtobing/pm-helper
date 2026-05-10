@@ -627,7 +627,7 @@ class Messenger extends Component
         // Unguessable room slug so the URL can't be joined by random guessers.
         // 18 chars of random alphanumeric = ~107 bits of entropy.
         $slug = 'pmhelper-' . strtolower(\Illuminate\Support\Str::random(18));
-        $meetingUrl = 'https://meet.digicrats.com/' . $slug;
+        $meetingUrl = 'https://meet.cirrus-hub.net/' . $slug;
 
         $starterName = auth()->user()->name;
         $body = "📹 {$starterName} started a meeting\n{$meetingUrl}";
@@ -673,8 +673,8 @@ class Messenger extends Component
             return;
         }
 
-        // Accept self-hosted meet.digicrats.com AND legacy meet.jit.si URLs
-        if (! preg_match('~^https://meet\.(digicrats\.com|jit\.si)/(pmhelper-[a-z0-9]+)$~i', $url, $m)) {
+        // Accept self-hosted meet.cirrus-hub.net AND legacy meet.digicrats.com / meet.jit.si URLs
+        if (! preg_match('~^https://(meet\.cirrus-hub\.net|meet\.digicrats\.com|meet\.jit\.si)/(pmhelper-[a-z0-9]+)$~i', $url, $m)) {
             return;
         }
         $slug = $m[2];
