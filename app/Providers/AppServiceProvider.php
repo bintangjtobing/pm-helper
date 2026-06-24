@@ -310,11 +310,34 @@ class AppServiceProvider extends ServiceProvider
 
         // Add custom meta (favicon)
         $favicon = config('app.favicon') ?: config('app.logo_dark') ?: config('app.logo');
+
+        // Birthday flags require the database. Compute them defensively so a
+        // transient DB outage (e.g. during a MySQL restart) or a console
+        // context never throws during application boot — otherwise every
+        // route, including the login page, would return a 500.
+        $userId = '';
+        $userBirthdayToday = '0';
+        $anyBirthdayToday = '0';
+
+        if (! app()->runningInConsole()) {
+            try {
+                $userId = auth()->id() ?? '';
+                $userBirthdayToday = (auth()->check()
+                    && auth()->user()->birthday
+                    && auth()->user()->birthday->format('m-d') === now()->format('m-d')) ? '1' : '0';
+                $anyBirthdayToday = \App\Models\User::whereMonth('birthday', now()->month)
+                    ->whereDay('birthday', now()->day)
+                    ->exists() ? '1' : '0';
+            } catch (\Throwable $e) {
+                // Database unavailable — fall back to defaults so the page still renders.
+            }
+        }
+
         Filament::pushMeta([
             new HtmlString('<link rel="icon" href="' . $favicon . '">'),
-            new HtmlString('<meta name="user-id" content="' . (auth()->id() ?? '') . '">'),
-            new HtmlString('<meta name="user-birthday-today" content="' . (auth()->check() && auth()->user()->birthday && auth()->user()->birthday->format('m-d') === now()->format('m-d') ? '1' : '0') . '">'),
-            new HtmlString('<meta name="any-birthday-today" content="' . (\App\Models\User::whereMonth('birthday', now()->month)->whereDay('birthday', now()->day)->exists() ? '1' : '0') . '">'),
+            new HtmlString('<meta name="user-id" content="' . $userId . '">'),
+            new HtmlString('<meta name="user-birthday-today" content="' . $userBirthdayToday . '">'),
+            new HtmlString('<meta name="any-birthday-today" content="' . $anyBirthdayToday . '">'),
         ]);
 
         // Register navigation groups (ordered by persona: daily work → self → collaborative → admin)
