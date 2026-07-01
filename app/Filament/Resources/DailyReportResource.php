@@ -142,8 +142,10 @@ class DailyReportResource extends Resource
                     ->label(__('Report'))
                     ->formatStateUsing(function ($record) {
                         $user = $record->user;
-                        $avatar = $user->getAttributes()['avatar_url']
-                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&size=64&background=' . substr(md5($user->id), 0, 6) . '&color=ffffff');
+                        $userName = $user->name ?? 'Unknown user';
+                        $userId = $user->id ?? $record->user_id ?? 0;
+                        $avatar = ($user ? $user->getAttributes()['avatar_url'] ?? null : null)
+                            ?? ('https://ui-avatars.com/api/?name=' . urlencode($userName) . '&size=64&background=' . substr(md5((string) $userId), 0, 6) . '&color=ffffff');
                         $hasBlockers = !empty($record->blockers);
                         $blockerBadge = $hasBlockers
                             ? '<span class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-red-500/10 text-red-500">Blocker</span>'
@@ -154,7 +156,7 @@ class DailyReportResource extends Resource
                             . '<div class="text-sm font-medium text-gray-900 dark:text-gray-100">' . e($record->date_label) . '</div>'
                             . '<div class="flex items-center gap-1.5 mt-0.5">'
                             . '<img src="' . e($avatar) . '" class="w-4 h-4 rounded-full object-cover shrink-0" loading="lazy" />'
-                            . '<span class="text-xs text-gray-500">' . e($user->name) . '</span>'
+                            . '<span class="text-xs text-gray-500">' . e($userName) . '</span>'
                             . ($record->project ? '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span><span class="px-1.5 py-0.5 text-[10px] font-medium rounded bg-primary-500/10 text-primary-500">' . e($record->project->name) . '</span>' : '')
                             . ($blockerBadge ? '<span class="text-xs text-gray-300 dark:text-gray-600">&middot;</span>' . $blockerBadge : '')
                             . '</div>'
