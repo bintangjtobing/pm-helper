@@ -38,9 +38,15 @@ class FilamentServiceProvider extends ServiceProvider
             // Register global scripts
             Filament::registerScripts([
                 asset('js/toast-notifications.js'),
-                asset('js/timezone-detect.js'),
                 asset('js/birthday-avatar.js'),
             ], true);
+
+            // Timezone sync butuh user login; di halaman login/reset cuma menghasilkan 401
+            if (auth()->check()) {
+                Filament::registerScripts([
+                    asset('js/timezone-detect.js'),
+                ], true);
+            }
             // Register ProjectAuditResource
             Filament::registerResources([
                 ProjectAuditResource::class,
